@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+
+	"github.com/masudur-rahman/expense-tracker-bot/infra/logr"
 )
 
 type StatusError struct {
@@ -205,6 +207,7 @@ func IsErrBadRequest(err error) bool {
 }
 
 func ErrCommonResponse(err error) string {
+	logr.DefaultLogger.Errorw("CommonResponse error", "error", err.Error())
 	if IsErrNotFound(err) || IsErrConflict(err) {
 		return err.Error()
 	}

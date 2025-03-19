@@ -15,6 +15,7 @@ type ExpenseConfiguration struct {
 	Telegram Telegram       `json:"telegram" yaml:"telegram"`
 	Database DatabaseConfig `json:"database" yaml:"database"`
 	Cache    cache.Config   `json:"cache" yaml:"cache"`
+	System   SystemConfig   `json:"system" yaml:"system"`
 }
 
 type Telegram struct {
@@ -28,6 +29,10 @@ type DatabaseConfig struct {
 	//ArangoDB DBConfigArangoDB `json:"arangodb" yaml:"arangodb"`
 	Postgres lib.PostgresConfig `json:"postgres" yaml:"postgres"`
 	SQLite   DBConfigSQLite     `json:"sqlite" yaml:"sqlite"`
+}
+
+type SystemConfig struct {
+	PDFConverter string `json:"pdfConverter" yaml:"pdfConverter"`
 }
 
 type DatabaseType string

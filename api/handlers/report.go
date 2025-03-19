@@ -3,10 +3,12 @@ package handlers
 import (
 	"bytes"
 	"fmt"
+	"strconv"
 	"strings"
 	"text/template"
 	"time"
 
+	"github.com/masudur-rahman/expense-tracker-bot/configs"
 	"github.com/masudur-rahman/expense-tracker-bot/models"
 	"github.com/masudur-rahman/expense-tracker-bot/models/gqtypes"
 	"github.com/masudur-rahman/expense-tracker-bot/modules/convert"
@@ -167,7 +169,8 @@ func generateTransactionReportFromTemplate(report gqtypes.Report) error {
 	}
 
 	buf := bytes.Buffer{}
-	tmpl, err := template.New("report").Parse(string(data))
+	funcMap := template.FuncMap{"formatBDT": FormatBDT}
+	tmpl, err := template.New("report").Funcs(funcMap).Parse(string(data))
 	if err != nil {
 		return err
 	}
@@ -177,5 +180,70 @@ func generateTransactionReportFromTemplate(report gqtypes.Report) error {
 		return err
 	}
 
-	return pkg.ConvertHTMLToPDF("/tmp/transaction_report.pdf", buf.Bytes())
+	return pkg.ConvertHTMLToPDF(configs.TrackerConfig.System.PDFConverter, "/tmp/transaction_report.pdf", buf.Bytes())
+}
+
+func FormatBDT(amount float64) string {
+	if amount < 0 {
+		return "-" + FormatBDT(-amount)
+	}
+
+	// Split into integer and decimal parts
+	integerPart := int64(amount)
+	decimalPart := amount - float64(integerPart)
+
+	// Format integer part with BDT commas
+	formattedInteger := formatBangladeshiCommas(integerPart)
+
+	// Handle decimal part
+	if decimalPart == 0 {
+		return formattedInteger
+	}
+
+	// Format decimal to 2 places and trim leading zero
+	decimalStr := strings.TrimPrefix(strconv.FormatFloat(decimalPart, 'f', 2, 64), "0")
+	return formattedInteger + decimalStr
+}
+
+func formatBangladeshiCommas(n int64) string {
+	str := strconv.FormatInt(n, 10)
+	length := len(str)
+
+	if length <= 3 {
+		return str
+	}
+
+	// Reverse string for easier grouping
+	reversed := reverseString(str)
+	groups := []string{}
+
+	// First group of 3 digits
+	groups = append(groups, reversed[:3])
+	reversed = reversed[3:]
+
+	// Subsequent groups of 2 digits
+	for len(reversed) > 0 {
+		chunkSize := 2
+		if len(reversed) < chunkSize {
+			chunkSize = len(reversed)
+		}
+		groups = append(groups, reversed[:chunkSize])
+		reversed = reversed[chunkSize:]
+	}
+
+	// Reverse groups and create formatted string
+	formattedGroups := make([]string, len(groups))
+	for i, group := range groups {
+		formattedGroups[len(groups)-1-i] = reverseString(group)
+	}
+
+	return strings.Join(formattedGroups, ",")
+}
+
+func reverseString(s string) string {
+	runes := []rune(s)
+	for i, j := 0, len(runes)-1; i < j; i, j = i+1, j-1 {
+		runes[i], runes[j] = runes[j], runes[i]
+	}
+	return string(runes)
 }

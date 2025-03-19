@@ -4,16 +4,18 @@
 <head>
     <style>
         * {
-            font-family: sans-serif;
+            font-family: "DejaVu Sans", sans-serif;
+            box-sizing: border-box;
         }
 
+        /* Screen styles */
         .content-table {
             border-collapse: collapse;
             margin: 15px 0;
             font-size: 0.9em;
-            min-width: 400px;
+            width: 100%;
+            table-layout: fixed;
             border-radius: 5px 5px 0 0;
-            /* overflow: hidden; */
             box-shadow: 0 0 20px rgba(0, 0, 0, 0.15);
         }
 
@@ -26,7 +28,13 @@
 
         .content-table th,
         .content-table td {
-            padding: 12px 14px;
+            padding: 10px 12px;
+            word-break: break-word;
+            vertical-align: top;
+        }
+
+        .content-table td {
+            font-size: 0.85em;
         }
 
         .content-table tbody tr {
@@ -34,39 +42,109 @@
         }
 
         .content-table tbody tr:nth-of-type(even) {
-            background-color: #f3f3f3;
+            background-color: #f8f8f8;
         }
 
         .content-table tbody tr:last-of-type {
             border-bottom: 3px solid #009879;
         }
 
-        .content-table tbody tr.active-row {
-            font-weight: bold;
-            color: #009879;
-        }
-
         .header-block {
-            background-color: #b2e0d9; /* Lighter green shade matching the table */
-            border: 1px solid #009879; /* Darker green for the border */
-            border-radius: 8px; /* Slightly increased border radius for a softer look */
-            padding: 20px; /* Increased padding for better spacing */
+            background-color: #b2e0d9;
+            border: 1px solid #009879;
+            border-radius: 8px;
+            padding: 20px;
             text-align: center;
             margin-bottom: 20px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); /* Subtle shadow for depth */
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
         }
 
         .header-block h1 {
             margin: 0;
-            font-size: 1.6em; /* Slightly larger font size for emphasis */
+            font-size: 1.6em;
             color: #333;
         }
 
         .header-block h4 {
             margin: 5px 0 0;
-            font-size: 1.3em; /* Slightly larger font size for better visibility */
-            color: #555; /* Darker shade for better contrast */
+            font-size: 1.3em;
+            color: #555;
         }
+
+        .summary-section {
+            margin-top: 30px;
+        }
+
+        /* Summary table adjustments */
+        .summary-table {
+            width: 50%;
+            margin: 15px 0;
+        }
+
+        /* Print-specific styles */
+        @media print {
+            .content-table {
+                border: 1px solid #009879 !important;
+                border-collapse: collapse !important;
+                box-shadow: none !important;
+            }
+
+            .content-table th,
+            .content-table td {
+                border-left: none !important;
+                border-right: none !important;
+                border-bottom: 1px solid #dddddd !important;
+                padding: 8px 10px !important;
+            }
+
+            .content-table thead tr {
+                border-bottom: 2px solid #009879 !important;
+            }
+
+            .content-table tbody tr:last-child td {
+                border-bottom: 3px solid #009879 !important;
+            }
+
+            .content-table tr:first-child th {
+                border-top: none !important;
+            }
+
+            .content-table td:first-child,
+            .content-table th:first-child {
+                padding-left: 12px !important;
+            }
+
+            .content-table td:last-child,
+            .content-table th:last-child {
+                padding-right: 12px !important;
+            }
+
+            /*.transaction-history {*/
+            /*    page-break-after: always !important;*/
+            /*}*/
+
+            .summary-section {
+                /*page-break-before: avoid !important;*/
+                margin-top: 20px !important; /* Print spacing */
+            }
+
+            .summary-table {
+                width: 50% !important;
+                margin: 10px 0 !important;
+                page-break-inside: avoid !important;
+            }
+        }
+
+        /* Column width definitions */
+        .col-date { width: 10%; }
+        .col-type { width: 8%; }
+        .col-amount { width: 10%; }
+        .col-source { width: 11.5%; }
+        .col-dest { width: 11.5%; }
+        .col-person { width: 10%; }
+        .col-category { width: 12%; }
+        .col-subcategory { width: 12%; }
+        .col-remarks { width: 12%; }
     </style>
 </head>
 
@@ -75,14 +153,25 @@
     <h1>Expense Tracker Report - {{ .Name }}</h1>
     <h4>Duration: [{{ .StartDate.Format "Jan 02, 2006" }} - {{ .EndDate.Format "Jan 02, 2006" }}]</h4>
 </div>
-<h2>Transaction History</h2>
 
-<table class="content-table">
+<h2>Transaction History</h2>
+<table class="content-table transaction-history">
+    <colgroup>
+        <col class="col-date">
+        <col class="col-type">
+        <col class="col-amount">
+        <col class="col-source">
+        <col class="col-dest">
+        <col class="col-person">
+        <col class="col-category">
+        <col class="col-subcategory">
+        <col class="col-remarks">
+    </colgroup>
     <thead>
     <tr>
         <th>Date</th>
         <th>Type</th>
-        <th>Amount</th>
+        <th style="text-align: right">Amount</th>
         <th>Source A/C</th>
         <th>Dest A/C</th>
         <th>Person</th>
@@ -96,7 +185,7 @@
     <tr>
         <td>{{ .Date.Format "Jan 02, '06" }}</td>
         <td>{{ .Type }}</td>
-        <td>&#2547;{{ .Amount }}</td>
+        <td style="text-align: right">&#2547;{{ .Amount | formatBDT }}</td>
         <td>{{ .Source }}</td>
         <td>{{ .Destination }}</td>
         <td>{{ .Person }}</td>
@@ -108,58 +197,74 @@
     </tbody>
 </table>
 
-<h2>Transaction Summary</h2>
-<table class="content-table">
-    <thead>
-    <tr>
-        <th>Transaction Type</th>
-        <th>Amount</th>
-    </tr>
-    </thead>
-    <tbody>
-    {{  range $type := .Summary.Type }}
-    <tr>
-        <td>{{ $type.Name }}</td>
-        <td>&#2547;{{ $type.Amount }}</td>
-    </tr>
-    {{ end }}
-    </tbody>
-</table>
+<div class="summary-section" >
+    <h2>Transaction Summary</h2>
 
-<table class="content-table">
-    <thead>
-    <tr>
-        <th>Transaction Category</th>
-        <th>Amount</th>
-    </tr>
-    </thead>
-    <tbody>
-    {{ range $category := .Summary.Category }}
-    <tr>
-        <td>{{ $category.Name }}</td>
-        <td>&#2547;{{ $category.Amount }}</td>
-    </tr>
-    {{ end }}
-    </tbody>
-</table>
+    <!-- Transaction Type -->
+    <table class="content-table summary-table">
+        <colgroup>
+            <col style="width: 60%">
+            <col style="width: 40%">
+        </colgroup>
+        <thead>
+        <tr>
+            <th>Transaction Type</th>
+            <th style="text-align: right">Amount</th>
+        </tr>
+        </thead>
+        <tbody>
+        {{ range $type := .Summary.Type }}
+        <tr>
+            <td>{{ $type.Name }}</td>
+            <td style="text-align: right">&#2547;{{ $type.Amount | formatBDT }}</td>
+        </tr>
+        {{ end }}
+        </tbody>
+    </table>
 
-<table class="content-table">
-    <thead>
-    <tr>
-        <th>Transaction Subcategory</th>
-        <th>Amount</th>
-    </tr>
-    </thead>
-    <tbody>
-    {{ range $subcategory := .Summary.Subcategory }}
-    <tr>
-        <td>{{ $subcategory.Name }}</td>
-        <td>&#2547;{{ $subcategory.Amount }}</td>
-    </tr>
-    {{ end }}
-    </tbody>
-</table>
+    <!-- Transaction Category -->
+    <table class="content-table summary-table">
+        <colgroup>
+            <col style="width: 60%">
+            <col style="width: 40%">
+        </colgroup>
+        <thead>
+        <tr>
+            <th>Transaction Category</th>
+            <th style="text-align: right">Amount</th>
+        </tr>
+        </thead>
+        <tbody>
+        {{ range $category := .Summary.Category }}
+        <tr>
+            <td>{{ $category.Name }}</td>
+            <td style="text-align: right">&#2547;{{ $category.Amount | formatBDT }}</td>
+        </tr>
+        {{ end }}
+        </tbody>
+    </table>
 
+    <!-- Transaction Subcategory -->
+    <table class="content-table summary-table">
+        <colgroup>
+            <col style="width: 60%">
+            <col style="width: 40%">
+        </colgroup>
+        <thead>
+        <tr>
+            <th>Transaction Subcategory</th>
+            <th style="text-align: right">Amount</th>
+        </tr>
+        </thead>
+        <tbody>
+        {{ range $subcategory := .Summary.Subcategory }}
+        <tr>
+            <td>{{ $subcategory.Name }}</td>
+            <td style="text-align: right">&#2547;{{ $subcategory.Amount | formatBDT }}</td>
+        </tr>
+        {{ end }}
+        </tbody>
+    </table>
+</div>
 </body>
-
 </html>
