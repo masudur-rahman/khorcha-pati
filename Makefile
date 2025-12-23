@@ -385,6 +385,9 @@ docker-manifest:
 release:
 	@$(MAKE) all-push docker-manifest --no-print-directory
 
+docker-build:
+	docker buildx build --platform linux/amd64,linux/arm64 --output "type=image,push=false" --tag $(DOCKER_IMAGE):$(VERSION) --builder builder .
+
 docker-build-push:
 	docker buildx build --platform linux/amd64,linux/arm64 --output "type=image,push=true" --tag $(DOCKER_IMAGE):$(VERSION) --builder builder .
 

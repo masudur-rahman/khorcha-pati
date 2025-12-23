@@ -46,14 +46,14 @@ jobs:
                   USERNAME: masudur-rahman
               run: |
                   docker login ghcr.io --username ${USERNAME} --password ${DOCKER_TOKEN}
-                  make release
+                  make container
 
-            - name: Publish Docker image to Docker Container Registry
-              env:
-                  REGISTRY: masudjuly02
-                  SRC_REG: ghcr.io/masudur-rahman
-                  DOCKER_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
-                  USERNAME: masudjuly02
-              run: |
-                  docker login --username ${USERNAME} --password ${DOCKER_TOKEN}
-                  make release
+#            - name: Publish Docker image to Docker Container Registry
+#              env:
+#                  REGISTRY: masudjuly02
+#                  SRC_REG: ghcr.io/masudur-rahman
+#                  DOCKER_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+#                  USERNAME: masudjuly02
+#              run: |
+#                  docker login --username ${USERNAME} --password ${DOCKER_TOKEN}
+#                  make release

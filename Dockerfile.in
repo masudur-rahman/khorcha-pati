@@ -32,9 +32,13 @@ RUN set -x \
   && wget https://github.com/wkhtmltopdf/packaging/releases/download/${WKHTMLTOPDF_VERSION}/wkhtmltox_${WKHTMLTOPDF_VERSION}.bullseye_${TARGETARCH}.deb \
   && dpkg -i wkhtmltox_${WKHTMLTOPDF_VERSION}.bullseye_${TARGETARCH}.deb || true \
   && apt-get install -f -y \
-  && ldconfig \
-  && rm wkhtmltox_${WKHTMLTOPDF_VERSION}.bullseye_${TARGETARCH}.deb \
-  && rm -rf /var/lib/apt/lists/* /usr/share/doc /usr/share/man /tmp/*
+  && ldconfig #\
+#  && rm wkhtmltox_${WKHTMLTOPDF_VERSION}.bullseye_${TARGETARCH}.deb \
+#  && rm -rf /var/lib/apt/lists/* /usr/share/doc /usr/share/man /tmp/* \
+
+RUN set -x \
+    && whereis wkhtmltopdf \
+    && which wkhtmltopdf
 
 
 # Add the platform-specific binary.
