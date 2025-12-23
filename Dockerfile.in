@@ -20,7 +20,8 @@ ARG HASH_LICENSES=0
 # its cache and can force a rebuild from here.
 ARG HASH_BINARY=0
 
-ARG WKHTMLTOPDF_VERSION=0.12.6.1-2
+ARG WKHTMLTOPDF_VERSION=0.12.6.1-3
+ARG DEBIAN_RELEASE_NAME=bookworm
 
 RUN set -x \
   && apt-get update \
@@ -29,11 +30,11 @@ RUN set -x \
   && echo 'Etc/UTC' > /etc/timezone
 
 RUN set -x \
-  && wget https://github.com/wkhtmltopdf/packaging/releases/download/${WKHTMLTOPDF_VERSION}/wkhtmltox_${WKHTMLTOPDF_VERSION}.bullseye_${TARGETARCH}.deb \
-  && dpkg -i wkhtmltox_${WKHTMLTOPDF_VERSION}.bullseye_${TARGETARCH}.deb || true \
+  && wget https://github.com/wkhtmltopdf/packaging/releases/download/${WKHTMLTOPDF_VERSION}/wkhtmltox_${WKHTMLTOPDF_VERSION}.${DEBIAN_RELEASE_NAME}_${TARGETARCH}.deb \
+  && dpkg -i wkhtmltox_${WKHTMLTOPDF_VERSION}.${DEBIAN_RELEASE_NAME}_${TARGETARCH}.deb || true \
   && apt-get install -f -y \
   && ldconfig \
-  && rm wkhtmltox_${WKHTMLTOPDF_VERSION}.bullseye_${TARGETARCH}.deb \
+  && rm wkhtmltox_${WKHTMLTOPDF_VERSION}.${DEBIAN_RELEASE_NAME}_${TARGETARCH}.deb \
   && rm -rf /var/lib/apt/lists/* /usr/share/doc /usr/share/man /tmp/*
 
 

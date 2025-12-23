@@ -1,4 +1,4 @@
-FROM ghcr.io/masudur-rahman/golang:1.21
+FROM ghcr.io/masudur-rahman/golang:1.24
 
 ARG TARGETOS
 ARG TARGETARCH=amd64
