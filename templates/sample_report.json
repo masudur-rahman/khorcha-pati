@@ -1,0 +1,226 @@
+{
+  "name": "Masudur Rahman",
+  "transactions": [
+    {
+      "date": "2025-02-01T00:00:00+06:00",
+      "type": "Income",
+      "amount": 50000,
+      "source": "",
+      "destination": "Eastern Bank PLC",
+      "person": "",
+      "category": "Miscellaneous",
+      "subcategory": "Misc",
+      "remarks": "Salary"
+    },
+    {
+      "date": "2025-02-02T00:00:00+06:00",
+      "type": "Transfer",
+      "amount": 10000,
+      "source": "Eastern Bank PLC",
+      "destination": "Cash in Hand",
+      "person": "",
+      "category": "Financial",
+      "subcategory": "Withdraw",
+      "remarks": ""
+    },
+    {
+      "date": "2025-02-02T00:00:00+06:00",
+      "type": "Expense",
+      "amount": 20000,
+      "source": "Eastern Bank PLC",
+      "destination": "",
+      "person": "Jane Doe",
+      "category": "Financial",
+      "subcategory": "Loan",
+      "remarks": ""
+    },
+    {
+      "date": "2025-02-28T01:40:50+06:00",
+      "type": "Expense",
+      "amount": 5000,
+      "source": "Eastern Bank PLC",
+      "destination": "",
+      "person": "",
+      "category": "Entertainment",
+      "subcategory": "Recreation",
+      "remarks": "Ear Buds"
+    },
+    {
+      "date": "2025-02-28T01:42:31+06:00",
+      "type": "Expense",
+      "amount": 15000,
+      "source": "Eastern Bank PLC",
+      "destination": "",
+      "person": "",
+      "category": "Entertainment",
+      "subcategory": "Recreation",
+      "remarks": "Mobile"
+    },
+    {
+      "date": "2025-02-28T01:43:35+06:00",
+      "type": "Income",
+      "amount": 10000,
+      "source": "",
+      "destination": "Eastern Bank PLC",
+      "person": "John Doe",
+      "category": "Financial",
+      "subcategory": "Borrow",
+      "remarks": ""
+    },
+    {
+      "date": "2025-03-14T19:46:56+06:00",
+      "type": "Expense",
+      "amount": 100,
+      "source": "Cash in Hand",
+      "destination": "",
+      "person": "",
+      "category": "Travel",
+      "subcategory": "Dining",
+      "remarks": ""
+    },
+    {
+      "date": "2025-03-15T11:24:07+06:00",
+      "type": "Expense",
+      "amount": 10000000,
+      "source": "Cash in Hand",
+      "destination": "",
+      "person": "",
+      "category": "Food",
+      "subcategory": "Snacks",
+      "remarks": ""
+    },
+    {
+      "date": "2025-03-15T11:25:27+06:00",
+      "type": "Income",
+      "amount": 100,
+      "source": "",
+      "destination": "Cash in Hand",
+      "person": "John Doe",
+      "category": "Financial",
+      "subcategory": "Borrow",
+      "remarks": ""
+    },
+    {
+      "date": "2025-03-15T11:26:15+06:00",
+      "type": "Expense",
+      "amount": 1000,
+      "source": "Cash in Hand",
+      "destination": "",
+      "person": "John Doe",
+      "category": "Financial",
+      "subcategory": "Borrow Return",
+      "remarks": ""
+    },
+    {
+      "date": "2025-03-15T11:26:25+06:00",
+      "type": "Income",
+      "amount": 10000,
+      "source": "",
+      "destination": "Cash in Hand",
+      "person": "Jane Doe",
+      "category": "Financial",
+      "subcategory": "Loan Recovery",
+      "remarks": ""
+    },
+    {
+      "date": "2025-03-15T11:26:41+06:00",
+      "type": "Income",
+      "amount": 10000,
+      "source": "",
+      "destination": "Eastern Bank PLC",
+      "person": "",
+      "category": "Miscellaneous",
+      "subcategory": "Misc",
+      "remarks": ""
+    },
+    {
+      "date": "2025-03-15T11:28:03+06:00",
+      "type": "Transfer",
+      "amount": 5000,
+      "source": "Eastern Bank PLC",
+      "destination": "Cash in Hand",
+      "person": "",
+      "category": "Financial",
+      "subcategory": "Withdraw",
+      "remarks": ""
+    }
+  ],
+  "summary": {
+    "type": {
+      "Expense": {
+        "name": "Expense",
+        "amount": 10041100
+      },
+      "Income": {
+        "name": "Income",
+        "amount": 80100
+      },
+      "Transfer": {
+        "name": "Transfer",
+        "amount": 15000
+      }
+    },
+    "category": {
+      "ent": {
+        "name": "Entertainment",
+        "amount": 20000
+      },
+      "fin": {
+        "name": "Financial",
+        "amount": 56100
+      },
+      "food": {
+        "name": "Food",
+        "amount": 10000000
+      },
+      "misc": {
+        "name": "Miscellaneous",
+        "amount": 60000
+      },
+      "trv": {
+        "name": "Travel",
+        "amount": 100
+      }
+    },
+    "subcategory": {
+      "ent-rec": {
+        "name": "Recreation",
+        "amount": 20000
+      },
+      "fin-borrow": {
+        "name": "Borrow",
+        "amount": 10100
+      },
+      "fin-loan": {
+        "name": "Loan",
+        "amount": 20000
+      },
+      "fin-recover": {
+        "name": "Loan Recovery",
+        "amount": 10000
+      },
+      "fin-return": {
+        "name": "Borrow Return",
+        "amount": 1000
+      },
+      "fin-with": {
+        "name": "Withdraw",
+        "amount": 15000
+      },
+      "food-snack": {
+        "name": "Snacks",
+        "amount": 10000000
+      },
+      "misc-misc": {
+        "name": "Misc",
+        "amount": 60000
+      },
+      "trv-dine": {
+        "name": "Dining",
+        "amount": 100
+      }
+    }
+  },
+  "startDate": "2025-01-01T00:00:00+06:00",
+  "endDate": "2025-03-28T12:33:04.363591+06:00"
+}

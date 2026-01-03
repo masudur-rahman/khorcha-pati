@@ -11,6 +11,7 @@ import (
 )
 
 func ConvertHTMLToPDF(converter string, outputFile string, data []byte) error {
+	return convertViaWkhtmlToPDF(outputFile, data)
 	switch converter {
 	case "wkhtmltopdf":
 		return convertViaWkhtmlToPDF(outputFile, data)
@@ -18,7 +19,6 @@ func ConvertHTMLToPDF(converter string, outputFile string, data []byte) error {
 		return convertViaChromeDP(outputFile, data)
 	default:
 		return convertViaChromeDP(outputFile, data)
-
 	}
 }
 
@@ -28,7 +28,7 @@ func convertViaWkhtmlToPDF(outputFile string, data []byte) error {
 		return err
 	}
 
-	return exec.Command("wkhtmltopdf", "--title", "Transaction Report",
+	return exec.Command("wkhtmltopdf", "--encoding", "UTF-8", "--title", "Transaction Report",
 		"--zoom", "0.98", "--page-size", "A4", "--orientation", "Portrait", inputFile, outputFile).Run()
 }
 
@@ -55,6 +55,11 @@ func convertViaChromeDP(outputFile string, htmlContent []byte) error {
 		chromedp.ActionFunc(func(ctx context.Context) (err error) {
 			// PDF parameters combining best of both outputs
 			pdfBuf, _, err = page.PrintToPDF().
+				//WithDisplayHeaderFooter(true).
+				//WithHeaderTemplate(`<div style="font-size:0;"></div>`).
+				//WithFooterTemplate(`<div style="width:100%;text-align:center;font-size:12px;color:#666;">
+				//	Page <span class="pageNumber"></span> of <span class="totalPages"></span>
+				//</div>`).
 				WithPrintBackground(true).
 				WithPaperWidth(8.27).   // A4 width in inches (210mm)
 				WithPaperHeight(11.69). // A4 height in inches (297mm)

@@ -29,6 +29,13 @@ RUN set -x \
   && apt-get install -y --no-install-recommends ca-certificates wget \
   && echo 'Etc/UTC' > /etc/timezone
 
+# Install fonts for wkhtmltopdf
+RUN apt-get install -y \
+    fonts-dejavu \
+    fonts-lohit-beng-bengali \
+    fonts-noto-core \
+    && rm -rf /var/lib/apt/lists/*
+
 RUN set -x \
   && wget https://github.com/wkhtmltopdf/packaging/releases/download/${WKHTMLTOPDF_VERSION}/wkhtmltox_${WKHTMLTOPDF_VERSION}.${DEBIAN_RELEASE_NAME}_${TARGETARCH}.deb \
   && dpkg -i wkhtmltox_${WKHTMLTOPDF_VERSION}.${DEBIAN_RELEASE_NAME}_${TARGETARCH}.deb || true \

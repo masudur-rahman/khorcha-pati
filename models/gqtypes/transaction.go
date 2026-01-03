@@ -9,15 +9,15 @@ import (
 )
 
 type Transaction struct {
-	Date        time.Time
-	Type        string
-	Amount      float64
-	Source      string
-	Destination string
-	Person      string
-	Category    string
-	Subcategory string
-	Remarks     string
+	Date        time.Time `json:"date"`
+	Type        string    `json:"type"`
+	Amount      float64   `json:"amount"`
+	Source      string    `json:"source"`
+	Destination string    `json:"destination"`
+	Person      string    `json:"person"`
+	Category    string    `json:"category"`
+	Subcategory string    `json:"subcategory"`
+	Remarks     string    `json:"remarks"`
 }
 
 type Summary struct {
@@ -35,21 +35,22 @@ Expense: %v
 }
 
 type FieldCost struct {
-	Name   string
-	Amount float64
+	Name   string  `json:"name"`
+	Amount float64 `json:"amount"`
 }
 
 type SummaryGroups struct {
-	Type        map[string]FieldCost
-	Category    map[string]FieldCost
-	Subcategory map[string]FieldCost
+	Type        map[string]FieldCost `json:"type"`
+	Category    map[string]FieldCost `json:"category"`
+	Subcategory map[string]FieldCost `json:"subcategory"`
 }
 
 type Report struct {
-	Name               string
-	Transactions       []Transaction
-	Summary            SummaryGroups
-	StartDate, EndDate time.Time
+	Name         string        `json:"name"`
+	Transactions []Transaction `json:"transactions"`
+	Summary      SummaryGroups `json:"summary"`
+	StartDate    time.Time     `json:"startDate"`
+	EndDate      time.Time     `json:"endDate"`
 }
 
 func (s SummaryGroups) String() string {

@@ -2,7 +2,9 @@ package handlers
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
+	"os"
 	"strconv"
 	"strings"
 	"text/template"
@@ -57,7 +59,11 @@ func handleReportCallback(ctx telebot.Context, callbackOpts CallbackOptions) err
 		return ctx.Send(models.ErrCommonResponse(err))
 	}
 
-	if err = generateTransactionReportFromTemplate(report); err != nil {
+	//if err  = generateSampleJsonReport(report); err != nil {
+	//	return ctx.Send(models.ErrCommonResponse(err))
+	//}
+
+	if err = generateTransactionReportFromTemplate(report, ""); err != nil {
 		return ctx.Send(err.Error())
 	}
 
@@ -65,6 +71,15 @@ func handleReportCallback(ctx telebot.Context, callbackOpts CallbackOptions) err
 		File:     telebot.FromDisk("/tmp/transaction_report.pdf"),
 		FileName: "transaction_report.pdf",
 	})
+}
+
+func generateSampleJsonReport(report gqtypes.Report) error {
+	data, err := json.MarshalIndent(report, "", "  ")
+	if err != nil {
+		return err
+	}
+
+	return os.WriteFile(pkg.ProjectDirectory+"/templates/"+"sample_report.json", data, 0644)
 }
 
 func generateReport(ctx telebot.Context, rop ReportCallbackOptions) (gqtypes.Report, error) {
@@ -162,7 +177,7 @@ func calculateStartTime(duration SummaryDuration) time.Time {
 	return startTime
 }
 
-func generateTransactionReportFromTemplate(report gqtypes.Report) error {
+func generateTransactionReportFromTemplate(report gqtypes.Report, reportPdfFileName string) error {
 	data, err := templates.FS.ReadFile("transaction_report.tmpl")
 	if err != nil {
 		return err
@@ -180,7 +195,14 @@ func generateTransactionReportFromTemplate(report gqtypes.Report) error {
 		return err
 	}
 
-	return pkg.ConvertHTMLToPDF(configs.TrackerConfig.System.PDFConverter, "/tmp/transaction_report.pdf", buf.Bytes())
+	if err = os.WriteFile("/tmp/transaction_report.html", buf.Bytes(), 0644); err != nil {
+		return err
+	}
+
+	if reportPdfFileName == "" {
+		reportPdfFileName = "/tmp/transaction_report.pdf"
+	}
+	return pkg.ConvertHTMLToPDF(configs.TrackerConfig.System.PDFConverter, reportPdfFileName, buf.Bytes())
 }
 
 func FormatBDT(amount float64) string {
