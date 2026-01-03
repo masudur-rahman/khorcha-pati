@@ -103,25 +103,39 @@ func (t *SQLTransactionRepository) ListTxnSubcategories(catID string) ([]models.
 }
 
 func (t *SQLTransactionRepository) UpdateTxnCategories() error {
+	db := t.db.Table("txn_category")
+	catt := models.TxnCategory{}
 	for _, cat := range models.TxnCategories {
-		if has, err := t.db.Table("txn_category").ID(cat.ID).FindOne(&models.TxnCategory{}); err != nil {
+		if has, err := db.ID(cat.ID).FindOne(&catt); err != nil {
 			return err
 		} else if has {
+			if catt.Name != cat.Name {
+				if err = db.ID(catt.ID).UpdateOne(cat); err != nil {
+					return err
+				}
+			}
 			continue
 		}
 
-		if _, err := t.db.Table("txn_category").InsertOne(cat); err != nil {
+		if _, err := db.InsertOne(cat); err != nil {
 			return err
 		}
 	}
 
+	db = t.db.Table("txn_subcategory")
+	subcatt := models.TxnSubcategory{}
 	for _, subcat := range models.TxnSubcategories {
-		if has, err := t.db.Table("txn_subcategory").ID(subcat.ID).FindOne(&models.TxnSubcategory{}); err != nil {
+		if has, err := db.ID(subcat.ID).FindOne(&subcatt); err != nil {
 			return err
 		} else if has {
+			if subcatt.Name != subcat.Name || subcatt.CatID != subcat.CatID {
+				if err = db.ID(subcatt.ID).UpdateOne(subcat); err != nil {
+					return err
+				}
+			}
 			continue
 		}
-		if _, err := t.db.Table("txn_subcategory").InsertOne(subcat); err != nil {
+		if _, err := db.InsertOne(subcat); err != nil {
 			return err
 		}
 	}

@@ -23,7 +23,7 @@ REGISTRY ?= masudjuly02
 git_branch       := $(shell git rev-parse --abbrev-ref HEAD)
 git_tag          := $(shell git describe --exact-match --abbrev=0 2>/dev/null || echo "")
 commit_hash      := $(shell git rev-parse --verify HEAD)
-commit_timestamp := $(shell date -u -r $$(git show -s --format=%ct) +%FT%T)
+commit_timestamp := $(shell git show -s --format=%cd --date=format:'%Y-%m-%dT%H:%M:%S' HEAD)
 
 VERSION          := $(shell git describe --tags --always --dirty)
 version_strategy := commit_hash
