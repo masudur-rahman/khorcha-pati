@@ -1,6 +1,6 @@
 FROM {ARG_FROM}
 
-LABEL org.opencontainers.image.source "https://github.com/masudur-rahman/expense-tracker-bot"
+LABEL org.opencontainers.image.source="https://github.com/masudur-rahman/expense-tracker-bot"
 
 ARG TARGETOS
 ARG TARGETARCH

@@ -5,6 +5,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/masudur-rahman/expense-tracker-bot/configs"
 	"github.com/masudur-rahman/expense-tracker-bot/models/gqtypes"
 	"github.com/masudur-rahman/expense-tracker-bot/pkg"
 
@@ -14,6 +15,8 @@ import (
 func TestGenerateTransactionInvoice(t *testing.T) {
 	report, err := generateSampleReport()
 	assert.NoError(t, err)
+	configs.TrackerConfig.System.PDFConverter = "wkhtmltopdf"
+	//configs.TrackerConfig.System.PDFConverter = "chromedp"
 	err = generateTransactionReportFromTemplate(report, "/tmp/transaction_report_test.pdf")
 	assert.NoError(t, err)
 }

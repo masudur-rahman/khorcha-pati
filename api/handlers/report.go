@@ -178,31 +178,60 @@ func calculateStartTime(duration SummaryDuration) time.Time {
 }
 
 func generateTransactionReportFromTemplate(report gqtypes.Report, reportPdfFileName string) error {
-	data, err := templates.FS.ReadFile("transaction_report.tmpl")
+	// Process body template
+	bodyData, err := templates.FS.ReadFile("transaction_report.tmpl")
 	if err != nil {
 		return err
 	}
-
-	buf := bytes.Buffer{}
+	bodyBuf := bytes.Buffer{}
 	funcMap := template.FuncMap{"formatBDT": FormatBDT}
-	tmpl, err := template.New("report").Funcs(funcMap).Parse(string(data))
+	bodyTmpl, err := template.New("report").Funcs(funcMap).Parse(string(bodyData))
 	if err != nil {
 		return err
 	}
-
-	err = tmpl.Execute(&buf, &report)
-	if err != nil {
+	if err = bodyTmpl.Execute(&bodyBuf, &report); err != nil {
+		return err
+	}
+	if err = os.WriteFile("/tmp/transaction_report.html", bodyBuf.Bytes(), 0644); err != nil {
 		return err
 	}
 
-	if err = os.WriteFile("/tmp/transaction_report.html", buf.Bytes(), 0644); err != nil {
+	// Process header template
+	headerData, err := templates.FS.ReadFile("header.tmpl")
+	if err != nil {
+		return err
+	}
+	headerBuf := bytes.Buffer{}
+	headerTmpl, err := template.New("header").Funcs(funcMap).Parse(string(headerData))
+	if err != nil {
+		return err
+	}
+	if err = headerTmpl.Execute(&headerBuf, &report); err != nil {
+		return err
+	}
+	if err = os.WriteFile("/tmp/header.html", headerBuf.Bytes(), 0644); err != nil {
+		return err
+	}
+
+	// Read footer template
+	footerData, err := templates.FS.ReadFile("footer.tmpl")
+	if err != nil {
+		return err
+	}
+	if err = os.WriteFile("/tmp/footer.html", footerData, 0644); err != nil {
 		return err
 	}
 
 	if reportPdfFileName == "" {
 		reportPdfFileName = "/tmp/transaction_report.pdf"
 	}
-	return pkg.ConvertHTMLToPDF(configs.TrackerConfig.System.PDFConverter, reportPdfFileName, buf.Bytes())
+	return pkg.ConvertHTMLToPDF(
+		configs.TrackerConfig.System.PDFConverter,
+		reportPdfFileName,
+		bodyBuf.Bytes(),
+		headerBuf.Bytes(),
+		footerData,
+	)
 }
 
 func FormatBDT(amount float64) string {

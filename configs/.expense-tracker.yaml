@@ -13,7 +13,7 @@ database:
         password: postgres
         sslmode: disable
 cache:
-    type: redis #map
+    type: map #redis
     redis:
         host: localhost
         port: "6379"
