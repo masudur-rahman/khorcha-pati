@@ -30,7 +30,13 @@ RUN set -x \
   && echo 'Etc/UTC' > /etc/timezone
 
 # Install fonts for wkhtmltopdf
-RUN apt-get install -y fonts-lohit-beng-bengali fonts-dejavu fontconfig
+RUN echo "deb http://deb.debian.org/debian {DEBIAN_RELEASE_NAME} contrib" >> /etc/apt/sources.list \
+    && apt-get update \
+    && DEBIAN_FRONTEND=noninteractive apt-get install -y \
+    fonts-lohit-beng-bengali \
+    fonts-dejavu \
+    fontconfig \
+    ttf-mscorefonts-installer
 
 RUN set -x \
   && wget https://github.com/wkhtmltopdf/packaging/releases/download/${WKHTMLTOPDF_VERSION}/wkhtmltox_${WKHTMLTOPDF_VERSION}.${DEBIAN_RELEASE_NAME}_${TARGETARCH}.deb \
