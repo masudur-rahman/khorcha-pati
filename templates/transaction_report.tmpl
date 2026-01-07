@@ -47,7 +47,8 @@
         }
         
         .content-table .date,
-        .content-table .type {
+        .content-table .type,
+        .content-table .category {
             white-space: nowrap;
         }
 
@@ -131,7 +132,7 @@
             <td>{{ .Source }}</td>
             <td>{{ .Destination }}</td>
             <td>{{ .Person }}</td>
-            <td>{{ .Category }}</td>
+            <td class="category">{{ .Category }}</td>
             <td>{{ .Subcategory }}</td>
             <td>{{ .Remarks }}</td>
         </tr>
