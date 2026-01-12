@@ -31,7 +31,7 @@
       "destination": "",
       "person": "Jane Doe",
       "category": "Financial",
-      "subcategory": "Loan",
+      "subcategory": "Loan Repayment",
       "remarks": ""
     },
     {
@@ -119,7 +119,7 @@
       "destination": "Cash in Hand",
       "person": "Jane Doe",
       "category": "Financial",
-      "subcategory": "Loan Recovery",
+      "subcategory": "Lend Recovery",
       "remarks": ""
     },
     {
@@ -268,15 +268,15 @@
         "name": "Borrow",
         "amount": 10100
       },
-      "fin-loan": {
-        "name": "Loan",
+      "fin-loan-repay": {
+        "name": "Loan Repayment",
         "amount": 20000
       },
-      "fin-recover": {
-        "name": "Loan Recovery",
+      "fin-lend-recover": {
+        "name": "Lend Recovery",
         "amount": 10000
       },
-      "fin-return": {
+      "fin-borrow-return": {
         "name": "Borrow Return",
         "amount": 1000
       },

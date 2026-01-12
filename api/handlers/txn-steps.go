@@ -10,8 +10,12 @@ import (
 )
 
 func loanOrBorrowTypeTransaction(callbackOpts CallbackOptions) bool {
-	return callbackOpts.Transaction.SubcategoryID == models.LoanSubcategoryID ||
-		callbackOpts.Transaction.SubcategoryID == models.BorrowSubcategoryID
+	return callbackOpts.Transaction.SubcategoryID == models.LoanRepaymentSubID ||
+		callbackOpts.Transaction.SubcategoryID == models.BorrowSubID ||
+		callbackOpts.Transaction.SubcategoryID == models.LoanReceivedSubID ||
+		callbackOpts.Transaction.SubcategoryID == models.LendSubID ||
+		callbackOpts.Transaction.SubcategoryID == models.LendRecoverySubID ||
+		callbackOpts.Transaction.SubcategoryID == models.BorrowReturnSubID
 }
 
 func sendTransactionAmountTypeQuery(ctx telebot.Context, callbackOpts CallbackOptions) error {

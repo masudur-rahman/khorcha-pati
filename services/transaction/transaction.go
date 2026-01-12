@@ -50,24 +50,24 @@ func (ts *txnService) AddTransaction(txn models.Transaction) error {
 	switch txn.Type {
 	case models.ExpenseTransaction:
 		switch txn.SubcategoryID {
-		case models.LoanSubcategoryID, models.BorrowReturnSubID:
+		case models.LoanRepaymentSubID, models.BorrowReturnSubID, models.LendSubID:
 			if err = ts.updateDebtorCreditorBalance(uow, txn, txn.Amount); err != nil {
 				return err
 			}
-		case models.BorrowSubcategoryID, models.LoanRecoverySubID:
-			return fmt.Errorf("borrow or loan recovery type expense should be under Income type")
+		case models.BorrowSubID, models.LendRecoverySubID, models.LoanReceivedSubID:
+			return fmt.Errorf("borrow, lend recovery or loan received type transaction should be under Income type")
 		}
 		if err = ts.acRepo.WithUnitOfWork(uow).UpdateAccountBalance(txn.UserID, txn.SrcID, -txn.Amount); err != nil {
 			return err
 		}
 	case models.IncomeTransaction:
 		switch txn.SubcategoryID {
-		case models.BorrowSubcategoryID, models.LoanRecoverySubID:
+		case models.BorrowSubID, models.LendRecoverySubID, models.LoanReceivedSubID:
 			if err = ts.updateDebtorCreditorBalance(uow, txn, -txn.Amount); err != nil {
 				return err
 			}
-		case models.LoanSubcategoryID, models.BorrowReturnSubID:
-			return fmt.Errorf("loan or borrow return type expense should be under Expense type")
+		case models.LoanRepaymentSubID, models.BorrowReturnSubID, models.LendSubID:
+			return fmt.Errorf("loan, borrow return or lend type transaction should be under Expense type")
 		}
 		if err = ts.acRepo.WithUnitOfWork(uow).UpdateAccountBalance(txn.UserID, txn.DstID, txn.Amount); err != nil {
 			return err
