@@ -268,15 +268,15 @@
         "name": "Borrow",
         "amount": 10100
       },
-      "fin-loan-repay": {
+      "fin-repay": {
         "name": "Loan Repayment",
         "amount": 20000
       },
-      "fin-lend-recover": {
+      "fin-recover": {
         "name": "Lend Recovery",
         "amount": 10000
       },
-      "fin-borrow-return": {
+      "fin-return": {
         "name": "Borrow Return",
         "amount": 1000
       },

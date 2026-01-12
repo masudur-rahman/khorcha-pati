@@ -125,6 +125,7 @@
         </tr>
         </thead>
         <tbody>
+        {{ if .Transactions }}
         {{ range .Transactions }}
         <tr>
             <td class="date">{{ .Date.Format "Jan 02, '06" }}</td>
@@ -136,6 +137,11 @@
             <td class="category">{{ .Category }}</td>
             <td>{{ .Subcategory }}</td>
             <td>{{ .Remarks }}</td>
+        </tr>
+        {{ end }}
+        {{ else }}
+        <tr>
+            <td colspan="9" style="text-align: center; padding: 20px;">No transactions found for this period</td>
         </tr>
         {{ end }}
         </tbody>
@@ -157,10 +163,16 @@
                 </tr>
                 </thead>
                 <tbody>
+                {{ if .Summary.Type }}
                 {{ range $type := .Summary.Type }}
                 <tr>
                     <td>{{ $type.Name }}</td>
                     <td style="text-align: right" class="amount">৳{{ $type.Amount | formatBDT }}</td>
+                </tr>
+                {{ end }}
+                {{ else }}
+                <tr>
+                    <td colspan="2" style="text-align: center; font-style: italic;">No data to display</td>
                 </tr>
                 {{ end }}
                 </tbody>
@@ -179,10 +191,16 @@
             </tr>
             </thead>
             <tbody>
+            {{ if .Summary.Category }}
             {{ range $category := .Summary.Category }}
             <tr>
                 <td>{{ $category.Name }}</td>
                 <td style="text-align: right" class="amount">৳{{ $category.Amount | formatBDT }}</td>
+            </tr>
+            {{ end }}
+            {{ else }}
+            <tr>
+                <td colspan="2" style="text-align: center; font-style: italic;">No data to display</td>
             </tr>
             {{ end }}
             </tbody>
@@ -200,10 +218,16 @@
             </tr>
             </thead>
             <tbody>
+            {{ if .Summary.Subcategory }}
             {{ range $subcategory := .Summary.Subcategory }}
             <tr>
                 <td>{{ $subcategory.Name }}</td>
                 <td style="text-align: right" class="amount">৳{{ $subcategory.Amount | formatBDT }}</td>
+            </tr>
+            {{ end }}
+            {{ else }}
+            <tr>
+                <td colspan="2" style="text-align: center; font-style: italic;">No data to display</td>
             </tr>
             {{ end }}
             </tbody>
