@@ -118,43 +118,57 @@ func (p *transactionParser) subcategoryParser() error {
 
 func (p *transactionParser) isVerbKeyword(keyword string) bool {
 	switch keyword {
-	case "transfer", "transferred":
+	// transfer
+	case "transfer", "transferred", "move", "moved", "send", "sent":
 		p.txnType = models.TransferTransaction
 		p.subcategory = "fin-bank"
-	case "withdraw", "withdrew":
+	case "withdraw", "withdrew", "cashout":
 		p.txnType = models.TransferTransaction
 		p.subcategory = "fin-with"
 		p.toValue = "cash"
-	case "deposit", "deposited":
+	case "deposit", "deposited", "cashin":
 		p.txnType = models.TransferTransaction
 		p.subcategory = "fin-deposit"
 		p.fromValue = "cash"
-	case "expense", "spend", "spent":
+
+	// expense
+	case "expense", "spend", "spent", "paid", "pay", "cost":
 		p.txnType = models.ExpenseTransaction
-	case "giveaway", "donate", "donated":
+	case "giveaway", "donate", "donated", "gifted":
 		p.txnType = models.ExpenseTransaction
 		p.subcategory = "misc-give"
-	case "income", "earn", "earned":
+	case "flexi", "recharge", "top-up":
+		p.txnType = models.ExpenseTransaction
+		p.subcategory = "fin-flexi"
+
+	// income
+	case "income", "earn", "earned", "received", "gained":
 		p.txnType = models.IncomeTransaction
+
+	// borrow
 	case "borrow", "borrowed":
 		p.txnType = models.IncomeTransaction
 		p.subcategory = models.BorrowSubID
 		p.from = &p.txn.DebtorCreditorName
-	case "return", "returned":
+
+	// return
+	case "return", "returned", "repaid", "pay-back":
 		p.txnType = models.ExpenseTransaction
 		p.subcategory = models.BorrowReturnSubID
 		p.to = &p.txn.DebtorCreditorName
+
+	// lend
 	case "lend", "lent":
 		p.txnType = models.ExpenseTransaction
 		p.subcategory = models.LendSubID
 		p.to = &p.txn.DebtorCreditorName
-	case "recover", "recovered", "collect", "collected":
+
+	// recover
+	case "recover", "recovered", "collect", "collected", "get-back":
 		p.txnType = models.IncomeTransaction
 		p.subcategory = models.LendRecoverySubID
 		p.from = &p.txn.DebtorCreditorName
-	case "flexi":
-		p.txnType = models.ExpenseTransaction
-		p.subcategory = "fin-flexi"
+
 	default:
 		return false
 	}
