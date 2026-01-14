@@ -121,7 +121,7 @@ func (p *transactionParser) isVerbKeyword(keyword string) bool {
 	// transfer
 	case "transfer", "transferred", "move", "moved", "send", "sent":
 		p.txnType = models.TransferTransaction
-		p.subcategory = "fin-bank"
+		p.subcategory = "fin-transfer"
 	case "withdraw", "withdrew", "cashout":
 		p.txnType = models.TransferTransaction
 		p.subcategory = "fin-with"
@@ -136,7 +136,7 @@ func (p *transactionParser) isVerbKeyword(keyword string) bool {
 		p.txnType = models.ExpenseTransaction
 	case "giveaway", "donate", "donated", "gifted":
 		p.txnType = models.ExpenseTransaction
-		p.subcategory = "misc-give"
+		p.subcategory = "misc-gift"
 	case "flexi", "recharge", "top-up":
 		p.txnType = models.ExpenseTransaction
 		p.subcategory = "fin-flexi"

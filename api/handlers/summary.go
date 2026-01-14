@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"bytes"
+	"fmt"
 	"strings"
 	"time"
 
@@ -50,7 +52,15 @@ func TransactionSummary(ctx telebot.Context) error {
 	}
 
 	summary := generateSummary(txns)
-	return ctx.Send(summary.String())
+	return ctx.Send(summary.String(), &telebot.SendOptions{ParseMode: telebot.ModeHTML})
+
+	//pngBytes, err := summary.PNG()
+	//if err != nil {
+	//	return err
+	//}
+	//
+	//photo := &telebot.Photo{File: telebot.FromReader(bytes.NewReader(pngBytes)), Caption: "Here is your transaction summary."}
+	//return ctx.Send(photo)
 }
 
 func generateSummary(txns []models.Transaction) gqtypes.SummaryGroups {
@@ -98,29 +108,39 @@ func handleSummaryCallback(ctx telebot.Context, callbackOpts CallbackOptions) er
 	case StepGroupBy:
 		return sendSummaryDurationQuery(ctx, callbackOpts)
 	case StepDuration:
-		data, err := processSummary(ctx, summary)
+		sg, err := processSummary(ctx, summary)
 		if err != nil {
 			return ctx.Send(models.ErrCommonResponse(err))
 		}
 
-		return ctx.Send(data)
+		//return ctx.Send(sg.String(), &telebot.SendOptions{ParseMode: telebot.ModeHTML})
+
+		pngBytes, err := sg.PNG()
+		if err != nil {
+			return err
+		}
+		photo := &telebot.Photo{
+			File:    telebot.FromReader(bytes.NewReader(pngBytes)),
+			Caption: fmt.Sprintf("Transaction summary of \"%s\".", summary.Duration),
+		}
+		return ctx.Send(photo)
 	default:
 		return ctx.Send("Invalid Step")
 	}
 }
 
-func processSummary(ctx telebot.Context, smop SummaryCallbackOptions) (string, error) {
+func processSummary(ctx telebot.Context, smop SummaryCallbackOptions) (gqtypes.SummaryGroups, error) {
 	now, startTime := time.Now(), calculateStartTime(smop.Duration)
 
 	svc := all.GetServices()
 	user, err := svc.User.GetUserByTelegramID(ctx.Sender().ID)
 	if err != nil {
-		return "", err
+		return gqtypes.SummaryGroups{}, err
 	}
 
 	txns, err := svc.Txn.ListTransactionsByTime(user.ID, "", startTime.Unix(), now.Unix())
 	if err != nil {
-		return "", err
+		return gqtypes.SummaryGroups{}, err
 	}
 
 	summary := gqtypes.SummaryGroups{
@@ -148,7 +168,7 @@ func processSummary(ctx telebot.Context, smop SummaryCallbackOptions) (string, e
 	for k, fc := range summary.Category {
 		fc.Name, err = svc.Txn.GetTxnCategoryName(k)
 		if err != nil {
-			return "", err
+			return gqtypes.SummaryGroups{}, err
 		}
 
 		summary.Category[k] = fc
@@ -157,13 +177,13 @@ func processSummary(ctx telebot.Context, smop SummaryCallbackOptions) (string, e
 	for k, fc := range summary.Subcategory {
 		fc.Name, err = svc.Txn.GetTxnSubcategoryName(k)
 		if err != nil {
-			return "", err
+			return gqtypes.SummaryGroups{}, err
 		}
 
 		summary.Subcategory[k] = fc
 	}
 
-	return summary.String(), nil
+	return summary, nil
 }
 
 func sendSummaryDurationQuery(ctx telebot.Context, callbackOpts CallbackOptions) error {

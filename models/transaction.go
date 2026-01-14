@@ -71,7 +71,7 @@ var foodSubs = []TxnSubcategory{
 	{ID: "food-take", Name: "Takeout", CatID: "food"},
 	{ID: "food-snack", Name: "Snacks", CatID: "food"},
 	{ID: "food-bev", Name: "Beverages", CatID: "food"},
-	{ID: "food-misc", Name: "General", CatID: "food"},
+	{ID: "food-misc", Name: "General Food", CatID: "food"},
 }
 
 var transSubs = []TxnSubcategory{

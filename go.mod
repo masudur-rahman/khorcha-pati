@@ -5,6 +5,8 @@ go 1.24
 require (
 	github.com/chromedp/cdproto v0.0.0-20250222051814-50c6cb17f10a
 	github.com/chromedp/chromedp v0.13.1
+	github.com/fogleman/gg v1.3.0
+	github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0
 	github.com/graphql-go/graphql v0.8.1
 	github.com/jedib0t/go-pretty/v6 v6.4.6
 	github.com/masudur-rahman/go-oneliners v1.0.0
@@ -17,6 +19,7 @@ require (
 	github.com/stretchr/testify v1.9.0
 	go.uber.org/zap v1.17.0
 	golang.org/x/crypto v0.36.0
+	golang.org/x/image v0.0.0-20190802002840-cff245a6509b
 	golang.org/x/oauth2 v0.23.0
 	google.golang.org/api v0.197.0
 	google.golang.org/genai v1.40.0

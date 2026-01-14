@@ -3,9 +3,16 @@ package gqtypes
 import (
 	"bytes"
 	"fmt"
+	"image"
+	"image/color"
+	"image/png"
 	"io"
-	"text/tabwriter"
+	"sort"
 	"time"
+
+	"github.com/fogleman/gg"
+	"github.com/golang/freetype/truetype"
+	"golang.org/x/image/font/gofont/goregular"
 )
 
 type Transaction struct {
@@ -53,83 +60,195 @@ type Report struct {
 	EndDate      time.Time     `json:"endDate"`
 }
 
+// sortMapToSlice converts map to sorted slice (Amount Descending)
+func sortMapToSlice(input map[string]FieldCost) []FieldCost {
+	var sorted []FieldCost
+	for k, v := range input {
+		if v.Name == "" {
+			v.Name = k
+		}
+		sorted = append(sorted, v)
+	}
+	sort.Slice(sorted, func(i, j int) bool {
+		return sorted[i].Amount > sorted[j].Amount
+	})
+	return sorted
+}
+
+const amountColWidth = 10
+
+func printSection(w io.Writer, title string, data map[string]FieldCost) {
+	if len(data) == 0 {
+		return
+	}
+	items := sortMapToSlice(data)
+
+	maxNameLen := 0
+	for _, item := range items {
+		if len(item.Name) > maxNameLen {
+			maxNameLen = len(item.Name)
+		}
+	}
+
+	nameColWidth := maxNameLen + 2
+
+	fmt.Fprintln(w, title)
+
+	fmt.Fprintf(w, "%-*s %*s\n", nameColWidth, "----", amountColWidth, "-------")
+
+	for _, item := range items {
+		fmt.Fprintf(w, "%-*s %*.2f\n", nameColWidth, item.Name, amountColWidth, item.Amount)
+	}
+	fmt.Fprintln(w, "")
+}
+
 func (s SummaryGroups) String() string {
-	buf := bytes.Buffer{}
-	w := tabwriter.NewWriter(&buf, 0, 0, 5, ' ', 0)
-	fmt.Fprintln(w, fmt.Sprintf("Transaction Summary\n"))
+	var buf bytes.Buffer
+	fmt.Fprintln(&buf, "Transaction Summary\n")
 
-	for k, v := range s.Type {
-		f := v.Name
-		if f == "" {
-			f = k
-		}
-		fmt.Fprintln(w, fmt.Sprintf("%v:\t%.2f", f, v.Amount))
-	}
+	printSection(&buf, "BY TYPE", s.Type)
+	printSection(&buf, "BY CATEGORY", s.Category)
+	printSection(&buf, "BY SUBCATEGORY", s.Subcategory)
 
-	for k, v := range s.Category {
-		f := v.Name
-		if f == "" {
-			f = k
-		}
-		fmt.Fprintln(w, fmt.Sprintf("%v:\t%.2f", f, v.Amount))
-	}
-
-	for k, v := range s.Subcategory {
-		f := v.Name
-		if f == "" {
-			f = k
-		}
-		fmt.Fprintln(w, fmt.Sprintf("%v:\t%.2f", f, v.Amount))
-	}
-
-	_ = w.Flush()
 	return buf.String()
 }
 
+// MarkdownString stays the same
 func (s SummaryGroups) MarkdownString() string {
-	buf := bytes.Buffer{}
-	w := tabwriter.NewWriter(&buf, 0, 0, 5, ' ', 0)
-	fmt.Fprintln(w, "\n## Transaction Summary")
+	var buf bytes.Buffer
+	fmt.Fprintln(&buf, "Transaction Summary")
 
-	if len(s.Type) > 0 {
-		writeRowHeader(w, "Type", "Amount")
-	}
-	for k, v := range s.Type {
-		f := v.Name
-		if f == "" {
-			f = k
+	printMD := func(title string, data map[string]FieldCost) {
+		if len(data) == 0 {
+			return
 		}
-		fmt.Fprintln(w, fmt.Sprintf("| %v | %v |", f, v.Amount))
-	}
-
-	if len(s.Type) > 0 {
-		writeRowHeader(w, "Category", "Amount")
-	}
-	for k, v := range s.Category {
-		f := v.Name
-		if f == "" {
-			f = k
+		items := sortMapToSlice(data)
+		fmt.Fprintf(&buf, "\n### %s\n", title)
+		fmt.Fprintln(&buf, "| Name | Amount |")
+		fmt.Fprintln(&buf, "| --- | ---: |")
+		for _, item := range items {
+			fmt.Fprintf(&buf, "| %s | %.2f |\n", item.Name, item.Amount)
 		}
-		fmt.Fprintln(w, fmt.Sprintf("| %v | %v |", f, v.Amount))
 	}
 
-	if len(s.Type) > 0 {
-		writeRowHeader(w, "Subcategory", "Amount")
-	}
-	for k, v := range s.Subcategory {
-		f := v.Name
-		if f == "" {
-			f = k
-		}
-		fmt.Fprintln(w, fmt.Sprintf("| %v | %v |", f, v.Amount))
-	}
+	printMD("Type", s.Type)
+	printMD("Category", s.Category)
+	printMD("Subcategory", s.Subcategory)
 
-	_ = w.Flush()
 	return buf.String()
 }
 
-func writeRowHeader(w io.Writer, a, b any) {
-	fmt.Fprintln(w)
-	fmt.Fprintln(w, fmt.Sprintf("| %v | %v |", a, b))
-	fmt.Fprintln(w, fmt.Sprintf("| --- | --- |"))
+// --- Styling Constants ---
+const (
+	imgWidth       = 400
+	margin         = 30.0
+	rowHeight      = 35.0
+	fontSizeTitle  = 24.0
+	fontSizeHeader = 18.0
+	fontSizeBody   = 18.0
+)
+
+// Define colors
+var (
+	bgCol       = color.RGBA{250, 250, 250, 255} // Off-white background
+	textDarkCol = color.RGBA{50, 50, 50, 255}    // Dark grey text
+	lineCol     = color.RGBA{200, 200, 200, 255} // Light grey for separators
+	accentCol   = color.RGBA{0, 122, 255, 255}   // Blue for main titles
+)
+
+func (s SummaryGroups) PNG() ([]byte, error) {
+	// 1. Load Font
+	font, err := truetype.Parse(goregular.TTF)
+	if err != nil {
+		return nil, fmt.Errorf("could not load font: %w", err)
+	}
+
+	// 2. Calculate Dynamic Height
+	totalRows := len(s.Type) + len(s.Category) + len(s.Subcategory)
+	estimatedHeight := margin + 60 + (float64(totalRows)*rowHeight + 3*(rowHeight*3.5)) + margin
+
+	// 3. Setup Graphics Context
+	dc := gg.NewContext(imgWidth, int(estimatedHeight))
+	dc.SetColor(bgCol)
+	dc.Clear()
+
+	setFontSize := func(size float64) {
+		face := truetype.NewFace(font, &truetype.Options{Size: size, DPI: 72})
+		dc.SetFontFace(face)
+	}
+
+	// --- Start Drawing ---
+	currentY := margin + fontSizeTitle
+
+	// Draw Main Report Title
+	dc.SetColor(accentCol)
+	setFontSize(fontSizeTitle)
+	dc.DrawStringAnchored("Transaction Summary", imgWidth/2, currentY, 0.5, 0.5)
+	currentY += 50
+
+	// Helper to draw a specific section with CUSTOM HEADER
+	drawSection := func(headerName string, data map[string]FieldCost) {
+		if len(data) == 0 {
+			return
+		}
+		items := sortMapToSlice(data)
+
+		// Section Title (e.g., "BY CATEGORY")
+		dc.SetColor(textDarkCol)
+		setFontSize(fontSizeHeader)
+		//dc.DrawString(title, margin, currentY)
+		//currentY += rowHeight * 1.2
+
+		// Header Row (Custom Name | Amount)
+		setFontSize(fontSizeBody)
+		dc.SetColor(textDarkCol)
+
+		// Use the custom headerName here
+		dc.DrawString(headerName, margin, currentY)
+
+		dc.DrawStringAnchored("Amount", imgWidth-margin, currentY, 1, 0)
+		currentY += 10
+
+		// Draw Separator Line
+		dc.SetColor(lineCol)
+		dc.SetLineWidth(1)
+		dc.DrawLine(margin, currentY, imgWidth-margin, currentY)
+		dc.Stroke()
+		currentY += rowHeight
+
+		// Draw Data Rows
+		setFontSize(fontSizeBody)
+		dc.SetColor(textDarkCol)
+		for _, item := range items {
+			dc.DrawStringAnchored(item.Name, margin, currentY, 0, 0.5)
+
+			amtStr := fmt.Sprintf("%.2f", item.Amount)
+			dc.DrawStringAnchored(amtStr, imgWidth-margin, currentY, 1, 0.5)
+
+			currentY += rowHeight
+		}
+		currentY += rowHeight * 0.8
+	}
+
+	// Draw the three sections with distinct headers
+	drawSection("Transaction Type", s.Type)
+	drawSection("Category", s.Category)
+	drawSection("Subcategory", s.Subcategory)
+
+	// 4. Encode to PNG Buffer (Cropped to exact size)
+	var buf bytes.Buffer
+	// Check if interface conversion is needed (gg usually returns *image.RGBA)
+	if rgbaImg, ok := dc.Image().(*image.RGBA); ok {
+		finalImage := rgbaImg.SubImage(image.Rect(0, 0, imgWidth, int(currentY+margin)))
+		err = png.Encode(&buf, finalImage)
+	} else {
+		// Fallback if image type differs
+		err = png.Encode(&buf, dc.Image())
+	}
+
+	if err != nil {
+		return nil, fmt.Errorf("could not encode png: %w", err)
+	}
+
+	return buf.Bytes(), nil
 }

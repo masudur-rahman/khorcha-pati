@@ -103,6 +103,9 @@ github.com/fatih/color
 # github.com/felixge/httpsnoop v1.0.4
 ## explicit; go 1.13
 github.com/felixge/httpsnoop
+# github.com/fogleman/gg v1.3.0
+## explicit
+github.com/fogleman/gg
 # github.com/go-json-experiment/json v0.0.0-20250211171154-1ae217ad3535
 ## explicit; go 1.23
 github.com/go-json-experiment/json
@@ -131,6 +134,10 @@ github.com/gobwas/pool/pbytes
 ## explicit; go 1.16
 github.com/gobwas/ws
 github.com/gobwas/ws/wsutil
+# github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0
+## explicit
+github.com/golang/freetype/raster
+github.com/golang/freetype/truetype
 # github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da
 ## explicit
 github.com/golang/groupcache/lru
@@ -354,6 +361,14 @@ golang.org/x/crypto/cryptobyte/asn1
 golang.org/x/crypto/hkdf
 golang.org/x/crypto/internal/alias
 golang.org/x/crypto/internal/poly1305
+# golang.org/x/image v0.0.0-20190802002840-cff245a6509b
+## explicit; go 1.12
+golang.org/x/image/draw
+golang.org/x/image/font
+golang.org/x/image/font/basicfont
+golang.org/x/image/font/gofont/goregular
+golang.org/x/image/math/f64
+golang.org/x/image/math/fixed
 # golang.org/x/net v0.38.0
 ## explicit; go 1.23.0
 golang.org/x/net/http/httpguts
