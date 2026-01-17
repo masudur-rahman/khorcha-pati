@@ -3,6 +3,7 @@ package handlers
 import (
 	"bytes"
 	"fmt"
+	"html"
 	"log"
 	"strings"
 	"text/tabwriter"
@@ -24,8 +25,7 @@ func StartTrackingExpenses(ctx telebot.Context) error {
 	us := all.GetServices().User
 	user, err := us.GetUserByTelegramID(ctx.Sender().ID)
 	if err == nil {
-		return ctx.Send(fmt.Sprintf("Welcome back %v %v !",
-			user.FirstName, user.LastName))
+		return sendStartText(ctx)
 	}
 	if !models.IsErrNotFound(err) {
 		logr.DefaultLogger.Errorw("Start error", "error", err.Error())
@@ -54,9 +54,63 @@ func StartTrackingExpenses(ctx telebot.Context) error {
 		return ctx.Send(err.Error())
 	}
 
-	return ctx.Send(fmt.Sprintf(`Hello %v %v!
-Welcome to Expense Tracker !
-`, ctx.Sender().FirstName, ctx.Sender().LastName))
+	ctx.Set("new-user", true)
+	return sendStartText(ctx)
+}
+
+func sendStartText(ctx telebot.Context) error {
+	firstName := html.EscapeString(ctx.Sender().FirstName)
+	lastName := html.EscapeString(ctx.Sender().LastName)
+
+	msg := fmt.Sprintf(`
+<b>👋 Hi %s %s!!</b>
+
+Welcome to <b>Expense Tracker Bot</b> 👛
+Track <i>expenses, income, transfers, and loans</i> — right from chat.
+
+✅ A <b>Cash</b> account is already created for you
+  → You don't need to mention it unless you want another account
+🏦 Add bank accounts anytime (BRAC, EBL, DBBL, etc)
+👥 Add people you lend to or borrow from when needed
+
+────────────────────
+
+<b>➕ Add a Transaction</b>
+
+You can do it <i>two ways</i>:
+
+<b>1) Interactive (easy)</b>
+Use the menu or send /newtxn and follow the steps.
+
+<b>2) Just send a message (fast)</b>
+Examples:
+
+<code>spent 500 for lunch</code>
+<code>spent 1000 for "Chicken Biriyani" from brac</code>
+<code>borrow 2000 from john to brac</code>
+
+💡 If no account is mentioned, <b>Cash is used by default</b>
+⏱️ If no time is mentioned, <b>current time is used automatically</b>
+
+Tip: wrap multi-word names in quotes
+<i>"Chicken Biriyani"</i>, <i>"Bill payment"</i>
+
+────────────────────
+
+<b>📊 Useful Commands</b>
+
+/new      – Add accounts or people
+/balance  – See balances
+/summary  – Monthly summary
+/report   – PDF report
+/help     – Full guide & examples
+
+────────────────────
+
+🚀 Start by sending a transaction or tap the menu.
+`, firstName, lastName)
+
+	return ctx.Send(msg, telebot.ModeHTML)
 }
 
 func Welcome(ctx telebot.Context) error {

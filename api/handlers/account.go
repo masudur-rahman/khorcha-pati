@@ -23,6 +23,12 @@ type AccountCallbackOptions struct {
 }
 
 func handleAccountCallback(ctx telebot.Context, callbackOptions CallbackOptions) error {
+	// Skip Cash type Account entirely
+	callbackOptions.Account = AccountCallbackOptions{
+		NextStep: StepAccountInfo,
+		Type:     models.BankAccount,
+	}
+
 	ac := callbackOptions.Account
 	switch ac.NextStep {
 	case StepAccountType, "":
