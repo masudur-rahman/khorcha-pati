@@ -237,7 +237,9 @@ func (p *transactionParser) finalizeMapping(isContact ContactVerifier, isAccount
 		}
 		info := fmt.Sprintf("%s %s", prefix, val)
 
-		p.appendNote(info)
+		if !strings.Contains(strings.ToLower(p.note), strings.ToLower(info)) {
+			p.appendNote(info)
+		}
 	}
 
 	processField(p.fromValue, true)

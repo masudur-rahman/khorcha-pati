@@ -222,6 +222,7 @@ var pcSubs = []TxnSubcategory{
 	{ID: "pc-spa", Name: "Spa & Massage", CatID: "pc"},
 	{ID: "pc-toilet", Name: "Toiletries", CatID: "pc"},
 	{ID: "pc-fit", Name: "Fitness", CatID: "pc"},
+	{ID: "pc-smoke", Name: "Smoking/Habits", CatID: "pc"},
 	{ID: "pc-misc", Name: "Wellness", CatID: "pc"},
 }
 
