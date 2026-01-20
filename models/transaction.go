@@ -1,5 +1,16 @@
 package models
 
+import (
+	"fmt"
+	"strings"
+	"time"
+)
+
+var (
+	SubCatNameMap      = make(map[string]string)
+	SubCatToCatNameMap = make(map[string]string)
+)
+
 type TransactionType string
 
 const (
@@ -27,6 +38,74 @@ type Transaction struct {
 	DebtorCreditorName string
 	Timestamp          int64
 	Remarks            string
+}
+
+// Summary creates a user-friendly status message
+func (t Transaction) Summary() string {
+	var sb strings.Builder
+
+	emoji := "💸"
+	action := "Expense Recorded"
+
+	switch t.Type {
+	case IncomeTransaction:
+		emoji = "💰"
+		action = "Income Recorded"
+	case TransferTransaction:
+		emoji = "↔️"
+		action = "Transfer Recorded"
+	}
+
+	sb.WriteString(fmt.Sprintf("%s *%s*\n", emoji, action))
+	sb.WriteString("──────────────\n")
+
+	sb.WriteString(fmt.Sprintf("💵 *Amount:* %.2f\n", t.Amount))
+
+	catName := "Unknown"
+	subName := t.SubcategoryID
+
+	if name, exists := SubCatNameMap[t.SubcategoryID]; exists {
+		subName = name
+	}
+	if cat, exists := SubCatToCatNameMap[t.SubcategoryID]; exists {
+		catName = cat
+	}
+
+	sb.WriteString(fmt.Sprintf("🏷 *Category:* %s › %s\n", catName, subName))
+
+	if t.Type == TransferTransaction {
+		sb.WriteString(fmt.Sprintf("🏦 *Flow:* %s ➔ %s\n", formatAccount(t.SrcID), formatAccount(t.DstID)))
+	} else if t.Type == IncomeTransaction {
+		if t.DstID != "" && t.DstID != "cash" {
+			sb.WriteString(fmt.Sprintf("📥 *To:* %s\n", formatAccount(t.DstID)))
+		}
+		if t.DebtorCreditorName != "" {
+			sb.WriteString(fmt.Sprintf("👤 *From:* %s\n", t.DebtorCreditorName))
+		}
+	} else {
+		if t.SrcID != "" && t.SrcID != "cash" {
+			sb.WriteString(fmt.Sprintf("💳 *From:* %s\n", formatAccount(t.SrcID)))
+		}
+		if t.DebtorCreditorName != "" {
+			sb.WriteString(fmt.Sprintf("👤 *To:* %s\n", t.DebtorCreditorName))
+		}
+	}
+
+	ts := time.Unix(t.Timestamp, 0)
+	sb.WriteString(fmt.Sprintf("📅 *Date:* %s\n", ts.Format("02 Jan, 2006 • 03:04 PM")))
+
+	if t.Remarks != "" && t.Remarks != t.SubcategoryID {
+		sb.WriteString(fmt.Sprintf("📝 *Note:* %s\n", t.Remarks))
+	}
+
+	return sb.String()
+}
+
+func formatAccount(id string) string {
+	if id == "" {
+		return "Unknown"
+	}
+	return strings.ToUpper(id)
 }
 
 type TxnCategory struct {
@@ -146,7 +225,6 @@ var pcSubs = []TxnSubcategory{
 	{ID: "pc-misc", Name: "Wellness", CatID: "pc"},
 }
 
-// 8. Family
 var famSubs = []TxnSubcategory{
 	{ID: "fam-allow", Name: "Spouse Allowance", CatID: "fam"},
 	{ID: "fam-par", Name: "Parents", CatID: "fam"},
@@ -156,7 +234,6 @@ var famSubs = []TxnSubcategory{
 	{ID: "fam-other", Name: "Other Family Exp", CatID: "fam"},
 }
 
-// 9. Education (Restored Granularity)
 var eduSubs = []TxnSubcategory{
 	{ID: "edu-course", Name: "Courses", CatID: "edu"},
 	{ID: "edu-book", Name: "Books/Stationary", CatID: "edu"},
@@ -217,4 +294,19 @@ func init() {
 	TxnSubcategories = append(TxnSubcategories, trvSubs...)
 	TxnSubcategories = append(TxnSubcategories, festSubs...)
 	TxnSubcategories = append(TxnSubcategories, miscSubs...)
+
+	catIDToName := make(map[string]string)
+	for _, cat := range TxnCategories {
+		catIDToName[cat.ID] = cat.Name
+	}
+
+	for _, sub := range TxnSubcategories {
+		SubCatNameMap[sub.ID] = sub.Name
+
+		if catName, ok := catIDToName[sub.CatID]; ok {
+			SubCatToCatNameMap[sub.ID] = catName
+		} else {
+			SubCatToCatNameMap[sub.ID] = "Unknown"
+		}
+	}
 }
