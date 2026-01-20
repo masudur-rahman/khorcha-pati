@@ -365,7 +365,19 @@ func isDebtTransaction(subID string) bool {
 	return false
 }
 
+func (p *transactionParser) ensureTypeMatchesCategory() {
+	// List of Subcategories that are ALWAYS Income
+	switch p.subcategory {
+	case "fin-sal", "fin-prof", "fin-interest", "fin-borrow", "fin-recover":
+		p.txnType = models.IncomeTransaction
+	// List of Subcategories that are ALWAYS Expense
+	case "fin-repay", "fin-lend", "fin-return":
+		p.txnType = models.ExpenseTransaction
+	}
+}
+
 func (p *transactionParser) parseTransaction() error {
+	p.ensureTypeMatchesCategory()
 	p.txn.Type = p.txnType
 	p.txn.SubcategoryID = p.subcategory
 	p.txn.Remarks = p.note
