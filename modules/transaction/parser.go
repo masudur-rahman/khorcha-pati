@@ -3,6 +3,7 @@ package transaction
 import (
 	"context"
 	"fmt"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -41,63 +42,154 @@ import (
 		- note	[note]
 */
 
+// Verifiers for dependency injection
+type ContactVerifier func(name string) bool
+
+type AccountVerifier func(name string) bool
+
 type transactionParser struct {
 	txn         models.Transaction
 	txnType     models.TransactionType
 	amount      string
-	from        *string
-	to          *string
 	fromValue   string
 	toValue     string
 	subcategory string
 	date        string
 	time        string
 	note        string
+	verbFound   bool
 }
 
-func ParseTransaction(text string) (models.Transaction, error) {
-	opts := transactionParser{}
-	kv := pkg.SplitString(text, ' ')
-	if len(kv)%2 != 0 {
-		return opts.txn, fmt.Errorf("invalid transaction format")
+func ParseTransaction(text string, isContact ContactVerifier, isAccount AccountVerifier) (models.Transaction, error) {
+	// --- STEP 0: Safety Defaults ---
+	if isContact == nil {
+		isContact = func(name string) bool { return false }
+	}
+	if isAccount == nil {
+		isAccount = func(name string) bool { return false }
 	}
 
-	opts.from = &opts.txn.SrcID
-	opts.to = &opts.txn.DstID
-	for idx := 0; idx < len(kv); idx += 2 {
-		word := strings.ToLower(kv[idx])
-		if opts.isVerbKeyword(word) {
-			opts.amount = kv[idx+1]
-		} else if word == "from" {
-			opts.fromValue = kv[idx+1]
-		} else if word == "to" {
-			opts.toValue = kv[idx+1]
-		} else if word == "for" {
-			opts.subcategory = kv[idx+1]
-		} else if word == "on" {
-			opts.date = kv[idx+1]
-		} else if word == "at" {
-			opts.time = kv[idx+1]
-		} else if word == "note" {
-			opts.note = kv[idx+1]
+	p := transactionParser{}
+
+	// --- STEP 1: Find Amount ---
+	reAmount := regexp.MustCompile(`(?i)(?:(?:total|tk|taka|amount)\s*)?(\d+(?:\.\d+)?)\s*(k)?(?:\s*(?:tk|taka|bdt))?`)
+	loc := reAmount.FindStringSubmatchIndex(text)
+	if loc == nil {
+		return models.Transaction{}, fmt.Errorf("no valid amount found in text")
+	}
+
+	numberStr := text[loc[2]:loc[3]]
+	if loc[4] != -1 {
+		val, _ := strconv.ParseFloat(numberStr, 64)
+		p.amount = fmt.Sprintf("%.2f", val*1000)
+	} else {
+		p.amount = numberStr
+	}
+	textWithoutAmount := text[:loc[0]] + " " + text[loc[1]:]
+
+	// --- STEP 2: Tokenize & Scan ---
+	words := strings.Fields(textWithoutAmount)
+	p.txnType = models.ExpenseTransaction
+
+	var currentKey string
+	var currentBuffer []string
+
+	for i := 0; i < len(words); i++ {
+		word := words[i]
+		lowerWord := strings.ToLower(word)
+
+		if lowerWord == "note" {
+			p.flushBuffer(currentKey, currentBuffer, isAccount)
+			if i+1 < len(words) {
+				p.note = strings.Join(words[i+1:], " ")
+			}
+			currentKey = ""
+			currentBuffer = nil
+			break
+		}
+		if p.isVerbKeyword(lowerWord) {
+			p.verbFound = true
+			p.flushBuffer(currentKey, currentBuffer, isAccount)
+			currentBuffer = []string{}
+			currentKey = ""
+			continue
+		}
+		if isDateKeyword(lowerWord) {
+			p.flushBuffer(currentKey, currentBuffer, isAccount)
+			p.date = lowerWord
+			currentBuffer = []string{}
+			currentKey = ""
+			continue
+		}
+		if isStandardKeyword(lowerWord) {
+			p.flushBuffer(currentKey, currentBuffer, isAccount)
+			currentKey = lowerWord
+			currentBuffer = []string{}
+		} else {
+			currentBuffer = append(currentBuffer, word)
+		}
+	}
+	p.flushBuffer(currentKey, currentBuffer, isAccount)
+	p.cleanSubcategory()
+
+	// --- STEP 3: Enrich Context (Pre-AI) ---
+	p.enrichContext(isAccount)
+
+	// --- STEP 4: Resolve ID (AI/Cache) ---
+	if err := p.subcategoryAIParser(); err != nil {
+		return models.Transaction{}, err
+	}
+
+	// --- STEP 5: Finalize Mapping (Post-AI) ---
+	p.finalizeMapping(isContact, isAccount)
+
+	// --- STEP 6: Finalize Struct ---
+	err := p.parseTransaction()
+	return p.txn, err
+}
+
+func (p *transactionParser) enrichContext(isAccount AccountVerifier) {
+	if p.isFormalSubcategoryID() {
+		return
+	}
+
+	mergeIntoText := func(val string, isSource bool) {
+		if val == "" {
+			return
+		}
+
+		if isAccount(strings.ToLower(val)) {
+			return
+		}
+
+		prefix := "to"
+		if isSource {
+			prefix = "from"
+		}
+		info := fmt.Sprintf("%s %s", prefix, val)
+
+		if p.subcategory != "" {
+			p.subcategory += " " + info
+		} else {
+			p.subcategory = info
 		}
 	}
 
-	if err := opts.subcategoryParser(); err != nil {
-		return models.Transaction{}, err
-	}
-	err := opts.parseTransaction()
-	return opts.txn, err
+	mergeIntoText(p.fromValue, true)
+	mergeIntoText(p.toValue, false)
 }
 
-func (p *transactionParser) subcategoryParser() error {
+func (p *transactionParser) subcategoryAIParser() error {
 	for _, subcat := range models.TxnSubcategories {
 		if subcat.ID == p.subcategory {
 			return nil
 		}
 	}
+
 	if p.note == "" {
 		p.note = p.subcategory
+	} else {
+		p.note = p.subcategory + " " + p.note
 	}
 
 	p.subcategory = strings.ToLower(p.subcategory)
@@ -105,7 +197,6 @@ func (p *transactionParser) subcategoryParser() error {
 		p.subcategory = subcat
 		return nil
 	}
-
 	subcat, err := ai.TxnCategoryGenerator(context.Background(), p.subcategory)
 	if err != nil {
 		return err
@@ -116,71 +207,168 @@ func (p *transactionParser) subcategoryParser() error {
 	return nil
 }
 
-func (p *transactionParser) isVerbKeyword(keyword string) bool {
-	switch keyword {
-	// transfer
-	case "transfer", "transferred", "move", "moved", "send", "sent":
-		p.txnType = models.TransferTransaction
-		p.subcategory = "fin-transfer"
-	case "withdraw", "withdrew", "cashout":
-		p.txnType = models.TransferTransaction
-		p.subcategory = "fin-with"
-		p.toValue = "cash"
-	case "deposit", "deposited", "cashin":
-		p.txnType = models.TransferTransaction
-		p.subcategory = "fin-deposit"
-		p.fromValue = "cash"
+func (p *transactionParser) finalizeMapping(isContact ContactVerifier, isAccount AccountVerifier) {
+	processField := func(val string, isSource bool) {
+		if val == "" {
+			return
+		}
+		cleanVal := strings.ToLower(val)
 
-	// expense
-	case "expense", "spend", "spent", "paid", "pay", "cost":
-		p.txnType = models.ExpenseTransaction
-	case "giveaway", "donate", "donated", "gifted":
-		p.txnType = models.ExpenseTransaction
-		p.subcategory = "misc-gift"
-	case "flexi", "recharge", "top-up":
-		p.txnType = models.ExpenseTransaction
-		p.subcategory = "fin-flexi"
+		if isAccount(cleanVal) {
+			if isSource {
+				p.txn.SrcID = cleanVal
+			} else {
+				p.txn.DstID = cleanVal
+			}
+			return
+		}
 
-	// income
-	case "income", "earn", "earned", "received", "gained":
-		p.txnType = models.IncomeTransaction
+		if isDebtTransaction(p.subcategory) {
+			if isContact(cleanVal) {
+				p.txn.DebtorCreditorName = cleanVal
+				return
+			}
+			return
+		}
 
-	// borrow
-	case "borrow", "borrowed":
-		p.txnType = models.IncomeTransaction
-		p.subcategory = models.BorrowSubID
-		p.from = &p.txn.DebtorCreditorName
+		prefix := "to"
+		if isSource {
+			prefix = "from"
+		}
+		info := fmt.Sprintf("%s %s", prefix, val)
 
-	// return
-	case "return", "returned", "repaid", "pay-back":
-		p.txnType = models.ExpenseTransaction
-		p.subcategory = models.BorrowReturnSubID
-		p.to = &p.txn.DebtorCreditorName
-
-	// lend
-	case "lend", "lent":
-		p.txnType = models.ExpenseTransaction
-		p.subcategory = models.LendSubID
-		p.to = &p.txn.DebtorCreditorName
-
-	// recover
-	case "recover", "recovered", "collect", "collected", "get-back":
-		p.txnType = models.IncomeTransaction
-		p.subcategory = models.LendRecoverySubID
-		p.from = &p.txn.DebtorCreditorName
-
-	default:
-		return false
+		p.appendNote(info)
 	}
-	return true
+
+	processField(p.fromValue, true)
+	processField(p.toValue, false)
+
+	if p.txnType == models.TransferTransaction && p.txn.DstID == "" {
+		p.txnType = models.ExpenseTransaction
+		if p.subcategory == "fin-transfer" {
+			p.subcategory = "misc-misc"
+		}
+	}
+
+	if isDebtTransaction(p.subcategory) {
+		if p.txn.DebtorCreditorName == "" {
+			var rawTarget string
+			if p.toValue != "" && !isAccount(strings.ToLower(p.toValue)) {
+				rawTarget = p.toValue
+			} else if p.fromValue != "" && !isAccount(strings.ToLower(p.fromValue)) {
+				rawTarget = p.fromValue
+			}
+			if rawTarget != "" {
+				p.appendNote(fmt.Sprintf("[Person: %s]", rawTarget))
+			}
+		}
+	}
+}
+
+func (p *transactionParser) isFormalSubcategoryID() bool {
+	for _, subcat := range models.TxnSubcategories {
+		if subcat.ID == p.subcategory {
+			return true
+		}
+	}
+	return false
+}
+
+func (p *transactionParser) appendNote(s string) {
+	if p.note == "" {
+		p.note = s
+	} else {
+		p.note += " " + s
+	}
+}
+
+func (p *transactionParser) flushBuffer(key string, buffer []string, isAccount AccountVerifier) {
+	if len(buffer) == 0 {
+		return
+	}
+	val := strings.Join(buffer, " ")
+	if key != "" {
+		p.assignValue(key, val, isAccount)
+	} else {
+		if p.subcategory != "" {
+			p.subcategory += " " + val
+		} else {
+			p.subcategory = val
+		}
+	}
+}
+
+func (p *transactionParser) assignValue(key, value string, isAccount AccountVerifier) {
+	switch key {
+	case "from":
+		p.fromValue = value
+	case "to":
+		p.toValue = value
+	case "on":
+		if isDateKeyword(value) {
+			p.date = value
+			return
+		}
+		if _, err := pkg.ParseDate(value); err == nil {
+			p.date = value
+			return
+		}
+		if isAccount(strings.ToLower(value)) {
+			p.fromValue = value
+			return
+		}
+		val := "on " + value
+		if p.subcategory != "" {
+			p.subcategory += " " + val
+		} else {
+			p.subcategory = val
+		}
+	case "at":
+		p.time = value
+	case "note":
+		p.note = value
+	}
+}
+
+func (p *transactionParser) cleanSubcategory() {
+	p.subcategory = strings.TrimSpace(p.subcategory)
+	lower := strings.ToLower(p.subcategory)
+	if strings.HasPrefix(lower, "for ") {
+		p.subcategory = p.subcategory[4:]
+	}
+	if strings.HasSuffix(lower, " for") {
+		p.subcategory = p.subcategory[:len(p.subcategory)-4]
+	}
+}
+
+func isStandardKeyword(w string) bool {
+	switch w {
+	case "from", "to", "on", "at":
+		return true
+	}
+	return false
+}
+
+func isDateKeyword(w string) bool {
+	switch w {
+	case "yesterday", "today", "tomorrow":
+		return true
+	}
+	return false
+}
+
+func isDebtTransaction(subID string) bool {
+	switch subID {
+	case models.BorrowSubID, models.BorrowReturnSubID, models.LendSubID, models.LendRecoverySubID:
+		return true
+	}
+	return false
 }
 
 func (p *transactionParser) parseTransaction() error {
 	p.txn.Type = p.txnType
 	p.txn.SubcategoryID = p.subcategory
 	p.txn.Remarks = p.note
-
-	p.parseFromTo()
 	p.setDefaultSourceDestination()
 
 	if p.txn.SubcategoryID == "" {
@@ -196,11 +384,16 @@ func (p *transactionParser) parseTransaction() error {
 			p.txn.SubcategoryID = "misc-misc"
 		}
 	}
-
 	if err := p.parseAmount(); err != nil {
 		return err
 	}
 	return p.parseTransactionTime()
+}
+
+func (p *transactionParser) parseAmount() error {
+	var err error
+	p.txn.Amount, err = strconv.ParseFloat(p.amount, 64)
+	return err
 }
 
 func (p *transactionParser) setDefaultSourceDestination() {
@@ -216,42 +409,77 @@ func (p *transactionParser) setDefaultSourceDestination() {
 	}
 }
 
-func (p *transactionParser) parseFromTo() {
-	if p.fromValue != "" {
-		*p.from = p.fromValue
-	}
-	if p.toValue != "" {
-		*p.to = p.toValue
-	}
-}
-
 func (p *transactionParser) parseTransactionTime() error {
 	var year, day, hour, minute, second int
 	var month time.Month
-	date, err := pkg.ParseDate(p.date)
-	if err != nil {
-		return err
-	}
 
+	if isDateKeyword(strings.ToLower(p.date)) {
+		now := time.Now()
+		switch strings.ToLower(p.date) {
+		case "yesterday":
+			now = now.AddDate(0, 0, -1)
+		case "tomorrow":
+			now = now.AddDate(0, 0, 1)
+		}
+		year, month, day = now.Date()
+	} else {
+		date, err := pkg.ParseDate(p.date)
+		if err != nil {
+			return err
+		}
+		year, month, day = date.Date()
+	}
 	tim, err := pkg.ParseTime(p.time)
 	if err != nil {
 		return err
 	}
 
-	year, month, day = date.Date()
-	if p.date != "" && p.time == "" { // if date is provided but time is not provided, use 12:00 AM
+	if p.date != "" && p.time == "" {
 		hour, minute, second = 0, 0, 0
 	} else {
 		hour, minute, second = tim.Clock()
 	}
-
-	p.txn.Timestamp = time.Date(year, month, day, hour, minute, second, 0, date.Location()).Unix()
-
+	p.txn.Timestamp = time.Date(year, month, day, hour, minute, second, 0, time.Local).Unix()
 	return nil
 }
 
-func (p *transactionParser) parseAmount() error {
-	var err error
-	p.txn.Amount, err = strconv.ParseFloat(p.amount, 64)
-	return err
+func (p *transactionParser) isVerbKeyword(keyword string) bool {
+	switch keyword {
+	case "transfer", "transferred", "move", "moved", "send", "sent":
+		p.txnType = models.TransferTransaction
+		p.subcategory = "fin-transfer"
+	case "withdraw", "withdrew", "cashout":
+		p.txnType = models.TransferTransaction
+		p.subcategory = "fin-with"
+		p.toValue = "cash"
+	case "deposit", "deposited", "cashin":
+		p.txnType = models.TransferTransaction
+		p.subcategory = "fin-deposit"
+		p.fromValue = "cash"
+	case "expense", "spend", "spent", "paid", "pay", "cost":
+		p.txnType = models.ExpenseTransaction
+	case "giveaway", "donate", "donated", "gifted":
+		p.txnType = models.ExpenseTransaction
+		p.subcategory = "misc-gift"
+	case "flexi", "recharge", "top-up":
+		p.txnType = models.ExpenseTransaction
+		p.subcategory = "fin-flexi"
+	case "income", "earn", "earned", "received", "gained":
+		p.txnType = models.IncomeTransaction
+	case "borrow", "borrowed":
+		p.txnType = models.IncomeTransaction
+		p.subcategory = models.BorrowSubID
+	case "return", "returned", "repaid", "pay-back":
+		p.txnType = models.ExpenseTransaction
+		p.subcategory = models.BorrowReturnSubID
+	case "lend", "lent":
+		p.txnType = models.ExpenseTransaction
+		p.subcategory = models.LendSubID
+	case "recover", "recovered", "collect", "collected", "get-back":
+		p.txnType = models.IncomeTransaction
+		p.subcategory = models.LendRecoverySubID
+	default:
+		return false
+	}
+	return true
 }

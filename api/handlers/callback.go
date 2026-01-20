@@ -180,10 +180,11 @@ func parseCallbackOptions(ctx telebot.Context) (CallbackOptions, error) {
 
 func TransactionTextCallback(ctx telebot.Context) error {
 	if ctx.Update().Message.ReplyTo == nil {
-		if err := handleTransactionFromRegularText(ctx); err != nil {
+		txnSummary, err := handleTransactionFromRegularText(ctx)
+		if err != nil {
 			return ctx.Send(err.Error())
 		}
-		return ctx.Send("Transaction added successfully!")
+		return ctx.Send(txnSummary, telebot.ModeMarkdown)
 	}
 
 	replyToID := ctx.Update().Message.ReplyTo.ID
@@ -263,16 +264,26 @@ func handleUserTypeTextCallback(ctx telebot.Context, callbackOpts CallbackOption
 	return processUserCreation(ctx, callbackOpts.User)
 }
 
-func handleTransactionFromRegularText(ctx telebot.Context) error {
+func handleTransactionFromRegularText(ctx telebot.Context) (string, error) {
 	user, err := all.GetServices().User.GetUserByTelegramID(ctx.Sender().ID)
 	if err != nil {
-		return err
+		return "", err
 	}
 
-	txn, err := transaction.ParseTransaction(ctx.Text())
+	isContact := func(name string) bool {
+		_, err = all.GetServices().DebtorCreditor.GetDebtorCreditorByName(user.ID, name)
+		return err == nil
+	}
+
+	isAccount := func(name string) bool {
+		_, err = all.GetServices().Account.GetAccountByShortName(user.ID, name)
+		return err == nil
+	}
+
+	txn, err := transaction.ParseTransaction(ctx.Text(), isContact, isAccount)
 	if err != nil {
-		return err
+		return "", err
 	}
 	txn.UserID = user.ID
-	return all.GetServices().Txn.AddTransaction(txn)
+	return txn.Summary(), all.GetServices().Txn.AddTransaction(txn)
 }
