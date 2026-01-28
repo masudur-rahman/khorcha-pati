@@ -472,6 +472,8 @@ func (p *transactionParser) isVerbKeyword(keyword string) bool {
 		p.fromValue = "cash"
 	case "expense", "spend", "spent", "paid", "pay", "cost":
 		p.txnType = models.ExpenseTransaction
+	case "sell", "sold", "sale", "sales":
+		p.txnType = models.IncomeTransaction
 	case "giveaway", "donate", "donated", "gifted":
 		p.txnType = models.ExpenseTransaction
 		p.subcategory = "misc-gift"
