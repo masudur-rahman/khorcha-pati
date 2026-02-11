@@ -85,15 +85,15 @@ Use the menu or send /newtxn and follow the steps.
 <b>2) Just send a message (fast)</b>
 Examples:
 
-<code>spent 500 for lunch</code>
-<code>spent 1000 for "Chicken Biriyani" from brac</code>
-<code>borrow 2000 from john to brac</code>
+<code>lunch 250</code>
+<code>groceries 1.5k</code>
+<code>bought a new shirt for 2500</code>
+<code>transfer 10k from brac to city</code>
+<code>lent 5000 to karim</code>
+<code>got bonus 20k</code>
 
 💡 If no account is mentioned, <b>Cash is used by default</b>
 ⏱️ If no time is mentioned, <b>current time is used automatically</b>
-
-Tip: wrap multi-word names in quotes
-<i>"Chicken Biriyani"</i>, <i>"Bill payment"</i>
 
 ────────────────────
 
