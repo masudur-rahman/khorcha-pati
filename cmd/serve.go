@@ -80,20 +80,17 @@ func pingHealthzApiPeriodically() {
 	logger.Infow("Health url provided", "url", healthPath)
 
 	t20 := time.NewTicker(20 * time.Minute)
-	for {
-		select {
-		case <-t20.C:
-			resp, err := http.Get(healthPath)
+	for range t20.C {
+		resp, err := http.Get(healthPath) //nolint:gosec // health check URL from config
+		if err != nil {
+			logger.Errorw("healthz api failed", "error", err.Error())
+		} else {
+			data, err := io.ReadAll(resp.Body)
+			var errMsg string
 			if err != nil {
-				logger.Errorw("healthz api failed", "error", err.Error())
-			} else {
-				data, err := io.ReadAll(resp.Body)
-				var errMsg string
-				if err != nil {
-					errMsg = err.Error()
-				}
-				logger.Infow("healthz api", "status", resp.StatusCode, "msg", string(data), "error", errMsg)
+				errMsg = err.Error()
 			}
+			logger.Infow("healthz api", "status", resp.StatusCode, "msg", string(data), "error", errMsg)
 		}
 	}
 }
@@ -102,7 +99,7 @@ func startHealthz() {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/healthz", func(writer http.ResponseWriter, request *http.Request) {
 		writer.WriteHeader(http.StatusOK)
-		writer.Write([]byte("Running"))
+		_, _ = writer.Write([]byte("Running"))
 	})
 
 	logr.DefaultLogger.Infow("Health checker started at :8080/healthz")

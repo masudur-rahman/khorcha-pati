@@ -46,7 +46,7 @@ type CallbackOptions struct {
 	Transaction       TransactionCallbackOptions `json:"transaction,omitempty"`
 	Summary           SummaryCallbackOptions     `json:"summary,omitempty"`
 	Report            ReportCallbackOptions      `json:"report,omitempty"`
-	Wallet           AccountCallbackOptions     `json:"wallet,omitempty"`
+	Wallet            AccountCallbackOptions     `json:"wallet,omitempty"`
 	User              UserCallbackOptions        `json:"user,omitempty"`
 	Category          TxnCategoryCallbackOptions `json:"category,omitempty"`
 	LastSelectedValue string

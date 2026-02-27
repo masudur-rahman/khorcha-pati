@@ -6,8 +6,8 @@ type Contacts struct {
 	NickName         string `db:",uqs"`
 	FullName         string
 	Email            string `db:"email,uqs"`
-	ContactInfo     string
-	NetBalance      float64
+	ContactInfo      string
+	NetBalance       float64
 	LastTxnTimestamp int64
 }
 

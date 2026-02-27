@@ -73,7 +73,7 @@ func handleReportCallback(ctx telebot.Context, callbackOpts CallbackOptions) err
 	})
 }
 
-func generateSampleJsonReport(report gqtypes.Report) error {
+func generateSampleJsonReport(report gqtypes.Report) error { //nolint:unused // kept for local debugging
 	data, err := json.MarshalIndent(report, "", "  ")
 	if err != nil {
 		return err
@@ -192,7 +192,7 @@ func generateTransactionReportFromTemplate(report gqtypes.Report, reportPdfFileN
 	if err = bodyTmpl.Execute(&bodyBuf, &report); err != nil {
 		return err
 	}
-	if err = os.WriteFile("/tmp/transaction_report.html", bodyBuf.Bytes(), 0644); err != nil {
+	if err = os.WriteFile("/tmp/transaction_report.html", bodyBuf.Bytes(), 0644); err != nil { //nolint:gosec // temp file for PDF pipeline
 		return err
 	}
 
@@ -209,7 +209,7 @@ func generateTransactionReportFromTemplate(report gqtypes.Report, reportPdfFileN
 	if err = headerTmpl.Execute(&headerBuf, &report); err != nil {
 		return err
 	}
-	if err = os.WriteFile("/tmp/header.html", headerBuf.Bytes(), 0644); err != nil {
+	if err = os.WriteFile("/tmp/header.html", headerBuf.Bytes(), 0644); err != nil { //nolint:gosec // temp file for PDF pipeline
 		return err
 	}
 
@@ -218,7 +218,7 @@ func generateTransactionReportFromTemplate(report gqtypes.Report, reportPdfFileN
 	if err != nil {
 		return err
 	}
-	if err = os.WriteFile("/tmp/footer.html", footerData, 0644); err != nil {
+	if err = os.WriteFile("/tmp/footer.html", footerData, 0644); err != nil { //nolint:gosec // temp file for PDF pipeline
 		return err
 	}
 

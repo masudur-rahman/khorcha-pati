@@ -16,10 +16,10 @@ const (
 )
 
 type AccountCallbackOptions struct {
-	NextStep  NextStep           `json:"nextStep"`
+	NextStep  NextStep          `json:"nextStep"`
 	Type      models.WalletType `json:"type"`
-	ShortName string             `json:"shortName"`
-	Name      string             `json:"name"`
+	ShortName string            `json:"shortName"`
+	Name      string            `json:"name"`
 }
 
 func handleAccountCallback(ctx telebot.Context, callbackOptions CallbackOptions) error {
