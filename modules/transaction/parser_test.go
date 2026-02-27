@@ -192,7 +192,7 @@ func TestParseTransaction(t *testing.T) {
 			for _, text := range tt.args.texts {
 				got, err := ParseTransaction(text, tt.args.contacts, tt.args.accounts)
 				if (err != nil) != tt.wantErr {
-					fmt.Errorf("ParseTransaction() error = %v, wantErr %v", err, tt.wantErr)
+					t.Errorf("ParseTransaction() error = %v, wantErr %v", err, tt.wantErr)
 					//return
 					continue
 				}

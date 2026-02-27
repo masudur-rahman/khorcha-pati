@@ -104,7 +104,7 @@ func printSection(w io.Writer, title string, data map[string]FieldCost) {
 
 func (s SummaryGroups) String() string {
 	var buf bytes.Buffer
-	fmt.Fprintln(&buf, "Transaction Summary\n")
+	fmt.Fprintln(&buf, "Transaction Summary")
 
 	printSection(&buf, "BY TYPE", s.Type)
 	printSection(&buf, "BY CATEGORY", s.Category)

@@ -17,7 +17,7 @@ func FormatDocuments(docs any, cols ...string) string {
 
 	buf := bytes.Buffer{}
 	w := tabwriter.NewWriter(&buf, 0, 0, 5, ' ', 0)
-	fmt.Fprintln(w, fmt.Sprintf(strings.Join(cols, "\t")))
+	fmt.Fprintln(w, strings.Join(cols, "\t"))
 
 	for idx := 0; idx < docsElem.Len(); idx++ {
 		doc := docsElem.Index(idx).Interface()
