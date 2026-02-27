@@ -1,12 +1,10 @@
 package handlers
 
 import (
-	"bytes"
 	"fmt"
 	"html"
 	"log"
 	"strings"
-	"text/tabwriter"
 	"time"
 
 	"github.com/masudur-rahman/expense-tracker-bot/configs"
@@ -25,13 +23,14 @@ func StartTrackingExpenses(ctx telebot.Context) error {
 	us := all.GetServices().User
 	user, err := us.GetUserByTelegramID(ctx.Sender().ID)
 	if err == nil {
+		ensureDefaultWallet(user.ID)
 		return sendStartText(ctx)
 	}
 	if !models.IsErrNotFound(err) {
 		logr.DefaultLogger.Errorw("Start error", "error", err.Error())
 		return ctx.Send(err.Error())
 	}
-	user = &models.User{
+	user = &models.Profile{
 		TelegramID: ctx.Sender().ID,
 		Username:   ctx.Sender().Username,
 		FirstName:  ctx.Sender().FirstName,
@@ -42,20 +41,28 @@ func StartTrackingExpenses(ctx telebot.Context) error {
 		return ctx.Send(err.Error())
 	}
 
-	acc := &models.Account{
-		UserID:    user.ID,
-		Type:      models.CashAccount,
-		ShortName: "cash",
-		Name:      "Cash in Hand",
-	}
-
-	if err = all.GetServices().Account.CreateAccount(acc); err != nil {
-		logr.DefaultLogger.Errorw("Create default cash account error", "error", err.Error())
+	if err = ensureDefaultWallet(user.ID); err != nil {
+		logr.DefaultLogger.Errorw("Create default cash wallet error", "error", err.Error())
 		return ctx.Send(err.Error())
 	}
 
 	ctx.Set("new-user", true)
 	return sendStartText(ctx)
+}
+
+func ensureDefaultWallet(userID int64) error {
+	_, err := all.GetServices().Wallet.GetWalletByShortName(userID, "cash")
+	if err == nil {
+		return nil
+	}
+
+	acc := &models.Wallet{
+		UserID:    userID,
+		Type:      models.CashAccount,
+		ShortName: "cash",
+		Name:      "Cash in Hand",
+	}
+	return all.GetServices().Wallet.CreateWallet(acc)
 }
 
 func sendStartText(ctx telebot.Context) error {
@@ -68,7 +75,7 @@ func sendStartText(ctx telebot.Context) error {
 Welcome to <b>Expense Tracker Bot</b> 👛
 Track <i>expenses, income, transfers, and loans</i> — right from chat.
 
-✅ A <b>Cash</b> account is already created for you
+✅ A <b>Cash</b> wallet is already created for you
   → You don't need to mention it unless you want another account
 🏦 Add bank accounts anytime (BRAC, EBL, DBBL, etc)
 👥 Add people you lend to or borrow from when needed
@@ -91,8 +98,10 @@ Examples:
 <code>transfer 10k from brac to city</code>
 <code>lent 5000 to karim</code>
 <code>got bonus 20k</code>
+<code>internet 500 on 1st</code>
+<code>dinner 1500 yesterday</code>
 
-💡 If no account is mentioned, <b>Cash is used by default</b>
+💡 If no wallet is mentioned, <b>Cash is used by default</b>
 ⏱️ If no time is mentioned, <b>current time is used automatically</b>
 
 ────────────────────
@@ -144,18 +153,42 @@ func New(ctx telebot.Context) error {
 	})
 }
 
-func ListUsers(ctx telebot.Context) error {
+func ListContacts(ctx telebot.Context) error {
 	user, err := all.GetServices().User.GetUserByTelegramID(ctx.Sender().ID)
 	if err != nil {
 		return ctx.Send(models.ErrCommonResponse(err))
 	}
 
-	users, err := all.GetServices().DebtorCreditor.ListDebtorCreditors(user.ID)
+	contacts, err := all.GetServices().Contact.ListContacts(user.ID)
 	if err != nil {
 		return ctx.Send(err.Error())
 	}
 
-	return ctx.Send(pkg.FormatDocuments(users, "NickName", "FullName", "Balance"))
+	return ctx.Send(printContacts(contacts), telebot.ModeMarkdown)
+}
+
+func printContacts(contacts []models.Contacts) string {
+	if len(contacts) == 0 {
+		return "No contacts found. Add one with /new"
+	}
+	var sb strings.Builder
+	sb.WriteString("👥 *Your Contacts*\n")
+	sb.WriteString("──────────────\n")
+	for _, c := range contacts {
+		name := c.FullName
+		if name == "" {
+			name = c.NickName
+		}
+		sb.WriteString(fmt.Sprintf("👤 *%s* (`%s`)\n", name, c.NickName))
+		if c.NetBalance > 0 {
+			sb.WriteString(fmt.Sprintf("   ➕ `%.2f` _they owe you_\n\n", c.NetBalance))
+		} else if c.NetBalance < 0 {
+			sb.WriteString(fmt.Sprintf("   ➖ `%.2f` _you owe them_\n\n", -c.NetBalance))
+		} else {
+			sb.WriteString("   ✅ _settled_\n\n")
+		}
+	}
+	return strings.TrimRight(sb.String(), "\n")
 }
 
 func NewUser(ctx telebot.Context) error {
@@ -171,7 +204,7 @@ Format /newuser <id> <name> <email>
 	if err != nil {
 		return ctx.Send(err.Error())
 	}
-	if err := all.GetServices().DebtorCreditor.CreateDebtorCreditor(&models.DebtorsCreditors{
+	if err := all.GetServices().Contact.CreateContact(&models.Contacts{
 		UserID:   user.ID,
 		NickName: ui[1],
 		FullName: ui[2],
@@ -186,54 +219,65 @@ Format /newuser <id> <name> <email>
 		return ctx.Send(err.Error())
 	}
 
-	return ctx.Send("New DebtorsCreditors added!")
+	return ctx.Send("✅ Contact added!", telebot.ModeMarkdown)
 }
 
 func AddAccount(ctx telebot.Context) error {
-	// <type (Cash or Bank)> <unique-short-name> <Account Name>
+	// <type (Cash or Bank)> <unique-short-name> <Wallet Name>
 	aci := pkg.SplitString(ctx.Text(), ' ')
 	if len(aci) != 4 {
 		return ctx.Send(`
 Syntax unknown.
-Format /new <type> <unique-name> <Account Name>
+Format /new <type> <unique-name> <Wallet Name>
 `)
 	}
-	acc := &models.Account{
-		Type:      models.AccountType(aci[1]),
+	acc := &models.Wallet{
+		Type:      models.WalletType(aci[1]),
 		ShortName: aci[2],
 		Name:      aci[3],
 	}
-	if err := all.GetServices().Account.CreateAccount(acc); err != nil {
+	if err := all.GetServices().Wallet.CreateWallet(acc); err != nil {
 		log.Println(err)
 		return ctx.Send(err.Error())
 	}
 
-	return ctx.Send("New Account Added !")
+	return ctx.Send("✅ Wallet added!", telebot.ModeMarkdown)
 }
 
-func ListAccounts(ctx telebot.Context) error {
+func ListWallets(ctx telebot.Context) error {
 	user, err := all.GetServices().User.GetUserByTelegramID(ctx.Sender().ID)
 	if err != nil {
 		return ctx.Send(models.ErrCommonResponse(err))
 	}
 
-	accounts, err := all.GetServices().Account.ListAccounts(user.ID)
+	wallets, err := all.GetServices().Wallet.ListWallets(user.ID)
 	if err != nil {
 		return err
 	}
 
-	return ctx.Send(printAccounts(accounts))
+	return ctx.Send(printWallets(wallets), telebot.ModeMarkdown)
 }
 
-func printAccounts(accounts []models.Account) string {
-	buf := bytes.Buffer{}
-	w := tabwriter.NewWriter(&buf, 0, 0, 5, ' ', 0)
-	fmt.Fprintln(w, "ID\tType\tName\tBalance")
-	for _, ac := range accounts {
-		fmt.Fprintf(w, "%v\t%v\t%v\t%.2f\n", ac.ShortName, ac.Type, ac.Name, ac.Balance)
+func printWallets(wallets []models.Wallet) string {
+	if len(wallets) == 0 {
+		return "No wallets found. Add one with /new"
 	}
-	_ = w.Flush()
-	return buf.String()
+	var sb strings.Builder
+	sb.WriteString("💳 *Your Wallets*\n")
+	sb.WriteString("──────────────\n")
+	var total float64
+	for _, w := range wallets {
+		icon := "💵"
+		if w.Type == models.BankAccount {
+			icon = "🏦"
+		}
+		sb.WriteString(fmt.Sprintf("%s *%s* (`%s`)\n", icon, w.Name, w.ShortName))
+		sb.WriteString(fmt.Sprintf("   Balance: `%.2f`\n\n", w.Balance))
+		total += w.Balance
+	}
+	sb.WriteString("──────────────\n")
+	sb.WriteString(fmt.Sprintf("💰 *Total: `%.2f`*", total))
+	return sb.String()
 }
 
 /*
@@ -243,7 +287,7 @@ If users will be able to select options from the UI, it's ideal to design the in
 2. Subcategory: Based on the selected type, present the relevant subcategories as options for the user to choose from. Display them as buttons or in a dropdown menu.
 3. Amount: Once the subcategory is selected, prompt the user to enter the monetary amount of the transaction.
 4. SrcID/DstID: Depending on the type of transaction, provide the appropriate options for the source ID (for Expense/Transfer) or destination ID (for Income/Transfer). This could be a dropdown menu or a list of selectable options.
-5. DebtorsCreditors (for Loan/Borrow): If the selected subcategory involves a person (Loan or Borrow), present the relevant users as options for the user to select from. Display them as buttons or in a dropdown menu.
+5. Contacts (for Loan/Borrow): If the selected subcategory involves a person (Loan or Borrow), present the relevant users as options for the user to select from. Display them as buttons or in a dropdown menu.
 6. Remarks: Provide an optional input field for the user to enter any additional remarks or notes related to the transaction.
 
 By structuring the input sequence in this way, users can easily navigate through the available options and make their selections. It enhances the user experience by presenting a guided interface that reduces the chance of errors or confusion during the input process.
@@ -266,9 +310,9 @@ func parseTransactionFlags(txnString string) (TransactionCallbackOptions, error)
 	set := pflag.NewFlagSet("transaction", pflag.ContinueOnError)
 	set.StringVarP(&typ, "type", "t", string(models.ExpenseTransaction), "Type of the transaction")
 	set.StringVarP(&txnOpts.SubcategoryID, "subcat", "s", "misc-misc", "Subcategory for the transaction")
-	set.StringVarP(&txnOpts.SrcID, "src", "f", "cash", "Source account for the transaction")
-	set.StringVarP(&txnOpts.DstID, "dst", "d", "", "Destination account for the transaction")
-	set.StringVarP(&txnOpts.DebtorCreditorName, "user", "u", "", "DebtorsCreditors associated with the loan/borrow")
+	set.StringVarP(&txnOpts.SrcID, "src", "f", "cash", "Source wallet for the transaction")
+	set.StringVarP(&txnOpts.DstID, "dst", "d", "", "Destination wallet for the transaction")
+	set.StringVarP(&txnOpts.DebtorCreditorName, "user", "u", "", "Contacts associated with the loan/borrow")
 	set.StringVarP(&txnOpts.Remarks, "remarks", "r", "", "Remarks for the transaction")
 	txnOpts.Type = models.TransactionType(typ)
 
@@ -331,13 +375,12 @@ func ListTransactions(ctx telebot.Context) error {
 	}
 
 	printer := configs.GetDefaultPrinter()
-	//printer.WithRenderType(pkg.RenderTypeMarkdown)
 	printer.WithStyle(table.StyleLight)
 	printer.WithExceptColumns([]string{"ID"})
 	defer printer.ClearColumns()
 	printer.PrintDocuments(txns)
 
-	return ctx.Send(pkg.FormatDocuments(txns, "Timestamp", "Amount", "Type"))
+	return ctx.Send(printTransactionList(txns), telebot.ModeMarkdown)
 }
 
 func ListExpenses(ctx telebot.Context) error {
@@ -352,13 +395,26 @@ func ListExpenses(ctx telebot.Context) error {
 	}
 
 	printer := configs.GetDefaultPrinter()
-	//printer.WithRenderType(pkg.RenderTypeMarkdown)
 	printer.WithStyle(table.StyleLight)
 	printer.WithExceptColumns([]string{"ID"})
 	defer printer.ClearColumns()
 	printer.PrintDocuments(txns)
 
-	return ctx.Send(pkg.FormatDocuments(txns, "Timestamp", "Amount", "Type"))
+	return ctx.Send(printTransactionList(txns), telebot.ModeMarkdown)
+}
+
+func printTransactionList(txns []models.Transaction) string {
+	if len(txns) == 0 {
+		return "No transactions found."
+	}
+	var sb strings.Builder
+	for i, txn := range txns {
+		sb.WriteString(txn.Summary())
+		if i < len(txns)-1 {
+			sb.WriteString("──────────────\n\n")
+		}
+	}
+	return sb.String()
 }
 
 func SyncSQLiteDatabase(ctx telebot.Context) error {

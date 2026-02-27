@@ -38,7 +38,7 @@ func processUserCreation(ctx telebot.Context, uop UserCallbackOptions) error {
 		return ctx.Send(models.ErrCommonResponse(err))
 	}
 
-	if err := all.GetServices().DebtorCreditor.CreateDebtorCreditor(&models.DebtorsCreditors{
+	if err := all.GetServices().Contact.CreateContact(&models.Contacts{
 		UserID:   user.ID,
 		NickName: uop.NickName,
 		FullName: uop.FullName,
@@ -48,5 +48,5 @@ func processUserCreation(ctx telebot.Context, uop UserCallbackOptions) error {
 		return ctx.Send(err.Error())
 	}
 
-	return ctx.Send(fmt.Sprintf("New DebtorsCreditors [%v] added!", uop.FullName))
+	return ctx.Send(fmt.Sprintf("✅ Contact *%v* added!", uop.FullName), telebot.ModeMarkdown)
 }

@@ -19,13 +19,15 @@ A Telegram Bot to track your expenses.
     ```
     new - Add new Transaction, Account or User
     newtxn - Add new transaction
-    user - List persons involved in some loan/borrow with the system user
+    users - List persons involved in some loan/borrow with the system user
     balance - List Account Balance
+    list - List recent transactions
     expense - Fetch Expense of Current month
     summary - Transaction summary of current month
     allsummary - Transaction summary based on Type, Category, Subcategory
     report - Transaction Report
     cat - List Transaction categories
+    sync - Sync database to Google Drive
     help - Show Usage page
     ```
 
@@ -151,7 +153,7 @@ To deploy `Expense Tracker Bot` application in production environment, the prefe
     ```bash
     helm repo add masud https://masudur-rahman.github.io/helm-charts/stable
     helm repo update
-    
+
     helm search repo masud/expense-tracker-bot
     ```
     - Install the chart
@@ -183,7 +185,7 @@ To deploy `Expense Tracker Bot` application in production environment, the prefe
               # --set database.postgres.password=<POSTGRES_PASSWORD> \
               # --set database.postgres.db=<POSTGRES_DB> \
               # --set database.postgres.host=<POSTGRES_HOST> \
-              # --set database.postgres.port=<POSTGRES_PORT> \ 
+              # --set database.postgres.port=<POSTGRES_PORT> \
               # --set database.postgres.sslmode=<POSTGRES_SSL_MODE>
           ```
 - Verify Installation

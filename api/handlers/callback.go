@@ -27,8 +27,8 @@ const (
 	TransactionFlagTypeCallback CallbackType = "Transaction with flags"
 	SummaryTypeCallback         CallbackType = "Summary"
 	ReportTypeCallback          CallbackType = "Report"
-	AccountTypeCallback         CallbackType = "Account"
-	UserTypeCallback            CallbackType = "DebtorsCreditors"
+	AccountTypeCallback         CallbackType = "💳 Wallet"
+	UserTypeCallback            CallbackType = "👤 Contact"
 
 	StepTxnType     NextStep = "txn-type"
 	StepAmount      NextStep = "txn-amount"
@@ -46,7 +46,7 @@ type CallbackOptions struct {
 	Transaction       TransactionCallbackOptions `json:"transaction,omitempty"`
 	Summary           SummaryCallbackOptions     `json:"summary,omitempty"`
 	Report            ReportCallbackOptions      `json:"report,omitempty"`
-	Account           AccountCallbackOptions     `json:"account,omitempty"`
+	Wallet           AccountCallbackOptions     `json:"wallet,omitempty"`
 	User              UserCallbackOptions        `json:"user,omitempty"`
 	Category          TxnCategoryCallbackOptions `json:"category,omitempty"`
 	LastSelectedValue string
@@ -233,14 +233,14 @@ func handleTransactionWithFlagTypeTextCallback(ctx telebot.Context, callbackOpts
 }
 
 func handleAccountTypeTextCallback(ctx telebot.Context, callbackOpts CallbackOptions) error {
-	switch callbackOpts.Account.NextStep {
+	switch callbackOpts.Wallet.NextStep {
 	case StepAccountInfo:
 		info := pkg.SplitString(ctx.Text(), ' ')
 		if len(info) < 2 {
-			return ctx.Reply("must contain <id> <account name>")
+			return ctx.Reply("must contain <id> <wallet name>")
 		}
-		callbackOpts.Account.ShortName, callbackOpts.Account.Name = info[0], info[1]
-		return processAccountCreation(ctx, callbackOpts.Account)
+		callbackOpts.Wallet.ShortName, callbackOpts.Wallet.Name = info[0], info[1]
+		return processAccountCreation(ctx, callbackOpts.Wallet)
 	default:
 		return ctx.Reply("yet to be implemented")
 	}
@@ -271,12 +271,12 @@ func handleTransactionFromRegularText(ctx telebot.Context) (string, error) {
 	}
 
 	isContact := func(name string) bool {
-		_, err = all.GetServices().DebtorCreditor.GetDebtorCreditorByName(user.ID, name)
+		_, err = all.GetServices().Contact.GetContactByName(user.ID, name)
 		return err == nil
 	}
 
 	isAccount := func(name string) bool {
-		_, err = all.GetServices().Account.GetAccountByShortName(user.ID, name)
+		_, err = all.GetServices().Wallet.GetWalletByShortName(user.ID, name)
 		return err == nil
 	}
 

@@ -38,6 +38,9 @@ type Transaction struct {
 	DebtorCreditorName string
 	Timestamp          int64
 	Remarks            string
+
+	DeletedAt int64 `db:"deleted_at"` // 0 = active; non-zero = unix timestamp of soft-delete
+	CreatedAt int64 `db:"created_at"` // unix timestamp of creation
 }
 
 // Summary creates a user-friendly status message

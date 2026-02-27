@@ -2,12 +2,12 @@ package all
 
 import (
 	"github.com/masudur-rahman/expense-tracker-bot/infra/logr"
-	"github.com/masudur-rahman/expense-tracker-bot/repos/accounts"
+	"github.com/masudur-rahman/expense-tracker-bot/repos/wallets"
 	"github.com/masudur-rahman/expense-tracker-bot/repos/event"
 	"github.com/masudur-rahman/expense-tracker-bot/repos/transaction"
 	"github.com/masudur-rahman/expense-tracker-bot/repos/user"
 	"github.com/masudur-rahman/expense-tracker-bot/services"
-	accsvc "github.com/masudur-rahman/expense-tracker-bot/services/accounts"
+	walletsvc "github.com/masudur-rahman/expense-tracker-bot/services/wallets"
 	eventsvc "github.com/masudur-rahman/expense-tracker-bot/services/event"
 	txnsvc "github.com/masudur-rahman/expense-tracker-bot/services/transaction"
 	usersvc "github.com/masudur-rahman/expense-tracker-bot/services/user"
@@ -16,11 +16,11 @@ import (
 )
 
 type Services struct {
-	User           services.UserService
-	Account        services.AccountsService
-	DebtorCreditor services.DebtorCreditorService
-	Txn            services.TransactionService
-	Event          services.EventService
+	User    services.ProfileService
+	Wallet  services.WalletService
+	Contact services.ContactService
+	Txn     services.TransactionService
+	Event   services.EventService
 }
 
 var svc *Services
@@ -31,22 +31,22 @@ func GetServices() *Services {
 
 func InitiateSQLServices(uow styx.UnitOfWork, logger logr.Logger) {
 	userRepo := user.NewSQLUserRepository(uow.SQL, logger)
-	accRepo := accounts.NewSQLAccountsRepository(uow.SQL, logger)
-	drCrRepo := user.NewSQLDebtorCreditorRepository(uow.SQL, logger)
+	walletRepo := wallets.NewSQLWalletRepository(uow.SQL, logger)
+	contactRepo := user.NewSQLContactRepository(uow.SQL, logger)
 	txnRepo := transaction.NewSQLTransactionRepository(uow.SQL, logger)
 	eventRepo := event.NewSQLEventRepository(uow.SQL, logger)
 
-	userSvc := usersvc.NewUserService(userRepo)
-	accSvc := accsvc.NewAccountService(accRepo)
-	drCrSvc := usersvc.NewDebtorCreditorService(drCrRepo)
-	txnSvc := txnsvc.NewTxnService(uow, accRepo, drCrRepo, txnRepo, eventRepo)
+	userSvc := usersvc.NewProfileService(userRepo)
+	walletSvc := walletsvc.NewWalletService(walletRepo)
+	contactSvc := usersvc.NewContactService(contactRepo)
+	txnSvc := txnsvc.NewTxnService(uow, walletRepo, contactRepo, txnRepo, eventRepo)
 	eventSvc := eventsvc.NewEventService(eventRepo)
 
 	svc = &Services{
-		User:           userSvc,
-		Account:        accSvc,
-		DebtorCreditor: drCrSvc,
-		Txn:            txnSvc,
-		Event:          eventSvc,
+		User:    userSvc,
+		Wallet:  walletSvc,
+		Contact: contactSvc,
+		Txn:     txnSvc,
+		Event:   eventSvc,
 	}
 }

@@ -19,9 +19,9 @@ func NewSQLUserRepository(db isql.Engine, logger logr.Logger) *SQLUserRepository
 	}
 }
 
-func (u *SQLUserRepository) GetUserByID(id int64) (*models.User, error) {
+func (u *SQLUserRepository) GetUserByID(id int64) (*models.Profile, error) {
 	u.logger.Infow("finding user by id", "id", id)
-	var user models.User
+	var user models.Profile
 	found, err := u.db.ID(id).FindOne(&user)
 	if err != nil {
 		return nil, err
@@ -32,9 +32,9 @@ func (u *SQLUserRepository) GetUserByID(id int64) (*models.User, error) {
 	return &user, nil
 }
 
-func (u *SQLUserRepository) GetUser(filter models.User) (*models.User, error) {
+func (u *SQLUserRepository) GetUser(filter models.Profile) (*models.Profile, error) {
 	//u.logger.Infow("finding user by telegram id", "telegram id", id)
-	var user models.User
+	var user models.Profile
 	found, err := u.db.FindOne(&user, filter)
 	if err != nil {
 		return nil, err
@@ -45,12 +45,12 @@ func (u *SQLUserRepository) GetUser(filter models.User) (*models.User, error) {
 	return &user, nil
 }
 
-func (u *SQLUserRepository) GetUserByUsername(username string) (*models.User, error) {
+func (u *SQLUserRepository) GetUserByUsername(username string) (*models.Profile, error) {
 	u.logger.Infow("finding user by name", "username", username)
-	filter := models.User{
+	filter := models.Profile{
 		Username: username,
 	}
-	var user models.User
+	var user models.Profile
 	found, err := u.db.FindOne(&user, filter)
 	if err != nil {
 		return nil, err
@@ -61,19 +61,19 @@ func (u *SQLUserRepository) GetUserByUsername(username string) (*models.User, er
 	return &user, nil
 }
 
-func (u *SQLUserRepository) ListUsers() ([]models.User, error) {
+func (u *SQLUserRepository) ListUsers() ([]models.Profile, error) {
 	u.logger.Infow("listing users")
-	users := make([]models.User, 0)
+	users := make([]models.Profile, 0)
 	err := u.db.FindMany(&users)
 	return users, err
 }
 
-func (u *SQLUserRepository) AddNewUser(user *models.User) error {
+func (u *SQLUserRepository) AddNewUser(user *models.Profile) error {
 	_, err := u.db.InsertOne(user)
 	return err
 }
 
-func (u *SQLUserRepository) UpdateUser(id int64, us *models.User) error {
+func (u *SQLUserRepository) UpdateUser(id int64, us *models.Profile) error {
 	user, err := u.GetUserByID(id)
 	if err != nil {
 		return err
@@ -87,5 +87,5 @@ func (u *SQLUserRepository) UpdateUser(id int64, us *models.User) error {
 
 func (u *SQLUserRepository) DeleteUser(id int64) error {
 	u.logger.Infow("deleting user", "id", id)
-	return u.db.DeleteOne(models.User{ID: id})
+	return u.db.DeleteOne(models.Profile{ID: id})
 }

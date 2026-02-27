@@ -1,0 +1,50 @@
+# golangci-lint configuration
+# Docs: https://golangci-lint.run/usage/configuration/
+
+linters-settings:
+  errcheck:
+    check-type-assertions: true
+    check-blank: true
+  govet:
+    enable-all: true
+  staticcheck:
+    checks: ["all"]
+  misspell:
+    locale: US
+  gosec:
+    excludes:
+      - G304  # file path from variable (acceptable in our config loader)
+
+linters:
+  enable:
+    - errcheck       # ensure errors are always checked
+    - govet          # go vet analysis
+    - gosimple       # simplification suggestions
+    - staticcheck    # advanced static analysis
+    - ineffassign    # detect ineffectual assignments
+    - unused         # detect unused code
+    - gofmt          # formatting check
+    - gosec          # security issues
+    - misspell       # spelling errors in comments/strings
+    - bodyclose      # HTTP response body must be closed
+    - noctx          # HTTP requests should use context
+    - contextcheck   # context propagation checks
+    - nilerr         # return nil err instead of nil, nil
+    - errorlint      # error wrapping correctness
+
+  disable:
+    - depguard       # we manage deps via go mod
+
+run:
+  timeout: 5m
+  skip-dirs:
+    - vendor
+
+issues:
+  exclude-rules:
+    # Relax some rules in test files
+    - path: _test\.go
+      linters:
+        - gosec
+        - errcheck
+        - bodyclose

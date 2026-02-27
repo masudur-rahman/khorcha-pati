@@ -44,7 +44,7 @@ func sendTransactionSrcTypeQuery(ctx telebot.Context, callbackOpts CallbackOptio
 		return ctx.Send(models.ErrCommonResponse(err))
 	}
 
-	return ctx.Send(fmt.Sprintf("%vSelect Source Account:", callbackOpts.LastSelectedValue), commonSendOptions(ctx, inlineButtons))
+	return ctx.Send(fmt.Sprintf("%vSelect Source Wallet:", callbackOpts.LastSelectedValue), commonSendOptions(ctx, inlineButtons))
 }
 
 func sendTransactionDstTypeQuery(ctx telebot.Context, callbackOpts CallbackOptions) error {
@@ -54,7 +54,7 @@ func sendTransactionDstTypeQuery(ctx telebot.Context, callbackOpts CallbackOptio
 		return ctx.Send(models.ErrCommonResponse(err))
 	}
 
-	return ctx.Send(fmt.Sprintf("%vSelect Destination Account:", callbackOpts.LastSelectedValue), commonSendOptions(ctx, inlineButtons))
+	return ctx.Send(fmt.Sprintf("%vSelect Destination Wallet:", callbackOpts.LastSelectedValue), commonSendOptions(ctx, inlineButtons))
 }
 
 func sendTransactionCategoryQuery(ctx telebot.Context, callbackOpts CallbackOptions) error {
@@ -84,7 +84,7 @@ func sendTransactionUserQuery(ctx telebot.Context, callbackOpts CallbackOptions)
 		return ctx.Send(models.ErrCommonResponse(err))
 	}
 
-	return ctx.Send(fmt.Sprintf("%vSelect the user associated with the Loan/Borrow:", callbackOpts.LastSelectedValue), commonSendOptions(ctx, inlineButtons))
+	return ctx.Send(fmt.Sprintf("%vSelect the contact for this transaction:", callbackOpts.LastSelectedValue), commonSendOptions(ctx, inlineButtons))
 }
 
 func sendTransactionRemarksQuery(ctx telebot.Context, callbackOpts CallbackOptions) error {

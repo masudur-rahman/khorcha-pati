@@ -1,29 +1,72 @@
-FROM ghcr.io/masudur-rahman/golang:1.24
+# syntax=docker/dockerfile:1
+# ══════════════════════════════════════════════════════════════════════════════
+# Stage 1 · Build
+# Uses BuildKit cache mounts so Go modules and the build cache persist
+# between CI runs, dramatically reducing build time.
+# ══════════════════════════════════════════════════════════════════════════════
+FROM golang:1.24-bookworm AS builder
 
-ARG TARGETOS
+ARG VERSION=dev
+ARG BUILD_DATE=unknown
+ARG GIT_COMMIT=none
+
+WORKDIR /app
+
+# Download dependencies first — this layer rebuilds only when go.mod/go.sum change
+COPY go.mod go.sum ./
+RUN --mount=type=cache,target=/go/pkg/mod \
+    go mod download
+
+# Build the binary — source changes only rebuild from here
+COPY . .
+RUN --mount=type=cache,target=/go/pkg/mod \
+    --mount=type=cache,target=/root/.cache/go-build \
+    CGO_ENABLED=0 GOOS=linux \
+    go build \
+      -ldflags "-s -w \
+        -X github.com/masudur-rahman/expense-tracker-bot/cmd.Version=${VERSION} \
+        -X github.com/masudur-rahman/expense-tracker-bot/cmd.BuildDate=${BUILD_DATE} \
+        -X github.com/masudur-rahman/expense-tracker-bot/cmd.GitCommit=${GIT_COMMIT}" \
+      -o /expense-tracker .
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Stage 2 · Runtime
+# debian:bookworm-slim with wkhtmltopdf for PDF report generation.
+# wkhtmltopdf requires system Qt/X11 libs that distroless cannot provide.
+# ══════════════════════════════════════════════════════════════════════════════
+FROM debian:bookworm-slim AS runtime
+
 ARG TARGETARCH=amd64
+ARG WKHTMLTOPDF_VERSION=0.12.6.1-3
+ARG DEBIAN_RELEASE_NAME=bookworm
 
-RUN apt update && apt upgrade -y
+RUN set -x \
+ && apt-get update \
+ && apt-get upgrade -y \
+ && apt-get install -y --no-install-recommends ca-certificates wget \
+ && echo 'Etc/UTC' > /etc/timezone
 
-RUN apt-get install -y fonts-lohit-beng-bengali fonts-dejavu fontconfig
+RUN echo "deb http://deb.debian.org/debian ${DEBIAN_RELEASE_NAME} contrib" >> /etc/apt/sources.list \
+ && apt-get update \
+ && DEBIAN_FRONTEND=noninteractive apt-get install -y \
+      fonts-lohit-beng-bengali \
+      fonts-dejavu \
+      fontconfig \
+      ttf-mscorefonts-installer
 
-RUN wget https://github.com/wkhtmltopdf/packaging/releases/download/0.12.6.1-3/wkhtmltox_0.12.6.1-3.bookworm_${TARGETARCH}.deb
-RUN dpkg -i wkhtmltox_0.12.6.1-3.bookworm_${TARGETARCH}.deb || true
-RUN apt-get update
-RUN apt-get install -f -y
-RUN ldconfig
-RUN rm wkhtmltox_0.12.6.1-3.bookworm_${TARGETARCH}.deb
+RUN set -x \
+ && wget -q https://github.com/wkhtmltopdf/packaging/releases/download/${WKHTMLTOPDF_VERSION}/wkhtmltox_${WKHTMLTOPDF_VERSION}.${DEBIAN_RELEASE_NAME}_${TARGETARCH}.deb \
+ && dpkg -i wkhtmltox_${WKHTMLTOPDF_VERSION}.${DEBIAN_RELEASE_NAME}_${TARGETARCH}.deb || true \
+ && apt-get install -f -y \
+ && ldconfig \
+ && rm wkhtmltox_${WKHTMLTOPDF_VERSION}.${DEBIAN_RELEASE_NAME}_${TARGETARCH}.deb \
+ && rm -rf /var/lib/apt/lists/* /usr/share/doc /usr/share/man /tmp/*
 
-WORKDIR /expense-tracker
+COPY --from=builder /expense-tracker /expense-tracker
 
-ADD . .
-#RUN go mod tidy && go mod vendor
-RUN go build -o expense-tracker
-
-#USER nobody:nobody
 USER 65535:65535
 
 EXPOSE 8080
 
-ENTRYPOINT ["./expense-tracker"]
+ENTRYPOINT ["/expense-tracker"]
 CMD ["serve"]

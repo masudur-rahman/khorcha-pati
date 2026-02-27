@@ -9,33 +9,33 @@ type userService struct {
 	userRepo repos.UserRepository
 }
 
-func NewUserService(userRepo repos.UserRepository) *userService {
+func NewProfileService(userRepo repos.UserRepository) *userService {
 	return &userService{userRepo: userRepo}
 }
 
-func (us *userService) GetUserByID(id int64) (*models.User, error) {
+func (us *userService) GetUserByID(id int64) (*models.Profile, error) {
 	return us.userRepo.GetUserByID(id)
 }
 
-func (us *userService) GetUserByTelegramID(id int64) (*models.User, error) {
-	filter := models.User{TelegramID: id}
+func (us *userService) GetUserByTelegramID(id int64) (*models.Profile, error) {
+	filter := models.Profile{TelegramID: id}
 	return us.userRepo.GetUser(filter)
 }
 
-func (us *userService) GetUserByUsername(username string) (*models.User, error) {
-	filter := models.User{Username: username}
+func (us *userService) GetUserByUsername(username string) (*models.Profile, error) {
+	filter := models.Profile{Username: username}
 	return us.userRepo.GetUser(filter)
 }
 
-func (us *userService) ListUsers() ([]models.User, error) {
+func (us *userService) ListUsers() ([]models.Profile, error) {
 	return us.userRepo.ListUsers()
 }
 
-func (us *userService) SignUp(user *models.User) error {
+func (us *userService) SignUp(user *models.Profile) error {
 	return us.userRepo.AddNewUser(user)
 }
 
-func (us *userService) UpdateUser(id int64, user *models.User) error {
+func (us *userService) UpdateUser(id int64, user *models.Profile) error {
 	return us.userRepo.UpdateUser(id, user)
 }
 

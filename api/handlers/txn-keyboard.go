@@ -28,7 +28,7 @@ func generateSrcDstTypeInlineButton(ctx telebot.Context, callbackOpts CallbackOp
 		return nil, err
 	}
 
-	acs, err := svc.Account.ListAccounts(user.ID)
+	acs, err := svc.Wallet.ListWallets(user.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -126,13 +126,13 @@ func generateTransactionUserTypeInlineButton(ctx telebot.Context, callbackOpts C
 		return nil, err
 	}
 
-	drcr, err := svc.DebtorCreditor.ListDebtorCreditors(user.ID)
+	contact, err := svc.Contact.ListContacts(user.ID)
 	if err != nil {
 		return nil, err
 	}
 
-	inlineButtons := make([]telebot.InlineButton, 0, len(drcr))
-	for _, user := range drcr {
+	inlineButtons := make([]telebot.InlineButton, 0, len(contact))
+	for _, user := range contact {
 		callbackOpts.Transaction.DebtorCreditorName = user.NickName
 		btn := generateInlineButton(callbackOpts, user.FullName)
 		inlineButtons = append(inlineButtons, btn)

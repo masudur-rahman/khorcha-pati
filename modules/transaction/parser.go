@@ -34,8 +34,8 @@ import (
 		- recover
 
 	other keywords:
-		- from 	[source account (for normal transaction)] [person (for borrow and recover)]
-		- to 	[destination account (for normal transaction)] [person (for lend and return)]
+		- from 	[source wallet (for normal transaction)] [person (for borrow and recover)]
+		- to 	[destination wallet (for normal transaction)] [person (for lend and return)]
 		- for 	[subcategory]
 		- on 	[date]
 		- at	[time]

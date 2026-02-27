@@ -1,26 +1,28 @@
 package models
 
-type DebtorsCreditors struct {
+type Contacts struct {
 	ID               int64  `db:"id,pk"`
 	UserID           int64  `db:",uqs"`
 	NickName         string `db:",uqs"`
 	FullName         string
 	Email            string `db:"email,uqs"`
 	ContactInfo      string
-	Balance          float64
+	NetBalance          float64
 	LastTxnTimestamp int64
 }
 
-type User struct {
+type Profile struct {
 	ID         int64  `db:"id,pk"`
 	TelegramID int64  `db:",uq"`
 	Username   string `db:",uq"`
 	FirstName  string
 	LastName   string
+
+	Timezone   string     `db:"timezone"` // IANA tz name, e.g. 'Asia/Dhaka'
 }
 
-//func (u *DebtorsCreditors) APIFormat() gqtypes.DebtorsCreditors {
-//	return gqtypes.DebtorsCreditors{
+//func (u *Contacts) APIFormat() gqtypes.Contacts {
+//	return gqtypes.Contacts{
 //		ID:        u.ID,
 //		Username:  u.Username,
 //		Email:     u.Email,

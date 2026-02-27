@@ -29,7 +29,7 @@ func ToTransactionAPIFormat(txn models.Transaction) gqtypes.Transaction {
 
 	if txn.SrcID != "" {
 		if err = cache.FetchDataWithCustomFunc(txn.SrcID, &src, func() (any, error) {
-			ac, err := svc.Account.GetAccountByShortName(txn.UserID, txn.SrcID)
+			ac, err := svc.Wallet.GetWalletByShortName(txn.UserID, txn.SrcID)
 			if err != nil {
 				return nil, err
 			}
@@ -41,7 +41,7 @@ func ToTransactionAPIFormat(txn models.Transaction) gqtypes.Transaction {
 
 	if txn.DstID != "" {
 		if err = cache.FetchDataWithCustomFunc(txn.DstID, &dst, func() (any, error) {
-			ac, err := svc.Account.GetAccountByShortName(txn.UserID, txn.DstID)
+			ac, err := svc.Wallet.GetWalletByShortName(txn.UserID, txn.DstID)
 			if err != nil {
 				return nil, err
 			}
@@ -53,7 +53,7 @@ func ToTransactionAPIFormat(txn models.Transaction) gqtypes.Transaction {
 
 	if txn.DebtorCreditorName != "" {
 		if err = cache.FetchDataWithCustomFunc(txn.DebtorCreditorName, &person, func() (any, error) {
-			user, err := svc.DebtorCreditor.GetDebtorCreditorByName(txn.UserID, txn.DebtorCreditorName)
+			user, err := svc.Contact.GetContactByName(txn.UserID, txn.DebtorCreditorName)
 			if err != nil {
 				return nil, err
 			}

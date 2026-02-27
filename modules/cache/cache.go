@@ -63,6 +63,12 @@ func SetCache(key string, value string, expiration time.Duration) error {
 	return instance.Set(key, value, expiration)
 }
 
+// UserWalletsKey returns the cache key for a user's wallet list.
+func UserWalletsKey(userID int64) string { return fmt.Sprintf("wallets:%d", userID) }
+
+// UserContactsKey returns the cache key for a user's contact list.
+func UserContactsKey(userID int64) string { return fmt.Sprintf("contacts:%d", userID) }
+
 // GetCache retrieves a value using the initialized cache implementation.
 func GetCache(key string) (string, bool) {
 	if instance == nil {

@@ -179,8 +179,58 @@ go-build: | $(BUILD_DIRS)
 	        ./hack/build.sh ./...                               \
 	    "
 
-run:
-	@go run main.go serve
+run: # @HELP builds and runs locally using native Go (no Docker)
+	go run . serve
+
+# ── Native Go targets (no Docker required) ────────────────────────────────────
+
+.PHONY: test
+test: # @HELP runs tests with race detector and coverage (native Go)
+	go test -v -race -coverprofile=coverage.out ./...
+	@go tool cover -func=coverage.out | grep -E "^total:" | awk '{print "Coverage: " $$3}'
+
+.PHONY: test-short
+test-short: # @HELP runs tests without long-running cases (native Go)
+	go test -short ./...
+
+.PHONY: coverage-html
+coverage-html: test # @HELP opens coverage report in browser
+	go tool cover -html=coverage.out
+
+.PHONY: vet
+vet: # @HELP runs go vet
+	go vet ./...
+
+.PHONY: lint
+lint: # @HELP runs golangci-lint (install: https://golangci-lint.run)
+	golangci-lint run ./... --timeout=5m
+
+.PHONY: vulncheck
+vulncheck: # @HELP runs govulncheck for known vulnerabilities
+	@which govulncheck >/dev/null 2>&1 || go install golang.org/x/vuln/cmd/govulncheck@latest
+	govulncheck ./...
+
+.PHONY: check
+check: vet test # @HELP runs vet + tests (native Go quality check)
+
+.PHONY: tidy
+tidy: # @HELP tidies and verifies Go modules
+	go mod tidy
+	go mod verify
+
+# ── Docker build (native go binary inside image) ──────────────────────────────
+
+.PHONY: docker-build
+docker-build: # @HELP builds a single-arch Docker image using multi-stage Dockerfile
+	DOCKER_BUILDKIT=1 docker build \
+	  --build-arg VERSION=$(VERSION) \
+	  --build-arg BUILD_DATE=$(commit_timestamp) \
+	  --build-arg GIT_COMMIT=$(commit_hash) \
+	  -t $(DOCKER_IMAGE):$(TAG) \
+	  -f Dockerfile .
+
+.PHONY: docker-build-push
+docker-build-push: # @HELP builds and pushes multi-arch image via buildx
 
 fmt: # @HELP Formats project source codes
 fmt: $(BUILD_DIRS)
@@ -385,7 +435,7 @@ docker-manifest:
 release:
 	@$(MAKE) all-push docker-manifest --no-print-directory
 
-docker-build-push:
+docker-build-push: # @HELP builds and pushes multi-arch image via buildx (legacy entry)
 	docker buildx build --platform linux/amd64,linux/arm64 --output "type=image,push=true" --tag $(DOCKER_IMAGE):$(VERSION) --builder builder .
 
 version: # @HELP outputs the version string

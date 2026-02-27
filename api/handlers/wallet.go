@@ -17,19 +17,19 @@ const (
 
 type AccountCallbackOptions struct {
 	NextStep  NextStep           `json:"nextStep"`
-	Type      models.AccountType `json:"type"`
+	Type      models.WalletType `json:"type"`
 	ShortName string             `json:"shortName"`
 	Name      string             `json:"name"`
 }
 
 func handleAccountCallback(ctx telebot.Context, callbackOptions CallbackOptions) error {
-	// Skip Cash type Account entirely
-	callbackOptions.Account = AccountCallbackOptions{
+	// Skip Cash type Wallet entirely
+	callbackOptions.Wallet = AccountCallbackOptions{
 		NextStep: StepAccountInfo,
 		Type:     models.BankAccount,
 	}
 
-	ac := callbackOptions.Account
+	ac := callbackOptions.Wallet
 	switch ac.NextStep {
 	case StepAccountType, "":
 		return sendAccountTypeQuery(ctx, callbackOptions)
@@ -41,10 +41,10 @@ func handleAccountCallback(ctx telebot.Context, callbackOptions CallbackOptions)
 }
 
 func sendAccountTypeQuery(ctx telebot.Context, callbackOpts CallbackOptions) error {
-	callbackOpts.Account.NextStep = StepAccountInfo
+	callbackOpts.Wallet.NextStep = StepAccountInfo
 	inlineButtons := generateAccountTypeInlineButton(callbackOpts)
 
-	return ctx.Send("Select Type of Account", &telebot.SendOptions{
+	return ctx.Send("Select Type of Wallet", &telebot.SendOptions{
 		ReplyTo: ctx.Message(),
 		ReplyMarkup: &telebot.ReplyMarkup{
 			InlineKeyboard: generateInlineKeyboard(inlineButtons),
@@ -56,9 +56,9 @@ func sendAccountTypeQuery(ctx telebot.Context, callbackOpts CallbackOptions) err
 func sendAccountInfoQuery(ctx telebot.Context, callbackOpts CallbackOptions) error {
 	msg, err := ctx.Bot().Reply(ctx.Message(), fmt.Sprintf(`Reply to this Message with the following data
 
-<short name> <account name>
+<short name> <wallet name>
 i.e.: %v
-`, accountExample(callbackOpts.Account.Type)), &telebot.SendOptions{
+`, accountExample(callbackOpts.Wallet.Type)), &telebot.SendOptions{
 		ReplyTo: ctx.Message(),
 	})
 	if err != nil {
@@ -69,7 +69,7 @@ i.e.: %v
 	return nil
 }
 
-func accountExample(typ models.AccountType) string {
+func accountExample(typ models.WalletType) string {
 	if typ == models.CashAccount {
 		return "cash \"Cash in Hand\""
 	}
@@ -82,25 +82,25 @@ func processAccountCreation(ctx telebot.Context, aop AccountCallbackOptions) err
 		return ctx.Send(models.ErrCommonResponse(err))
 	}
 
-	acc := &models.Account{
+	acc := &models.Wallet{
 		UserID:    user.ID,
 		Type:      aop.Type,
 		ShortName: aop.ShortName,
 		Name:      aop.Name,
 	}
-	if err := all.GetServices().Account.CreateAccount(acc); err != nil {
+	if err := all.GetServices().Wallet.CreateWallet(acc); err != nil {
 		log.Println(err)
 		return ctx.Send(err.Error())
 	}
 
-	return ctx.Send(fmt.Sprintf("New Account [%v] Added !", acc.Name))
+	return ctx.Send(fmt.Sprintf("✅ Wallet *%v* added!", acc.Name), telebot.ModeMarkdown)
 }
 
 func generateAccountTypeInlineButton(callbackOpts CallbackOptions) []telebot.InlineButton {
-	types := []models.AccountType{models.CashAccount, models.BankAccount}
+	types := []models.WalletType{models.CashAccount, models.BankAccount}
 	inlineButtons := make([]telebot.InlineButton, 0, 3)
 	for _, typ := range types {
-		callbackOpts.Account.Type = typ
+		callbackOpts.Wallet.Type = typ
 		btn := generateInlineButton(callbackOpts, typ)
 		inlineButtons = append(inlineButtons, btn)
 	}

@@ -1,6 +1,6 @@
 # Expense Tracker
 
-A Telegram Bot to track your expenses.  
+A Telegram Bot to track your expenses.
 `Expense Tracker Bot` is a Telegram Bot to track your daily transactions.
 
 ## Features
@@ -12,7 +12,7 @@ A Telegram Bot to track your expenses.
 - **Transaction Reports**: Generate transaction reports in PDF format for your chosen duration.
 
 ## Usage
-The `Expense Tracker Bot` is now available for public use.  
+The `Expense Tracker Bot` is now available for public use.
 To use this bot, go to Telegram and search for [@XpenseTrackerBot](https://t.me/XpenseTrackerBot)
 
 Once you are inside the bot inbox,  press `Start` button to start using the Tracker Bot.
@@ -30,41 +30,27 @@ Before you start tracking your expenses
 #### Interactively
 To track your transactions interactively, send `/newtxn` command and follow the on-display suggestions.
 
-#### Regular Text Message
-You also can add new transaction by sending a regular text message.  
-You just need to mention
-- what you did
-- how much did it cost
-- when you did it
-- affected accounts
-- affected persons in case of loan/borrow
-- remarks
+#### Regular Text Message (Natural Language)
+You can add new transactions by simply sending a text message describing what you did. The bot is smart enough to understand natural language!
 
-and the bot will take care of the rest
+You just need to mention:
+- **What** you did (description/category)
+- **How much** (amount)
+- **When** (optional, defaults to now)
+- **Account** (optional, defaults to 'cash')
+- **Person** (optional, for loans/borrows)
 
-##### Obviously you need to follow some rules while adding transactions via text messages.
-
-Message needs to be in key/value pairs, like:
-- {action} {amount}
-- for {txn subcategory} // the subcategory must match the allowed subcategory
-- {from/to} {account} // default cash
-- {from/to} {debtor/creditor} // in case of lending/borrowing
-- on {date} // "DD-MM-YYY", "YYYY-MM-DD", "MMM DD, YYYY", today, tomorrow, yesterday [default today]
-- at {time} // midnight, morning, noon, afternoon, evening, night and also different time formats [default now] 
-- note {remarks}
-
-These key/value pairs can appear in any order
-
-
-Some example text for adding a new transaction:
+**Examples:**
 ```
-- transferred 2000 from brac to dbbl on 2020-01-01 note "Bill payment"
-- spent 1000 for food-rest on "Jan 13, 2013" from dbbl note "Lunch"
-- earn 5000 to brac on 20-01-2023 note "Salary"
-- borrow 1000 from user to brac on 2020-01-01
-- return 1000 to user from brac on 2020-01-01
-- lend 1000 to user from brac on 2020-01-01
-- recover 1000 from user to brac on 2020-01-01
+lunch 250
+groceries 1.5k
+bought a new shirt for 2500
+transfer 10k from brac to city
+lent 5000 to karim
+got bonus 20k
+dinner 1500 yesterday
+internet 500 on 1st
+spent 500 for taxi
 ```
 
 <details>
@@ -214,16 +200,12 @@ You always can send `/cat` command to list the subcategory
     - i.e: `brac "BRAC Bank"`
     - i.e: `cash "Cash in Hand"`
 
-[//]: # (  - `txn` - Add new transaction)
-[//]: # (    - through some flags)
-[//]: # (    - i.e: `<amount> -t=<type> -s=<subcat> -f=<src> -d=<dst> -u=<user> -r=<remarks>`)
-
-- `/newtxn` - Add new transaction
-  - Add a new transaction through a series of callback queries.
+- `/newtxn` - Add new transaction (Interactive)
 - `/users` - List users
   - list all the persons involved in some loan/borrow with the system user
 - `/balance` - List Account Balance
   - list all the registered accounts and their balance
+- `/list` - List recent transactions
 - `/expense` - Fetch Expense of Current month
   - list transactions of current month
 - `/summary` - Transaction summary of current month
@@ -237,6 +219,7 @@ You always can send `/cat` command to list the subcategory
 - `/cat` - List Transaction categories
   - list all the registered categories
   - by selecting a category, list all the registered subcategories of that category
+- `/sync` - Sync database to Google Drive (if configured)
 - `/help` - Show Usage page
 
 

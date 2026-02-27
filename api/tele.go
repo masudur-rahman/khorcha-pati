@@ -31,8 +31,8 @@ func TeleBotRoutes() (*telebot.Bot, error) {
 	bot.Handle("/new", handlers.New)
 	bot.Handle("/newtxn", handlers.NewTransaction)
 
-	bot.Handle("/users", handlers.ListUsers)
-	bot.Handle("/balance", handlers.ListAccounts)
+	bot.Handle("/contacts", handlers.ListContacts)
+	bot.Handle("/balance", handlers.ListWallets)
 
 	bot.Handle("/list", handlers.ListTransactions)
 	bot.Handle("/expense", handlers.ListExpenses)

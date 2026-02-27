@@ -10,20 +10,20 @@ import (
 )
 
 type txnService struct {
-	uow       styx.UnitOfWork
-	acRepo    repos.AccountsRepository
-	drCrRepo  repos.DebtorCreditorRepository
-	txnRepo   repos.TransactionRepository
-	eventRepo repos.EventRepository
+	uow         styx.UnitOfWork
+	walletRepo  repos.WalletRepository
+	contactRepo repos.ContactRepository
+	txnRepo     repos.TransactionRepository
+	eventRepo   repos.EventRepository
 }
 
-func NewTxnService(uow styx.UnitOfWork, acRepo repos.AccountsRepository, drCrRepo repos.DebtorCreditorRepository, txnRepo repos.TransactionRepository, evRepo repos.EventRepository) *txnService {
+func NewTxnService(uow styx.UnitOfWork, walletRepo repos.WalletRepository, contactRepo repos.ContactRepository, txnRepo repos.TransactionRepository, evRepo repos.EventRepository) *txnService {
 	return &txnService{
-		uow:       uow,
-		acRepo:    acRepo,
-		drCrRepo:  drCrRepo,
-		txnRepo:   txnRepo,
-		eventRepo: evRepo,
+		uow:         uow,
+		walletRepo:  walletRepo,
+		contactRepo: contactRepo,
+		txnRepo:     txnRepo,
+		eventRepo:   evRepo,
 	}
 }
 
@@ -51,53 +51,48 @@ func (ts *txnService) AddTransaction(txn models.Transaction) error {
 	case models.ExpenseTransaction:
 		switch txn.SubcategoryID {
 		case models.LoanRepaymentSubID, models.BorrowReturnSubID, models.LendSubID:
-			if err = ts.updateDebtorCreditorBalance(uow, txn, txn.Amount); err != nil {
+			if err = ts.updateContactBalance(uow, txn, txn.Amount); err != nil {
 				return err
 			}
 		case models.BorrowSubID, models.LendRecoverySubID, models.LoanReceivedSubID:
 			return fmt.Errorf("borrow, lend recovery or loan received type transaction should be under Income type")
 		}
-		if err = ts.acRepo.WithUnitOfWork(uow).UpdateAccountBalance(txn.UserID, txn.SrcID, -txn.Amount); err != nil {
+		if err = ts.walletRepo.WithUnitOfWork(uow).UpdateWalletBalance(txn.UserID, txn.SrcID, -txn.Amount); err != nil {
 			return err
 		}
 	case models.IncomeTransaction:
 		switch txn.SubcategoryID {
 		case models.BorrowSubID, models.LendRecoverySubID, models.LoanReceivedSubID:
-			if err = ts.updateDebtorCreditorBalance(uow, txn, -txn.Amount); err != nil {
+			if err = ts.updateContactBalance(uow, txn, -txn.Amount); err != nil {
 				return err
 			}
 		case models.LoanRepaymentSubID, models.BorrowReturnSubID, models.LendSubID:
 			return fmt.Errorf("loan, borrow return or lend type transaction should be under Expense type")
 		}
-		if err = ts.acRepo.WithUnitOfWork(uow).UpdateAccountBalance(txn.UserID, txn.DstID, txn.Amount); err != nil {
+		if err = ts.walletRepo.WithUnitOfWork(uow).UpdateWalletBalance(txn.UserID, txn.DstID, txn.Amount); err != nil {
 			return err
 		}
 	case models.TransferTransaction:
-		if err = ts.acRepo.WithUnitOfWork(uow).UpdateAccountBalance(txn.UserID, txn.SrcID, -txn.Amount); err != nil {
+		if err = ts.walletRepo.WithUnitOfWork(uow).UpdateWalletBalance(txn.UserID, txn.SrcID, -txn.Amount); err != nil {
 			return err
 		}
-		if err = ts.acRepo.WithUnitOfWork(uow).UpdateAccountBalance(txn.UserID, txn.DstID, txn.Amount); err != nil {
+		if err = ts.walletRepo.WithUnitOfWork(uow).UpdateWalletBalance(txn.UserID, txn.DstID, txn.Amount); err != nil {
 			return err
 		}
 	}
 	return ts.txnRepo.WithUnitOfWork(uow).AddTransaction(txn)
 }
 
-func (ts *txnService) updateDebtorCreditorBalance(uow styx.UnitOfWork, txn models.Transaction, amount float64) error {
-	drcr, err := ts.drCrRepo.WithUnitOfWork(uow).GetDebtorCreditorByName(txn.UserID, txn.DebtorCreditorName)
+func (ts *txnService) updateContactBalance(uow styx.UnitOfWork, txn models.Transaction, amount float64) error {
+	contact, err := ts.contactRepo.WithUnitOfWork(uow).GetContactByName(txn.UserID, txn.DebtorCreditorName)
 	if err != nil {
 		return err
 	}
-
-	return ts.drCrRepo.WithUnitOfWork(uow).UpdateDebtorCreditorBalance(drcr.ID, amount)
+	return ts.contactRepo.WithUnitOfWork(uow).UpdateContactBalance(contact.ID, amount)
 }
 
 func (ts *txnService) ListTransactionsByType(userID int64, txnType models.TransactionType) ([]models.Transaction, error) {
-	filter := models.Transaction{
-		UserID: userID,
-		Type:   txnType,
-	}
-	return ts.txnRepo.ListTransactions(filter)
+	return ts.txnRepo.ListTransactions(models.Transaction{UserID: userID, Type: txnType})
 }
 
 func (ts *txnService) ListTransactions(userID int64) ([]models.Transaction, error) {
@@ -109,11 +104,7 @@ func (ts *txnService) ListTransactionsByCategory(userID int64, catID string) ([]
 }
 
 func (ts *txnService) ListTransactionsBySubcategory(userID int64, subcatID string) ([]models.Transaction, error) {
-	filter := models.Transaction{
-		UserID:        userID,
-		SubcategoryID: subcatID,
-	}
-	return ts.txnRepo.ListTransactions(filter)
+	return ts.txnRepo.ListTransactions(models.Transaction{UserID: userID, SubcategoryID: subcatID})
 }
 
 func (ts *txnService) ListTransactionsByTime(userID int64, txnType models.TransactionType, startTime, endTime int64) ([]models.Transaction, error) {
@@ -121,27 +112,15 @@ func (ts *txnService) ListTransactionsByTime(userID int64, txnType models.Transa
 }
 
 func (ts *txnService) ListTransactionsBySourceID(userID int64, srcID string) ([]models.Transaction, error) {
-	filter := models.Transaction{
-		UserID: userID,
-		SrcID:  srcID,
-	}
-	return ts.txnRepo.ListTransactions(filter)
+	return ts.txnRepo.ListTransactions(models.Transaction{UserID: userID, SrcID: srcID})
 }
 
 func (ts *txnService) ListTransactionsByDestinationID(userID int64, dstID string) ([]models.Transaction, error) {
-	filter := models.Transaction{
-		UserID: userID,
-		DstID:  dstID,
-	}
-	return ts.txnRepo.ListTransactions(filter)
+	return ts.txnRepo.ListTransactions(models.Transaction{UserID: userID, DstID: dstID})
 }
 
-func (ts *txnService) ListTransactionsByDebtorCreditorName(userID int64, drcrName string) ([]models.Transaction, error) {
-	filter := models.Transaction{
-		UserID:             userID,
-		DebtorCreditorName: drcrName,
-	}
-	return ts.txnRepo.ListTransactions(filter)
+func (ts *txnService) ListTransactionsByDebtorCreditorName(userID int64, name string) ([]models.Transaction, error) {
+	return ts.txnRepo.ListTransactions(models.Transaction{UserID: userID, DebtorCreditorName: name})
 }
 
 func (ts *txnService) GetTxnCategoryName(catID string) (string, error) {

@@ -64,27 +64,27 @@ func (err ErrUserAlreadyExist) Error() string {
 	}.Error()
 }
 
-type ErrDebtorCreditorNotFound struct {
+type ErrContactNotFound struct {
 	UserID   int64
 	NickName string
 }
 
-func (err ErrDebtorCreditorNotFound) Error() string {
+func (err ErrContactNotFound) Error() string {
 	return StatusError{
 		Status:  http.StatusNotFound,
-		Message: fmt.Sprintf("user [userid: %v, nickname: %v] doesn't exist", err.UserID, err.NickName),
+		Message: fmt.Sprintf("contact [userid: %v, nickname: %v] doesn't exist", err.UserID, err.NickName),
 	}.Error()
 }
 
-type ErrDebtorCreditorAlreadyExist struct {
+type ErrContactAlreadyExist struct {
 	UserID   int64
 	NickName string
 }
 
-func (err ErrDebtorCreditorAlreadyExist) Error() string {
+func (err ErrContactAlreadyExist) Error() string {
 	return StatusError{
 		Status:  http.StatusConflict,
-		Message: fmt.Sprintf("user [userid: %v, nickname: %v] already exist", err.UserID, err.NickName),
+		Message: fmt.Sprintf("contact [userid: %v, nickname: %v] already exists", err.UserID, err.NickName),
 	}.Error()
 }
 
@@ -151,7 +151,7 @@ type ErrAccountNotFound struct {
 func (err ErrAccountNotFound) Error() string {
 	return StatusError{
 		Status:  http.StatusNotFound,
-		Message: fmt.Sprintf("account not found for id: %v", err.AccID),
+		Message: fmt.Sprintf("wallet not found for id: %v", err.AccID),
 	}.Error()
 }
 
@@ -162,7 +162,7 @@ type ErrAccountAlreadyExist struct {
 func (err ErrAccountAlreadyExist) Error() string {
 	return StatusError{
 		Status:  http.StatusConflict,
-		Message: fmt.Sprintf("account already exist with short-name: %v", err.ShortName),
+		Message: fmt.Sprintf("wallet already exist with short-name: %v", err.ShortName),
 	}.Error()
 }
 
@@ -178,7 +178,7 @@ func IsErrNotFound(err error) bool {
 		return true
 	case ErrAccountNotFound:
 		return true
-	case ErrDebtorCreditorNotFound:
+	case ErrContactNotFound:
 		return true
 
 	default:
