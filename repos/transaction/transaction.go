@@ -59,7 +59,7 @@ func (t *SQLTransactionRepository) ListTransactionsByCategory(userID int64, catI
 func (t *SQLTransactionRepository) ListTransactionsByTime(userID int64, txnType models.TransactionType, startTime, endTime int64) ([]models.Transaction, error) {
 	t.logger.Infow("list transactions by time")
 	txns := make([]models.Transaction, 0)
-	err := t.db.Where(fmt.Sprintf("timestamp >= ? AND timestamp <= ?"), startTime, endTime).
+	err := t.db.Where("timestamp >= ? AND timestamp <= ?", startTime, endTime).
 		FindMany(&txns, models.Transaction{UserID: userID, Type: txnType})
 	return txns, err
 }

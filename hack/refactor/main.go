@@ -44,13 +44,19 @@ const (
 	cDim    = "\033[2m"
 )
 
-func red(s string) string    { return cRed + s + cReset }
-func green(s string) string  { return cGreen + s + cReset }
+func red(s string) string { return cRed + s + cReset }
+
+func green(s string) string { return cGreen + s + cReset }
+
 func yellow(s string) string { return cYellow + s + cReset }
-func blue(s string) string   { return cBlue + s + cReset }
-func cyan(s string) string   { return cCyan + s + cReset }
-func bold(s string) string   { return cBold + s + cReset }
-func dim(s string) string    { return cDim + s + cReset }
+
+func blue(s string) string { return cBlue + s + cReset }
+
+func cyan(s string) string { return cCyan + s + cReset }
+
+func bold(s string) string { return cBold + s + cReset }
+
+func dim(s string) string { return cDim + s + cReset }
 
 // ─── Globals ──────────────────────────────────────────────────────────────────
 

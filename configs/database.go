@@ -95,20 +95,17 @@ func getPostgresDatabase(ctx context.Context) (isql.Engine, error) {
 
 func pingPostgresDatabasePeriodically(ctx context.Context, cfg sqlib.PostgresConfig, conn *sql.Conn, logger logr.Logger) {
 	t5 := time.NewTicker(5 * time.Minute)
-	for {
-		select {
-		case <-t5.C:
-			if err := conn.PingContext(ctx); err != nil {
-				logger.Errorw("Database connection closed", "error", err.Error())
-				conn, err = sqlib.GetPostgresConnection(cfg)
-				if err != nil {
-					logger.Errorw("couldn't create database connection", "error", err.Error())
-				}
-
-				db := postgres.NewPostgres(ctx, conn).ShowSQL(true)
-				all.InitiateSQLServices(styx.UnitOfWork{SQL: db}, logger)
-				logger.Infow("New connection established")
+	for range t5.C {
+		if err := conn.PingContext(ctx); err != nil {
+			logger.Errorw("Database connection closed", "error", err.Error())
+			conn, err = sqlib.GetPostgresConnection(cfg)
+			if err != nil {
+				logger.Errorw("couldn't create database connection", "error", err.Error())
 			}
+
+			db := postgres.NewPostgres(ctx, conn).ShowSQL(true)
+			all.InitiateSQLServices(styx.UnitOfWork{SQL: db}, logger)
+			logger.Infow("New connection established")
 		}
 	}
 }
