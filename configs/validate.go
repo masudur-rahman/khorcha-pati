@@ -17,7 +17,7 @@ var requiredEnvVars = []string{
 }
 
 // Validate checks that all required environment variables are present and
-// non-empty. Call this at the very start of main() before initialising
+// non-empty. Call this at the very start of main() before initializing
 // anything else so operators get a clear diagnostic on misconfiguration.
 //
 //	if err := configs.Validate(); err != nil {

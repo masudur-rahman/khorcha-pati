@@ -6,8 +6,8 @@ type Contacts struct {
 	NickName         string `db:",uqs"`
 	FullName         string
 	Email            string `db:"email,uqs"`
-	ContactInfo      string
-	NetBalance          float64
+	ContactInfo     string
+	NetBalance      float64
 	LastTxnTimestamp int64
 }
 
@@ -17,8 +17,7 @@ type Profile struct {
 	Username   string `db:",uq"`
 	FirstName  string
 	LastName   string
-
-	Timezone   string     `db:"timezone"` // IANA tz name, e.g. 'Asia/Dhaka'
+	Timezone   string `db:"timezone"`
 }
 
 //func (u *Contacts) APIFormat() gqtypes.Contacts {

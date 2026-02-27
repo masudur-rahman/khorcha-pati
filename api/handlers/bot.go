@@ -23,7 +23,9 @@ func StartTrackingExpenses(ctx telebot.Context) error {
 	us := all.GetServices().User
 	user, err := us.GetUserByTelegramID(ctx.Sender().ID)
 	if err == nil {
-		ensureDefaultWallet(user.ID)
+		if err = ensureDefaultWallet(user.ID); err != nil {
+			logr.DefaultLogger.Errorw("Ensure default wallet error", "error", err.Error())
+		}
 		return sendStartText(ctx)
 	}
 	if !models.IsErrNotFound(err) {

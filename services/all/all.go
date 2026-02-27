@@ -2,15 +2,15 @@ package all
 
 import (
 	"github.com/masudur-rahman/expense-tracker-bot/infra/logr"
-	"github.com/masudur-rahman/expense-tracker-bot/repos/wallets"
 	"github.com/masudur-rahman/expense-tracker-bot/repos/event"
 	"github.com/masudur-rahman/expense-tracker-bot/repos/transaction"
 	"github.com/masudur-rahman/expense-tracker-bot/repos/user"
+	"github.com/masudur-rahman/expense-tracker-bot/repos/wallets"
 	"github.com/masudur-rahman/expense-tracker-bot/services"
-	walletsvc "github.com/masudur-rahman/expense-tracker-bot/services/wallets"
 	eventsvc "github.com/masudur-rahman/expense-tracker-bot/services/event"
 	txnsvc "github.com/masudur-rahman/expense-tracker-bot/services/transaction"
 	usersvc "github.com/masudur-rahman/expense-tracker-bot/services/user"
+	walletsvc "github.com/masudur-rahman/expense-tracker-bot/services/wallets"
 
 	"github.com/masudur-rahman/styx"
 )

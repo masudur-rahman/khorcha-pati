@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"os"
+	"os/exec"
 	"testing"
 
 	"github.com/masudur-rahman/expense-tracker-bot/configs"
@@ -13,10 +14,12 @@ import (
 )
 
 func TestGenerateTransactionInvoice(t *testing.T) {
+	if _, err := exec.LookPath("wkhtmltopdf"); err != nil {
+		t.Skip("wkhtmltopdf not installed, skipping")
+	}
 	report, err := generateSampleReport()
 	assert.NoError(t, err)
 	configs.TrackerConfig.System.PDFConverter = "wkhtmltopdf"
-	//configs.TrackerConfig.System.PDFConverter = "chromedp"
 	err = generateTransactionReportFromTemplate(report, "/tmp/transaction_report_test.pdf")
 	assert.NoError(t, err)
 }

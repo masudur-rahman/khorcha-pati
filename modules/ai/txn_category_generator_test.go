@@ -3,11 +3,15 @@ package ai
 import (
 	"context"
 	"fmt"
+	"os"
 	"testing"
 	"time"
 )
 
 func TestTxnCategoryGenerator(t *testing.T) {
+	if os.Getenv("GEMINI_API_KEY") == "" && os.Getenv("OPENROUTER_API_KEY") == "" {
+		t.Skip("no AI API key set, skipping")
+	}
 	type args struct {
 		ctx       context.Context
 		userInput string

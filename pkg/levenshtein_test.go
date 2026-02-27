@@ -26,5 +26,5 @@ func ExampleLevenshteinDistance() {
 	}
 
 	fmt.Printf("Distance between `%v` and `%v` is %v\n", a, rs, md)
-	// Output: Hello
+	// Output: Distance between `snack` and `Snacks` is 1
 }

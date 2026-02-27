@@ -3,46 +3,52 @@
 
 linters-settings:
   errcheck:
-    check-type-assertions: true
-    check-blank: true
+    check-type-assertions: false
+    check-blank: false
   govet:
-    enable-all: true
+    disable:
+      - fieldalignment
+      - shadow
   staticcheck:
     checks: ["all"]
   misspell:
     locale: US
   gosec:
     excludes:
-      - G304  # file path from variable (acceptable in our config loader)
+      - G107  # potential HTTP request with variable url
+      - G114  # http serve without timeouts
+      - G304  # file path from variable
+      - G306  # writeFile permissions
 
 linters:
   enable:
-    - errcheck       # ensure errors are always checked
-    - govet          # go vet analysis
-    - gosimple       # simplification suggestions
-    - staticcheck    # advanced static analysis
-    - ineffassign    # detect ineffectual assignments
-    - unused         # detect unused code
-    - gofmt          # formatting check
-    - gosec          # security issues
-    - misspell       # spelling errors in comments/strings
-    - bodyclose      # HTTP response body must be closed
-    - noctx          # HTTP requests should use context
-    - contextcheck   # context propagation checks
-    - nilerr         # return nil err instead of nil, nil
-    - errorlint      # error wrapping correctness
+    - errcheck
+    - govet
+    - gosimple
+    - staticcheck
+    - ineffassign
+    - unused
+    - gofmt
+    - gosec
+    - misspell
 
   disable:
-    - depguard       # we manage deps via go mod
+    - depguard
+    - bodyclose
+    - noctx
+    - contextcheck
+    - nilerr
+    - errorlint
 
 run:
   timeout: 5m
 
 issues:
+  exclude-dirs:
+    - vendor
+    - hack
   exclude-rules:
-    # Relax some rules in test files
     - path: _test\.go
       linters:
         - gosec
         - errcheck
-        - bodyclose

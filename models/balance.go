@@ -16,8 +16,7 @@ type Wallet struct {
 	Balance          float64
 	LastTxnAmount    float64
 	LastTxnTimestamp int64
-
-	Version    int        `db:"version"` // optimistic concurrency lock
+	Version         int `db:"version"`
 }
 
 type Event struct {

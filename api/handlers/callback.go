@@ -168,10 +168,6 @@ func handleTransactionCallback(ctx telebot.Context, callbackOpts CallbackOptions
 	}
 }
 
-func setLastSelectedValue(callbackOpts *CallbackOptions) {
-
-}
-
 func parseCallbackOptions(ctx telebot.Context) (CallbackOptions, error) {
 	var callbackOpts CallbackOptions
 	err := cache.FetchData(ctx.Callback().Data, &callbackOpts)

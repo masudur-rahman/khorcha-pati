@@ -25,8 +25,8 @@ var testInputs = []string{
 	// The "Context Provider"
 	"bought a new shirt for eid 2500",
 	"sent 5000 to ammu for medicine",
-	"paid 1500 for wifi bill january",
-	"dinner at kfc with friends 1200",
+	"paid 1500 for wifi bill",
+	"kfc dinner with team 1200",
 	"bought gift for rahim wedding 2000",
 	"repair bike brake shoe 450",
 	"advance payment for house rent 10k",
@@ -73,11 +73,7 @@ var testInputs = []string{
 
 func initCache() {
 	cfg := cache.Config{
-		Type: cache.CacheRedis,
-		Redis: cache.ConfigRedis{
-			Host: "localhost",
-			Port: "6379",
-		},
+		Type: cache.CacheMap,
 	}
 	cache.Init(cfg)
 }
@@ -192,7 +188,7 @@ func TestParseTransaction(t *testing.T) {
 			for _, text := range tt.args.texts {
 				got, err := ParseTransaction(text, tt.args.contacts, tt.args.accounts)
 				if (err != nil) != tt.wantErr {
-					t.Errorf("ParseTransaction() error = %v, wantErr %v", err, tt.wantErr)
+					t.Errorf("ParseTransaction(%q) error = %v, wantErr %v", text, err, tt.wantErr)
 					//return
 					continue
 				}

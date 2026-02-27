@@ -1,7 +1,7 @@
 // Package health exposes a minimal HTTP health-check endpoint.
 // Wire it into a lightweight http.ServeMux running on port 8080
 // so Railway, Docker HEALTHCHECK, and any monitoring system can
-// verify the process is alive and initialised.
+// verify the process is alive and initialized.
 //
 // In main.go:
 //
