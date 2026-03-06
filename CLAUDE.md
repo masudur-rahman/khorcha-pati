@@ -65,7 +65,7 @@ make all-container            # multi-arch Docker build
 - Wallet.Version field for optimistic concurrency (not yet enforced)
 
 ## Environment
-See `.env.example`. Required: `TELEGRAM_BOT_TOKEN`, `PARSE_APP_ID`, `PARSE_REST_API_KEY`, `PARSE_SERVER_URL`
+See `.env.example`. Required: `TELEGRAM_BOT_TOKEN`
 
 ## Pending Work
 1. `TransactionService.Undo()` — soft-delete last txn + revert balances

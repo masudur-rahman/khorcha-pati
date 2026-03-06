@@ -11,9 +11,6 @@ import (
 // to start. Add new required keys here as they are introduced.
 var requiredEnvVars = []string{
 	"TELEGRAM_BOT_TOKEN",
-	"PARSE_APP_ID",
-	"PARSE_REST_API_KEY",
-	"PARSE_SERVER_URL",
 }
 
 // Validate checks that all required environment variables are present and
@@ -34,9 +31,7 @@ func Validate() error {
 		return nil
 	}
 	return fmt.Errorf(
-		"missing required environment variables: %s\n"+
-			"Copy .env.example to .env and fill in the values, "+
-			"or set them as environment variables.",
+		"missing required environment variables: %s",
 		strings.Join(missing, ", "),
 	)
 }
