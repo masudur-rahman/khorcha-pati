@@ -314,7 +314,7 @@ func parseTransactionFlags(txnString string) (TransactionCallbackOptions, error)
 	set.StringVarP(&txnOpts.SubcategoryID, "subcat", "s", "misc-misc", "Subcategory for the transaction")
 	set.StringVarP(&txnOpts.SrcID, "src", "f", "cash", "Source wallet for the transaction")
 	set.StringVarP(&txnOpts.DstID, "dst", "d", "", "Destination wallet for the transaction")
-	set.StringVarP(&txnOpts.DebtorCreditorName, "user", "u", "", "Contacts associated with the loan/borrow")
+	set.StringVarP(&txnOpts.ContactName, "contact", "u", "", "Contact associated with the loan/borrow")
 	set.StringVarP(&txnOpts.Remarks, "remarks", "r", "", "Remarks for the transaction")
 	txnOpts.Type = models.TransactionType(typ)
 
@@ -353,7 +353,7 @@ func parseTransactionFlags(txnString string) (TransactionCallbackOptions, error)
 //		Type:          models.TransactionType(txnOpts.Type),
 //		SrcID:         txnOpts.SrcID,
 //		DstID:         txnOpts.DstID,
-//		DebtorCreditorName:        txnOpts.DebtorCreditorName,
+//		ContactName:        txnOpts.ContactName,
 //		Timestamp:     time.Now().Unix(),
 //		Remarks:       txnOpts.Remarks,
 //	}

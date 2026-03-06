@@ -31,7 +31,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Changed
 - /users command renamed to /contacts
-- Menu labels: "Account" → "Wallet", "DebtorsCreditors" → "Contact"
+- Menu labels: "Account" → "Wallet", "Person" → "Contact"
 - Contact.Balance renamed to Contact.NetBalance (positive = they owe you)
 - Contact struct gains Handle field (short name for text parsing)
 - Profile struct gains Timezone field

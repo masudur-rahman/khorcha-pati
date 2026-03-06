@@ -57,13 +57,13 @@ type TransactionCallbackOptions struct {
 
 	Type models.TransactionType `json:"type"`
 
-	Amount             float64 `json:"amount,omitempty"`
-	SrcID              string  `json:"srcID,omitempty"`
-	DstID              string  `json:"dstID,omitempty"`
-	CategoryID         string  `json:"catID,omitempty"`
-	SubcategoryID      string  `json:"subcatID,omitempty"`
-	DebtorCreditorName string  `json:"userID,omitempty"`
-	Remarks            string  `json:"remarks,omitempty"`
+	Amount        float64 `json:"amount,omitempty"`
+	SrcID         string  `json:"srcID,omitempty"`
+	DstID         string  `json:"dstID,omitempty"`
+	CategoryID    string  `json:"catID,omitempty"`
+	SubcategoryID string  `json:"subcatID,omitempty"`
+	ContactName   string  `json:"userID,omitempty"`
+	Remarks       string  `json:"remarks,omitempty"`
 }
 
 var callbackData = make(map[int]CallbackOptions) // map[messageID]CallbackOptions
@@ -121,7 +121,7 @@ func Callback(ctx telebot.Context) error {
 }
 
 func handleTransactionCallback(ctx telebot.Context, callbackOpts CallbackOptions) error {
-	// Type -> Amount -> SrcID (and/or) DstID -> Category -> Subcategory -> (DebtorCreditorName) -> Remarks
+	// Type -> Amount -> SrcID (and/or) DstID -> Category -> Subcategory -> (ContactName) -> Remarks
 	txn := callbackOpts.Transaction
 	switch txn.NextStep {
 	case StepTxnType:
@@ -155,7 +155,7 @@ func handleTransactionCallback(ctx telebot.Context, callbackOpts CallbackOptions
 			return sendTransactionRemarksQuery(ctx, callbackOpts)
 		}
 	case StepUser:
-		callbackOpts.LastSelectedValue = fmt.Sprintf("Selected User: *%v*\n\n", callbackOpts.Transaction.DebtorCreditorName)
+		callbackOpts.LastSelectedValue = fmt.Sprintf("Selected Contact: *%v*\n\n", callbackOpts.Transaction.ContactName)
 		return sendTransactionRemarksQuery(ctx, callbackOpts)
 	case StepRemarks:
 		err := processTransaction(ctx, callbackOpts.Transaction)

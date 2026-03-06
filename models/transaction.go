@@ -28,16 +28,16 @@ const (
 )
 
 type Transaction struct {
-	ID                 int64 `db:"id,pk autoincr"`
-	UserID             int64
-	Amount             float64
-	SubcategoryID      string
-	Type               TransactionType
-	SrcID              string
-	DstID              string
-	DebtorCreditorName string
-	Timestamp          int64
-	Remarks            string
+	ID            int64 `db:"id,pk autoincr"`
+	UserID        int64
+	Amount        float64
+	SubcategoryID string
+	Type          TransactionType
+	SrcID         string
+	DstID         string
+	ContactName   string
+	Timestamp     int64
+	Remarks       string
 
 	DeletedAt int64 `db:"deleted_at"` // 0 = active; non-zero = unix timestamp of soft-delete
 	CreatedAt int64 `db:"created_at"` // unix timestamp of creation
@@ -82,15 +82,15 @@ func (t Transaction) Summary() string {
 		if t.DstID != "" && t.DstID != "cash" {
 			sb.WriteString(fmt.Sprintf("📥 *To:* %s\n", formatAccount(t.DstID)))
 		}
-		if t.DebtorCreditorName != "" {
-			sb.WriteString(fmt.Sprintf("👤 *From:* %s\n", t.DebtorCreditorName))
+		if t.ContactName != "" {
+			sb.WriteString(fmt.Sprintf("👤 *From:* %s\n", t.ContactName))
 		}
 	} else {
 		if t.SrcID != "" && t.SrcID != "cash" {
 			sb.WriteString(fmt.Sprintf("💳 *From:* %s\n", formatAccount(t.SrcID)))
 		}
-		if t.DebtorCreditorName != "" {
-			sb.WriteString(fmt.Sprintf("👤 *To:* %s\n", t.DebtorCreditorName))
+		if t.ContactName != "" {
+			sb.WriteString(fmt.Sprintf("👤 *To:* %s\n", t.ContactName))
 		}
 	}
 

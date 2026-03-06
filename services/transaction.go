@@ -11,7 +11,7 @@ type TransactionService interface {
 	ListTransactionsByTime(userID int64, txnType models.TransactionType, startTime, endTime int64) ([]models.Transaction, error)
 	ListTransactionsBySourceID(userID int64, srcID string) ([]models.Transaction, error)
 	ListTransactionsByDestinationID(userID int64, dstID string) ([]models.Transaction, error)
-	ListTransactionsByDebtorCreditorName(userID int64, name string) ([]models.Transaction, error)
+	ListTransactionsByContactName(userID int64, name string) ([]models.Transaction, error)
 
 	GetTxnCategoryName(catID string) (string, error)
 	ListTxnCategories() ([]models.TxnCategory, error)

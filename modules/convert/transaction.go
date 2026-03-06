@@ -51,15 +51,15 @@ func ToTransactionAPIFormat(txn models.Transaction) gqtypes.Transaction {
 		}
 	}
 
-	if txn.DebtorCreditorName != "" {
-		if err = cache.FetchDataWithCustomFunc(txn.DebtorCreditorName, &person, func() (any, error) {
-			user, err := svc.Contact.GetContactByName(txn.UserID, txn.DebtorCreditorName)
+	if txn.ContactName != "" {
+		if err = cache.FetchDataWithCustomFunc(txn.ContactName, &person, func() (any, error) {
+			user, err := svc.Contact.GetContactByName(txn.UserID, txn.ContactName)
 			if err != nil {
 				return nil, err
 			}
 			return user.FullName, nil
 		}); err != nil {
-			person = txn.DebtorCreditorName
+			person = txn.ContactName
 		}
 	}
 
