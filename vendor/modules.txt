@@ -295,6 +295,7 @@ github.com/stretchr/objx
 github.com/stretchr/testify/assert
 github.com/stretchr/testify/assert/yaml
 github.com/stretchr/testify/mock
+github.com/stretchr/testify/require
 # go.opencensus.io v0.24.0
 ## explicit; go 1.13
 go.opencensus.io
