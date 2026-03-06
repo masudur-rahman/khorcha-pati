@@ -53,6 +53,7 @@ to quickly create a Cobra application.`,
 			log.Fatalln(err)
 		}
 		configs.InitiateCache()
+		configs.LoadAICacheIntoMemory()
 
 		bot, err := api.TeleBotRoutes()
 		if err != nil {

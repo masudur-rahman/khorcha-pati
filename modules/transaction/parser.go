@@ -8,6 +8,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/masudur-rahman/expense-tracker-bot/configs"
+	"github.com/masudur-rahman/expense-tracker-bot/infra/logr"
 	"github.com/masudur-rahman/expense-tracker-bot/models"
 	"github.com/masudur-rahman/expense-tracker-bot/modules/ai"
 	"github.com/masudur-rahman/expense-tracker-bot/modules/cache"
@@ -197,12 +199,20 @@ func (p *transactionParser) subcategoryAIParser() error {
 		p.subcategory = subcat
 		return nil
 	}
-	subcat, err := ai.TxnCategoryGenerator(context.Background(), p.subcategory)
+	inputText := p.subcategory
+	subcat, err := ai.TxnCategoryGenerator(context.Background(), inputText)
 	if err != nil {
 		return err
 	}
 
-	_ = cache.SetCache(p.subcategory, subcat, -1)
+	_ = cache.SetCache(inputText, subcat, -1)
+	if dbErr := configs.InsertAICache(models.AICache{
+		InputText:     inputText,
+		SubcategoryID: subcat,
+		CreatedAt:     time.Now().Unix(),
+	}); dbErr != nil {
+		logr.DefaultLogger.Errorw("Failed to persist AI cache", "error", dbErr.Error())
+	}
 	p.subcategory = subcat
 	return nil
 }

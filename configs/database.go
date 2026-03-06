@@ -21,6 +21,9 @@ import (
 	"github.com/masudur-rahman/styx/sql/sqlite/lib"
 )
 
+// sqlDB holds a reference to the database engine for utility functions.
+var sqlDB isql.Engine
+
 func InitiateCache() {
 	cache.Init(TrackerConfig.Cache)
 }
@@ -65,6 +68,7 @@ func getSQLiteDatabase(ctx context.Context) (isql.Engine, error) {
 }
 
 func initializeSQLServices(uow styx.UnitOfWork) error {
+	sqlDB = uow.SQL
 	if err := syncTables(uow.SQL); err != nil {
 		return err
 	}
@@ -146,5 +150,31 @@ func syncTables(db isql.Engine) error {
 		models.TxnCategory{},
 		models.TxnSubcategory{},
 		models.Event{},
+		models.AICache{},
 	)
+}
+
+// LoadAICacheIntoMemory loads all persisted AI cache rows into the in-memory cache.
+func LoadAICacheIntoMemory() {
+	if sqlDB == nil {
+		return
+	}
+	var rows []models.AICache
+	if err := sqlDB.Table("ai_cache").FindMany(&rows); err != nil {
+		logr.DefaultLogger.Errorw("Failed to load AI cache", "error", err.Error())
+		return
+	}
+	for _, row := range rows {
+		_ = cache.SetCache(row.InputText, row.SubcategoryID, -1)
+	}
+	logr.DefaultLogger.Infow("AI cache loaded from DB", "count", len(rows))
+}
+
+// InsertAICache persists a single AI cache entry to the database.
+func InsertAICache(entry models.AICache) error {
+	if sqlDB == nil {
+		return fmt.Errorf("database not initialized")
+	}
+	_, err := sqlDB.Table("ai_cache").InsertOne(entry)
+	return err
 }
