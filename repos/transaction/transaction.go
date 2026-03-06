@@ -41,10 +41,37 @@ func (t *SQLTransactionRepository) AddTransaction(txn models.Transaction) error 
 	return err
 }
 
+// GetLastActiveTransaction returns the most recent non-deleted transaction for a user.
+func (t *SQLTransactionRepository) GetLastActiveTransaction(userID int64) (*models.Transaction, error) {
+	t.logger.Infow("get last active transaction", "userID", userID)
+	var txns []models.Transaction
+	if err := t.db.Where("deleted_at = 0").
+		FindMany(&txns, models.Transaction{UserID: userID}); err != nil {
+		return nil, err
+	}
+	if len(txns) == 0 {
+		return nil, errors.New("no active transactions found")
+	}
+
+	latest := txns[0]
+	for _, txn := range txns[1:] {
+		if txn.CreatedAt > latest.CreatedAt {
+			latest = txn
+		}
+	}
+	return &latest, nil
+}
+
+// SoftDeleteTransaction marks a transaction as deleted by setting DeletedAt.
+func (t *SQLTransactionRepository) SoftDeleteTransaction(txnID int64, deletedAt int64) error {
+	t.logger.Infow("soft-deleting transaction", "txnID", txnID)
+	return t.db.ID(txnID).MustCols("deleted_at").UpdateOne(&models.Transaction{DeletedAt: deletedAt})
+}
+
 func (t *SQLTransactionRepository) ListTransactions(filter models.Transaction) ([]models.Transaction, error) {
 	t.logger.Infow("list transactions")
 	txns := make([]models.Transaction, 0)
-	err := t.db.FindMany(&txns, filter)
+	err := t.db.Where("deleted_at = 0").FindMany(&txns, filter)
 	return txns, err
 }
 
@@ -52,6 +79,7 @@ func (t *SQLTransactionRepository) ListTransactionsByCategory(userID int64, catI
 	t.logger.Infow("list transactions by category")
 	txns := make([]models.Transaction, 0)
 	err := t.db.Where(fmt.Sprintf("sub_category_id LIKE %s%%", catID)).
+		Where("deleted_at = 0").
 		FindMany(&txns, models.Transaction{UserID: userID})
 	return txns, err
 }
@@ -60,6 +88,7 @@ func (t *SQLTransactionRepository) ListTransactionsByTime(userID int64, txnType 
 	t.logger.Infow("list transactions by time")
 	txns := make([]models.Transaction, 0)
 	err := t.db.Where("timestamp >= ? AND timestamp <= ?", startTime, endTime).
+		Where("deleted_at = 0").
 		FindMany(&txns, models.Transaction{UserID: userID, Type: txnType})
 	return txns, err
 }

@@ -1,5 +1,10 @@
 package models
 
+import "fmt"
+
+// ErrOptimisticLock is returned when a concurrent wallet modification is detected.
+var ErrOptimisticLock = fmt.Errorf("wallet was modified concurrently, please retry")
+
 type WalletType string
 
 const (

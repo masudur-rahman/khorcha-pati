@@ -75,10 +75,27 @@ func (a *SQLWalletRepository) UpdateWalletBalance(userID int64, shortName string
 	if err != nil {
 		return err
 	}
+	oldVersion := w.Version
 	w.Balance += txnAmount
 	w.LastTxnAmount = txnAmount
 	w.LastTxnTimestamp = time.Now().Unix()
-	return a.db.ID(w.ID).MustCols("balance").UpdateOne(w)
+	w.Version = oldVersion + 1
+
+	result, err := a.db.Exec(
+		`UPDATE "wallet" SET balance = ?, last_txn_amount = ?, last_txn_timestamp = ?, version = ? WHERE id = ? AND version = ?`,
+		w.Balance, w.LastTxnAmount, w.LastTxnTimestamp, w.Version, w.ID, oldVersion,
+	)
+	if err != nil {
+		return err
+	}
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rowsAffected == 0 {
+		return models.ErrOptimisticLock
+	}
+	return nil
 }
 
 func (a *SQLWalletRepository) DeleteWallet(userID int64, shortName string) error {

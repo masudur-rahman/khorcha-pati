@@ -87,6 +87,65 @@ func (ts *txnService) AddTransaction(txn models.Transaction) error {
 	return ts.txnRepo.WithUnitOfWork(uow).AddTransaction(txn)
 }
 
+// Undo soft-deletes the last active transaction and reverses wallet/contact balances.
+func (ts *txnService) Undo(userID int64) (*models.Transaction, error) {
+	txn, err := ts.txnRepo.GetLastActiveTransaction(userID)
+	if err != nil {
+		return nil, fmt.Errorf("nothing to undo: %w", err)
+	}
+
+	uow, err := ts.uow.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		if err != nil {
+			_ = uow.Rollback()
+			return
+		}
+		err = uow.Commit()
+	}()
+
+	if err = ts.reverseBalances(uow, *txn); err != nil {
+		return nil, err
+	}
+
+	if err = ts.txnRepo.WithUnitOfWork(uow).SoftDeleteTransaction(txn.ID, time.Now().Unix()); err != nil {
+		return nil, err
+	}
+
+	return txn, nil
+}
+
+func (ts *txnService) reverseBalances(uow styx.UnitOfWork, txn models.Transaction) error {
+	walletRepo := ts.walletRepo.WithUnitOfWork(uow)
+
+	switch txn.Type {
+	case models.ExpenseTransaction:
+		switch txn.SubcategoryID {
+		case models.LoanRepaymentSubID, models.BorrowReturnSubID, models.LendSubID:
+			if err := ts.updateContactBalance(uow, txn, -txn.Amount); err != nil {
+				return err
+			}
+		}
+		return walletRepo.UpdateWalletBalance(txn.UserID, txn.SrcID, txn.Amount)
+	case models.IncomeTransaction:
+		switch txn.SubcategoryID {
+		case models.BorrowSubID, models.LendRecoverySubID, models.LoanReceivedSubID:
+			if err := ts.updateContactBalance(uow, txn, txn.Amount); err != nil {
+				return err
+			}
+		}
+		return walletRepo.UpdateWalletBalance(txn.UserID, txn.DstID, -txn.Amount)
+	case models.TransferTransaction:
+		if err := walletRepo.UpdateWalletBalance(txn.UserID, txn.SrcID, txn.Amount); err != nil {
+			return err
+		}
+		return walletRepo.UpdateWalletBalance(txn.UserID, txn.DstID, -txn.Amount)
+	}
+	return nil
+}
+
 func (ts *txnService) updateContactBalance(uow styx.UnitOfWork, txn models.Transaction, amount float64) error {
 	contact, err := ts.contactRepo.WithUnitOfWork(uow).GetContactByName(txn.UserID, txn.ContactName)
 	if err != nil {
