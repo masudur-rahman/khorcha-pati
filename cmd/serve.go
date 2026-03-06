@@ -18,6 +18,7 @@ package cmd
 
 import (
 	"context"
+	"encoding/json"
 	"io"
 	"log"
 	"net/http"
@@ -63,7 +64,7 @@ to quickly create a Cobra application.`,
 		ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 		defer stop()
 
-		go startHealthz()
+		healthSrv := startHealthz()
 		go pingHealthzApiPeriodically()
 		log.Println("Expense Tracker Bot started")
 
@@ -72,6 +73,12 @@ to quickly create a Cobra application.`,
 		<-ctx.Done()
 		log.Println("Shutting down...")
 		bot.Stop()
+
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		if err := healthSrv.Shutdown(shutdownCtx); err != nil {
+			log.Printf("Health server shutdown error: %v", err)
+		}
 	},
 }
 
@@ -110,13 +117,31 @@ func pingHealthzApiPeriodically() {
 	}
 }
 
-func startHealthz() {
+func startHealthz() *http.Server {
 	mux := http.NewServeMux()
-	mux.HandleFunc("/healthz", func(writer http.ResponseWriter, request *http.Request) {
-		writer.WriteHeader(http.StatusOK)
-		_, _ = writer.Write([]byte("Running"))
-	})
+	mux.HandleFunc("/healthz", handleHealthz)
 
+	srv := &http.Server{Addr: ":8080", Handler: mux, ReadHeaderTimeout: 10 * time.Second}
 	logr.DefaultLogger.Infow("Health checker started at :8080/healthz")
-	log.Fatalln(http.ListenAndServe(":8080", mux))
+	go func() {
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Printf("Health server error: %v", err)
+		}
+	}()
+	return srv
+}
+
+func handleHealthz(w http.ResponseWriter, _ *http.Request) {
+	resp := map[string]string{"status": "ok", "db": "ok"}
+
+	if err := configs.PingDatabase(); err != nil {
+		resp["status"] = "degraded"
+		resp["db"] = err.Error()
+		w.WriteHeader(http.StatusServiceUnavailable)
+	} else {
+		w.WriteHeader(http.StatusOK)
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(resp) //nolint:errchkjson
 }

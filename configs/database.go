@@ -170,6 +170,15 @@ func LoadAICacheIntoMemory() {
 	logr.DefaultLogger.Infow("AI cache loaded from DB", "count", len(rows))
 }
 
+// PingDatabase checks if the database connection is healthy.
+func PingDatabase() error {
+	if sqlDB == nil {
+		return fmt.Errorf("database not initialized")
+	}
+	_, err := sqlDB.Exec("SELECT 1")
+	return err
+}
+
 // InsertAICache persists a single AI cache entry to the database.
 func InsertAICache(entry models.AICache) error {
 	if sqlDB == nil {
