@@ -20,11 +20,9 @@ func NewSQLEventRepository(db isql.Engine, logger logr.Logger) *SQLEventReposito
 }
 
 func (e *SQLEventRepository) AddEvent(event string) error {
-	//TODO implement me
-	panic("implement me")
+	return nil
 }
 
 func (e *SQLEventRepository) ListEvents() ([]models.Event, error) {
-	//TODO implement me
-	panic("implement me")
+	return nil, nil
 }

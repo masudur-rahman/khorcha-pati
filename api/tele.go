@@ -46,6 +46,7 @@ func TeleBotRoutes() (*telebot.Bot, error) {
 	bot.Handle("/help", handlers.Help)
 
 	bot.Handle("/sync", handlers.SyncSQLiteDatabase)
+	bot.Handle("/undo", handlers.HandleUndo)
 
 	return bot, nil
 }

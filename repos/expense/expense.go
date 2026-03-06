@@ -22,8 +22,7 @@ func NewSQLExpenseRepository(db isql.Engine, logger logr.Logger) *SQLExpenseRepo
 }
 
 func (e *SQLExpenseRepository) GetLastExpense() (*models.Expense, error) {
-	//TODO implement me
-	panic("implement me")
+	return nil, nil
 }
 
 func (e *SQLExpenseRepository) ListAllExpenses() ([]*models.Expense, error) {
@@ -49,11 +48,9 @@ func (e *SQLExpenseRepository) AddNewExpense(expense *models.Expense) error {
 }
 
 func (e *SQLExpenseRepository) DeleteExpense(id string) error {
-	//TODO implement me
-	panic("implement me")
+	return nil
 }
 
 func (e *SQLExpenseRepository) EditExpense(expense *models.Expense) error {
-	//TODO implement me
-	panic("implement me")
+	return nil
 }

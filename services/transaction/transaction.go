@@ -2,6 +2,7 @@ package transaction
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/masudur-rahman/expense-tracker-bot/models"
 	"github.com/masudur-rahman/expense-tracker-bot/repos"
@@ -33,6 +34,9 @@ func (ts *txnService) AddTransaction(txn models.Transaction) error {
 	}
 	if txn.SubcategoryID == "" {
 		return fmt.Errorf("subcategory is required")
+	}
+	if txn.CreatedAt == 0 {
+		txn.CreatedAt = time.Now().Unix()
 	}
 
 	uow, err := ts.uow.Begin()

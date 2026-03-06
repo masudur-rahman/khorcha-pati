@@ -17,12 +17,15 @@ limitations under the License.
 package cmd
 
 import (
+	"context"
 	"io"
 	"log"
 	"net/http"
 	"net/url"
 	"os"
+	"os/signal"
 	"path"
+	"syscall"
 	"time"
 
 	"github.com/masudur-rahman/expense-tracker-bot/api"
@@ -43,6 +46,9 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
+		if err := configs.Validate(); err != nil {
+			log.Fatalln(err)
+		}
 		if err := configs.InitiateDatabaseConnection(cmd.Context()); err != nil {
 			log.Fatalln(err)
 		}
@@ -53,10 +59,18 @@ to quickly create a Cobra application.`,
 			log.Fatalln(err)
 		}
 
+		ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+		defer stop()
+
 		go startHealthz()
 		go pingHealthzApiPeriodically()
 		log.Println("Expense Tracker Bot started")
-		bot.Start()
+
+		go bot.Start()
+
+		<-ctx.Done()
+		log.Println("Shutting down...")
+		bot.Stop()
 	},
 }
 
