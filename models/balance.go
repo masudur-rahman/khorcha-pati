@@ -21,7 +21,7 @@ type Wallet struct {
 	Balance          float64
 	LastTxnAmount    float64
 	LastTxnTimestamp int64
-	Version          int `db:"version"`
+	Version          int64 `db:"version"`
 }
 
 type Event struct {
