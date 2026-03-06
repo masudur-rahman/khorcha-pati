@@ -1,5 +1,26 @@
-# golangci-lint configuration
+# golangci-lint configuration (v2)
 # Docs: https://golangci-lint.run/usage/configuration/
+version: "2"
+
+linters:
+  enable:
+    - errcheck
+    - govet
+    - staticcheck
+    - ineffassign
+    - unused
+    - gosec
+    - misspell
+  disable:
+    - depguard
+    - bodyclose
+    - noctx
+    - nilerr
+    - errorlint
+
+formatters:
+  enable:
+    - gofmt
 
 linters-settings:
   errcheck:
@@ -15,30 +36,10 @@ linters-settings:
     locale: US
   gosec:
     excludes:
-      - G107  # potential HTTP request with variable url
-      - G114  # http serve without timeouts
-      - G304  # file path from variable
-      - G306  # writeFile permissions
-
-linters:
-  enable:
-    - errcheck
-    - govet
-    - gosimple
-    - staticcheck
-    - ineffassign
-    - unused
-    - gofmt
-    - gosec
-    - misspell
-
-  disable:
-    - depguard
-    - bodyclose
-    - noctx
-    - contextcheck
-    - nilerr
-    - errorlint
+      - G107
+      - G114
+      - G304
+      - G306
 
 run:
   timeout: 5m

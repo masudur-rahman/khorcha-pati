@@ -9,6 +9,7 @@ import (
 	"github.com/masudur-rahman/expense-tracker-bot/models"
 	"github.com/masudur-rahman/expense-tracker-bot/models/gqtypes"
 	"github.com/masudur-rahman/expense-tracker-bot/pkg"
+	pkgtg "github.com/masudur-rahman/expense-tracker-bot/pkg/telegram"
 	"github.com/masudur-rahman/expense-tracker-bot/services/all"
 
 	"gopkg.in/telebot.v3"
@@ -52,7 +53,12 @@ func TransactionSummary(ctx telebot.Context) error {
 	}
 
 	summary := generateSummary(txns)
-	return ctx.Send(summary.String(), &telebot.SendOptions{ParseMode: telebot.ModeHTML})
+	for _, chunk := range pkgtg.SplitMessage(summary.String()) {
+		if err := ctx.Send(chunk, &telebot.SendOptions{ParseMode: telebot.ModeHTML}); err != nil {
+			return err
+		}
+	}
+	return nil
 
 	//pngBytes, err := summary.PNG()
 	//if err != nil {

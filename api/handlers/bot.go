@@ -12,6 +12,7 @@ import (
 	"github.com/masudur-rahman/expense-tracker-bot/models"
 	"github.com/masudur-rahman/expense-tracker-bot/modules/google"
 	"github.com/masudur-rahman/expense-tracker-bot/pkg"
+	pkgtg "github.com/masudur-rahman/expense-tracker-bot/pkg/telegram"
 	"github.com/masudur-rahman/expense-tracker-bot/services/all"
 
 	"github.com/jedib0t/go-pretty/v6/table"
@@ -382,7 +383,7 @@ func ListTransactions(ctx telebot.Context) error {
 	defer printer.ClearColumns()
 	printer.PrintDocuments(txns)
 
-	return ctx.Send(printTransactionList(txns), telebot.ModeMarkdown)
+	return sendSplitMessage(ctx, printTransactionList(txns))
 }
 
 func ListExpenses(ctx telebot.Context) error {
@@ -402,7 +403,17 @@ func ListExpenses(ctx telebot.Context) error {
 	defer printer.ClearColumns()
 	printer.PrintDocuments(txns)
 
-	return ctx.Send(printTransactionList(txns), telebot.ModeMarkdown)
+	return sendSplitMessage(ctx, printTransactionList(txns))
+}
+
+// sendSplitMessage sends text in chunks that fit Telegram's message size limit.
+func sendSplitMessage(ctx telebot.Context, text string) error {
+	for _, chunk := range pkgtg.SplitMessage(text) {
+		if err := ctx.Send(chunk, telebot.ModeMarkdown); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func printTransactionList(txns []models.Transaction) string {
