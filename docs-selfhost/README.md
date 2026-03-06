@@ -1,10 +1,6 @@
-# Expense Tracker
+# Expense Tracker Bot — Self-Hosting Guide
 
-A Telegram Bot to track your expenses.
-
-## Description
-
-`Expense Tracker Bot` is a Telegram Bot to track your expenses. It is built using [Go](https://golang.org/).
+A Telegram Bot to track your expenses. This guide covers everything you need to self-host the bot.
 
 ## Requirements
 
@@ -17,10 +13,11 @@ A Telegram Bot to track your expenses.
 
 2. Set commands for the bot using `/setcommands` command.
     ```
-    new - Add new Transaction, Account or User
+    new - Add new Wallet or Contact
     newtxn - Add new transaction
-    users - List persons involved in some loan/borrow with the system user
-    balance - List Account Balance
+    undo - Undo last transaction
+    contacts - List contacts
+    balance - List Wallet Balances
     list - List recent transactions
     expense - Fetch Expense of Current month
     summary - Transaction summary of current month
@@ -79,6 +76,73 @@ If you want to back up your SQLite database to Google Drive regularly, follow th
     - Create a folder named `.expense-tracker`.
     - Share this folder with the service account (`expense-tracker@<project-id>.iam.gserviceaccount.com`) and grant it "Editor" permission.
 
+## Environment Variables
+
+### Required
+
+| Variable | Description |
+|---|---|
+| `TELEGRAM_BOT_TOKEN` | Bot token from @BotFather |
+
+### AI Classification (Optional)
+
+Set one or both to enable AI-powered subcategory classification for natural language transactions.
+
+| Variable | Description |
+|---|---|
+| `GEMINI_API_KEY` | Google Gemini API key |
+| `OPENROUTER_API_KEY` | OpenRouter API key (fallback if Gemini is not set) |
+
+### PostgreSQL Overrides (Optional)
+
+These override the corresponding values in the YAML config file.
+
+| Variable | Description |
+|---|---|
+| `POSTGRES_USER` | PostgreSQL username |
+| `POSTGRES_PASSWORD` | PostgreSQL password |
+| `POSTGRES_DB` | Database name |
+| `POSTGRES_HOST` | Database host |
+| `POSTGRES_PORT` | Database port |
+| `POSTGRES_SSL_MODE` | SSL mode (`disable`, `require`, etc.) |
+
+### Other (Optional)
+
+| Variable | Description |
+|---|---|
+| `BASE_URL` | If set, the bot pings `{BASE_URL}/healthz` every 20 minutes to keep itself alive |
+| `GOOGLE_APPLICATION_CREDENTIALS` | Path to Google service account JSON for Drive backup |
+
+## Configuration File
+
+The bot reads its configuration from `configs/.expense-tracker.yaml`. Full structure:
+
+```yaml
+telegram:
+    user: <telegram_username>
+database:
+    type: sqlite  # or postgres
+    sqlite:
+        syncToDrive: false
+        disableSyncFromDrive: false
+    postgres:
+        name: expense
+        host: localhost
+        port: 5432
+        user: postgres
+        password: postgres
+        sslmode: disable
+cache:
+    type: map  # or redis
+    redis:
+        host: localhost
+        port: "6379"
+        password: ""
+```
+
+- **database.type**: `sqlite` (default) or `postgres`
+- **cache.type**: `map` (in-memory, default) or `redis`
+
 ## Installation and Running
 
 ### Local Setup
@@ -92,12 +156,6 @@ If you want to back up your SQLite database to Google Drive regularly, follow th
    ```
 
 2. Update the configuration file (`configs/.expense-tracker.yaml`) as needed. You can modify the Telegram user and specify the database type.
-    ```bash
-    telegram:
-      user: masudur_rahman
-    database:
-      type: sqlite
-    ```
 
 3. Export required environment variables:
 
@@ -111,21 +169,31 @@ If you want to back up your SQLite database to Google Drive regularly, follow th
    export GOOGLE_APPLICATION_CREDENTIALS=$HOME/Downloads/service-account-key.json
    ```
 
+   If using AI classification:
+
+   ```bash
+   export GEMINI_API_KEY=<YOUR_GEMINI_API_KEY>
+   ```
+
 4. Run the server:
 
    ```bash
    make run
    ```
+
 ### Docker Setup
+
 - Write configuration file
     ```shell
     mkdir -p $HOME/.expense-tracker/configs
 
     echo '
     telegram:
-      user: masudur_rahman
+      user: <telegram_username>
     database:
       type: sqlite
+    cache:
+      type: map
     ' > $HOME/.expense-tracker/configs/.expense-tracker.yaml
     ```
 
@@ -134,15 +202,8 @@ If you want to back up your SQLite database to Google Drive regularly, follow th
     docker run -v $HOME/.expense-tracker/configs:/configs \
       -v $HOME/.expense-tracker:/.expense-tracker \
       -e TELEGRAM_BOT_TOKEN=<TELEGRAM_BOT_TOKEN> \
-      ghcr.io/masudur-rahman/expense-tracker-bot:v1.0.0 serve
+      ghcr.io/masudur-rahman/expense-tracker-bot:latest serve
     ```
-
-### Back4App Setup
-
-1. Create a new app on [Back4App](https://www.back4app.com/).
-2. Connect your app to a GitHub repository.
-3. Set the environment variables to the `Settings.Environment Variables` section.
-4. Restart the server.
 
 ### Production Environment (Kubernetes)
 
@@ -197,3 +258,13 @@ To deploy `Expense Tracker Bot` application in production environment, the prefe
     expense-tracker-bot-7989d96fcc-b4smq            1/1     Running   2 (30s ago)   31s
     expense-tracker-bot-postgres-55dcb67965-95r7g   1/1     Running   0             31s
     ```
+
+## Health Check
+
+The bot exposes a health check endpoint:
+
+- **Endpoint:** `GET /healthz` on port `8080`
+- **Response:** JSON with database connectivity status
+- **Docker:** The Docker image includes a built-in `HEALTHCHECK` directive
+
+If `BASE_URL` is set, the bot will ping `{BASE_URL}/healthz` every 20 minutes as a keep-alive mechanism.
