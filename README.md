@@ -201,6 +201,7 @@ You always can send `/cat` command to list the subcategory
   - `Contact` - Add a person for lending/borrowing
 
 - `/newtxn` - Add new transaction (Interactive)
+- `/undo` - Undo last transaction (soft-delete + revert balances)
 - `/contacts` - List contacts
   - list all the people involved in lending/borrowing with you
 - `/balance` - List Wallet Balances
@@ -230,8 +231,8 @@ https://github.com/masudur-rahman/expense-tracker-bot/assets/13915755/83db45c8-1
 ## Future Work
 
 A list of possible future work:
-- [ ] Add support for undoing a transaction
-- [ ] Add Database backup and restore support
+- [x] Add support for undoing a transaction
+- [x] Add Database backup and restore support (Google Drive sync)
 - [ ] Add support for multiple users
 
 ## Self Hosting
