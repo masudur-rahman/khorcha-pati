@@ -100,5 +100,5 @@ jobs:
       - name: Verify modules
         run: make verify
 
-      - name: Build containers
-        run: make all-container
+      - name: Build container
+        run: make docker-build
