@@ -111,13 +111,13 @@ func processTransaction(ctx telebot.Context, txn TransactionCallbackOptions) err
 	}
 
 	return all.GetServices().Txn.AddTransaction(models.Transaction{
-		UserID:             user.ID,
-		Amount:             txn.Amount,
-		SubcategoryID:      txn.SubcategoryID,
-		Type:               txn.Type,
-		SrcID:              txn.SrcID,
-		DstID:              txn.DstID,
-		DebtorCreditorName: txn.DebtorCreditorName,
-		Remarks:            txn.Remarks,
+		UserID:        user.ID,
+		Amount:        txn.Amount,
+		SubcategoryID: txn.SubcategoryID,
+		Type:          txn.Type,
+		SrcID:         txn.SrcID,
+		DstID:         txn.DstID,
+		ContactName:   txn.ContactName,
+		Remarks:       txn.Remarks,
 	})
 }

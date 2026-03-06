@@ -18,12 +18,12 @@ To use this bot, go to Telegram and search for [@XpenseTrackerBot](https://t.me/
 Once you are inside the bot inbox,  press `Start` button to start using the Tracker Bot.
 
 Before you start tracking your expenses
-- Add accounts like `cash`, `brac`, `ebl` etc
-  - Command `/new` => Account => Type (Cash or Bank)
-  - Reply with account details (`cash "Cash in Hand"`, `ebl EBL` etc)
-- Add some debtors/creditors with whom you are financially involved
-  - Command `/new` => DebtorsCreditors
-  - Reply with the person details (`john "John Doe" john@doe.com`)
+- Add wallets like `cash`, `brac`, `ebl` etc
+  - Command `/new` => Wallet => Type (Cash or Bank)
+  - Reply with wallet details (`cash "Cash in Hand"`, `ebl EBL` etc)
+- Add contacts with whom you are financially involved
+  - Command `/new` => Contact
+  - Reply with the contact details (`john "John Doe" john@doe.com`)
 
 ### Track your Transactions
 
@@ -37,8 +37,8 @@ You just need to mention:
 - **What** you did (description/category)
 - **How much** (amount)
 - **When** (optional, defaults to now)
-- **Account** (optional, defaults to 'cash')
-- **Person** (optional, for loans/borrows)
+- **Wallet** (optional, defaults to 'cash')
+- **Contact** (optional, for loans/borrows)
 
 **Examples:**
 ```
@@ -194,17 +194,17 @@ Miscellaneous (misc):
 You always can send `/cat` command to list the subcategory
 
 ### Available commands:
-- `/new` - Add new Transaction, Account or User
-  - `DebtorsCreditors` - Add new debtor or creditors
-  - `Account` - Add new account (Cash, Bank)
+- `/new` - Add new Wallet or Contact
+  - `Wallet` - Add new wallet (Cash, Bank)
     - i.e: `brac "BRAC Bank"`
     - i.e: `cash "Cash in Hand"`
+  - `Contact` - Add a person for lending/borrowing
 
 - `/newtxn` - Add new transaction (Interactive)
-- `/users` - List users
-  - list all the persons involved in some loan/borrow with the system user
-- `/balance` - List Account Balance
-  - list all the registered accounts and their balance
+- `/contacts` - List contacts
+  - list all the people involved in lending/borrowing with you
+- `/balance` - List Wallet Balances
+  - list all the registered wallets and their balance
 - `/list` - List recent transactions
 - `/expense` - Fetch Expense of Current month
   - list transactions of current month

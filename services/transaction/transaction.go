@@ -84,7 +84,7 @@ func (ts *txnService) AddTransaction(txn models.Transaction) error {
 }
 
 func (ts *txnService) updateContactBalance(uow styx.UnitOfWork, txn models.Transaction, amount float64) error {
-	contact, err := ts.contactRepo.WithUnitOfWork(uow).GetContactByName(txn.UserID, txn.DebtorCreditorName)
+	contact, err := ts.contactRepo.WithUnitOfWork(uow).GetContactByName(txn.UserID, txn.ContactName)
 	if err != nil {
 		return err
 	}
@@ -119,8 +119,8 @@ func (ts *txnService) ListTransactionsByDestinationID(userID int64, dstID string
 	return ts.txnRepo.ListTransactions(models.Transaction{UserID: userID, DstID: dstID})
 }
 
-func (ts *txnService) ListTransactionsByDebtorCreditorName(userID int64, name string) ([]models.Transaction, error) {
-	return ts.txnRepo.ListTransactions(models.Transaction{UserID: userID, DebtorCreditorName: name})
+func (ts *txnService) ListTransactionsByContactName(userID int64, name string) ([]models.Transaction, error) {
+	return ts.txnRepo.ListTransactions(models.Transaction{UserID: userID, ContactName: name})
 }
 
 func (ts *txnService) GetTxnCategoryName(catID string) (string, error) {

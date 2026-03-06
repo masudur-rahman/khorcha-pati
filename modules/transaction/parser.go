@@ -225,7 +225,7 @@ func (p *transactionParser) finalizeMapping(isContact ContactVerifier, isAccount
 
 		if isDebtTransaction(p.subcategory) {
 			if isContact(cleanVal) {
-				p.txn.DebtorCreditorName = cleanVal
+				p.txn.ContactName = cleanVal
 				return
 			}
 			return
@@ -253,7 +253,7 @@ func (p *transactionParser) finalizeMapping(isContact ContactVerifier, isAccount
 	}
 
 	if isDebtTransaction(p.subcategory) {
-		if p.txn.DebtorCreditorName == "" {
+		if p.txn.ContactName == "" {
 			var rawTarget string
 			if p.toValue != "" && !isAccount(strings.ToLower(p.toValue)) {
 				rawTarget = p.toValue

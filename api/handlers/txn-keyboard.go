@@ -133,7 +133,7 @@ func generateTransactionUserTypeInlineButton(ctx telebot.Context, callbackOpts C
 
 	inlineButtons := make([]telebot.InlineButton, 0, len(contact))
 	for _, user := range contact {
-		callbackOpts.Transaction.DebtorCreditorName = user.NickName
+		callbackOpts.Transaction.ContactName = user.NickName
 		btn := generateInlineButton(callbackOpts, user.FullName)
 		inlineButtons = append(inlineButtons, btn)
 	}
