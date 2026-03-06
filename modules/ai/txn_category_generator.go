@@ -6,9 +6,44 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"sync"
+	"time"
 
 	"github.com/masudur-rahman/expense-tracker-bot/models"
 )
+
+const aiRateLimit = 5 // max requests per second
+
+var (
+	aiMu       sync.Mutex
+	aiTokens   = aiRateLimit
+	aiLastFill = time.Now()
+)
+
+// waitForRateLimit blocks until a rate limit token is available.
+func waitForRateLimit(ctx context.Context) error {
+	for {
+		aiMu.Lock()
+		now := time.Now()
+		elapsed := now.Sub(aiLastFill)
+		if elapsed >= time.Second {
+			aiTokens = aiRateLimit
+			aiLastFill = now
+		}
+		if aiTokens > 0 {
+			aiTokens--
+			aiMu.Unlock()
+			return nil
+		}
+		aiMu.Unlock()
+
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-time.After(100 * time.Millisecond):
+		}
+	}
+}
 
 type GeneratorAI string
 
@@ -28,6 +63,10 @@ func TxnCategoryGenerator(ctx context.Context, userInput string, ai ...Generator
 	generator := GeneratorOpenRouter
 	if len(ai) > 0 {
 		generator = ai[0]
+	}
+
+	if err := waitForRateLimit(ctx); err != nil {
+		return "", err
 	}
 
 	taxonomyJson, err := json.MarshalIndent(models.TxnSubcategories, "", "  ")
