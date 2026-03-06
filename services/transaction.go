@@ -4,6 +4,7 @@ import "github.com/masudur-rahman/expense-tracker-bot/models"
 
 type TransactionService interface {
 	AddTransaction(txn models.Transaction) error
+	Undo(userID int64) (*models.Transaction, error)
 	ListTransactions(userID int64) ([]models.Transaction, error)
 	ListTransactionsByType(userID int64, txnType models.TransactionType) ([]models.Transaction, error)
 	ListTransactionsByCategory(userID int64, catID string) ([]models.Transaction, error)
