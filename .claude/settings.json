@@ -1,0 +1,28 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(go *)",
+      "Bash(make *)",
+      "Bash(git *)",
+      "Bash(golangci-lint *)",
+      "Bash(gofmt *)",
+      "Bash(goimports *)",
+      "Bash(goimports-reviser *)",
+      "Bash(docker build *)",
+      "Bash(ls *)",
+      "Bash(find *)",
+      "Bash(grep *)",
+      "Bash(cat *)",
+      "Read(**)",
+      "Edit(**)",
+      "Write(**)"
+    ],
+    "deny": [
+      "Bash(rm -rf /)",
+      "Bash(rm -rf ~)",
+      "Bash(rm -rf .)",
+      "Bash(sudo *)",
+      "Bash(docker push *)"
+    ]
+  }
+}

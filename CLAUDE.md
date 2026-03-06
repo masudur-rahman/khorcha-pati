@@ -1,148 +1,85 @@
-# CLAUDE.md — Expense Tracker Bot
+# Project: expense-tracker-bot
 
-## Project Overview
+## Overview
+Telegram bot for personal finance tracking. Supports natural language transaction input, interactive menus, PDF reports, category classification via Gemini AI, and multiple database backends (SQLite + PostgreSQL).
 
-A Telegram bot for personal finance tracking built in Go 1.24. Supports natural language transaction input (e.g. "spent 500 for food-rest from dbbl"), interactive menus, PDF reports, and multiple database backends.
-
-**Branch**: `natural` (active development) — upstream PR target: `main`
+## Stack
+Go 1.24 | telebot.v3 | styx ORM (SQLite/PostgreSQL) | Cobra CLI | Zap logger | Redis/go-cache | Gemini AI | Google Drive sync | wkhtmltopdf | Docker multi-stage
 
 ## Architecture
-
-Clean layered architecture with interface-based design:
-
 ```
-models/          → Pure data structs (Profile, Contacts, Wallet, Transaction, …)
-repos/           → Data access interfaces + SQL implementations (styx ORM)
-services/        → Business logic interfaces + implementations
-  services/all/  → Dependency injection registry (GetServices())
+models/             Data structs (Profile, Wallet, Contacts, Transaction, Event)
+repos/              Data access interfaces + styx ORM implementations
+services/           Business logic interfaces + implementations
+  services/all/     DI registry — all.GetServices()
 api/
-  api/tele.go    → Telegram bot route registration
-  api/handlers/  → Standalone handler functions (not struct methods)
-  api/wizard/    → Server-side wizard state store (10-min TTL)
+  tele.go           Bot route registration
+  handlers/         Standalone handler functions (NOT struct methods)
+  wizard/           Server-side wizard state for /newtxn (10-min TTL)
 modules/
-  modules/cache/ → Pluggable cache (memory / Redis)
-  modules/transaction/parser.go → Natural language parser
-  modules/ai/    → Gemini / OpenRouter AI integrations
-  modules/google/→ Google Drive DB backup/restore
-configs/         → Config loading, database init, cache init
-cmd/             → Cobra CLI (root + serve commands)
-pkg/             → Utility packages (PDF, formatter, time helpers, …)
-  pkg/health/    → HTTP health-check handler (JSON /health endpoint)
-  pkg/telegram/  → SplitMessage() helper (≤4000 chars per Telegram message)
-infra/logr/      → Structured logger (Zap)
+  cache/            Pluggable cache (memory map / Redis)
+  transaction/      Natural language parser (amount, date, wallet, contact)
+  ai/               Gemini LLM category classifier
+  google/           Google Drive SQLite backup/restore
+  convert/          Transaction model to GraphQL type conversion
+configs/            Config loading, DB init, env validation
+cmd/                Cobra CLI (root + serve)
+pkg/                Utilities (PDF, formatting, health endpoint, Levenshtein)
+infra/logr/         Structured logger (Zap wrapper)
 ```
 
-## Key Naming Conventions (post-refactor)
-
-| Old name            | New name        | Notes                                   |
-|---------------------|-----------------|-----------------------------------------|
-| Account             | Wallet          | models.Wallet, WalletService, WalletRepo |
-| DebtorCreditor/DrCr | Contact         | models.Contacts, ContactService, etc.   |
-| User (bot owner)    | Profile         | models.Profile; telebot.User unchanged  |
-| models/user.go      | models/profile.go | Contains both Profile and Contacts     |
-| repos/accounts/     | repos/wallets/  | Package name: `wallets`                 |
-| services/accounts/  | services/wallets/ | Package name: `wallets`               |
-| /users command      | /contacts       | Telegram bot command                    |
-
-## Handler Pattern
-
-Handlers are **standalone functions**, not struct methods. They access services via:
-
-```go
-all.GetServices().User          // ProfileService
-all.GetServices().Wallet        // WalletService
-all.GetServices().Transaction   // TransactionService
-all.GetServices().Contact       // ContactService (formerly DrCr)
+## Commands
+```bash
+go run . serve                # run bot locally
+go build ./...                # verify compilation
+go test ./...                 # run tests
+go test -v -race ./...        # tests with race detector
+golangci-lint run ./...       # lint
+make run                      # native go run
+make test                     # test with coverage
+make lint                     # golangci-lint
+make check                    # vet + test
+make docker-build             # single-arch Docker image
+make all-container            # multi-arch Docker build
 ```
 
-Register handlers in `api/tele.go`.
+## Conventions
+- Handlers are standalone functions, access services via `all.GetServices().User / .Wallet / .Contact / .Txn`
+- Register handlers in `api/tele.go`
+- Import order: stdlib -> internal -> external (blank line between groups)
+- Models synced in `configs/database.go:syncTables()` — add new models there
+- Naming: Profile (bot user), Wallet (cash/bank), Contacts (people), Transaction
+- Bot responses use Telegram Markdown (`*bold*`, `` `code` ``, `_italic_`)
+- Transaction.Summary() is the standard emoji-rich formatting pattern for bot output
+
+## Key Naming (post-refactor)
+| Old               | New       | Notes                                       |
+|-------------------|-----------|---------------------------------------------|
+| Account           | Wallet    | models.Wallet, WalletService, repos/wallets |
+| DebtorCreditor    | Contact   | models.Contacts, ContactService             |
+| User (bot owner)  | Profile   | models.Profile; telebot.User unchanged      |
 
 ## Database
+- SQLite (default, Google Drive sync) + PostgreSQL supported
+- Schema auto-synced via styx ORM on startup
+- Wallet.Version field for optimistic concurrency (not yet enforced)
 
-Supports SQLite (default, syncs to Google Drive) and PostgreSQL. Schema auto-synced via `styx` ORM on startup. All models must be listed in `configs/database.go:syncTables()`.
+## Environment
+See `.env.example`. Required: `TELEGRAM_BOT_TOKEN`, `PARSE_APP_ID`, `PARSE_REST_API_KEY`, `PARSE_SERVER_URL`
 
-Models synced: `Profile`, `Contacts`, `Wallet`, `Transaction`, `TxnCategory`, `TxnSubcategory`, `Event`
+## Pending Work
+1. `TransactionService.Undo()` — soft-delete last txn + revert balances
+2. Wire `api/wizard/state.go` into /newtxn handler (64-byte callback_data limit)
+3. Wire `pkg/telegram/SplitMessage()` into /expense, /summary, /allsummary
+4. Optimistic locking in WalletRepo.UpdateBalance using Wallet.Version
 
-## Common Commands
+## Active Context
+Completed full Account/DebtorCreditor -> Wallet/Contact rename. CI/CD passing. Bot responses use emoji-rich formatting.
 
-```bash
-# Run locally
-go run . serve
-
-# Build
-go build -o bin/expense-tracker .
-
-# Tests (native)
-go test ./...
-go test -v -race ./...
-
-# Lint (requires golangci-lint)
-golangci-lint run ./...
-
-# Check build
-go build ./...
-
-# Docker (multi-stage, preserves wkhtmltopdf for PDF)
-docker build -t expense-tracker .
-
-# Makefile targets
-make run           # native go run
-make test          # native go test with coverage
-make vet           # go vet
-make lint          # golangci-lint
-make check         # vet + test
-make tidy          # go mod tidy + verify
-make all-build     # docker-based cross-compile
-make all-container # docker-based container build
-make release       # docker multi-arch push + manifest
-make version       # print version info
-make help          # list all targets
-```
-
-## Environment Variables
-
-See `.env.example` for the full list. Key required vars:
-
-- `TELEGRAM_BOT_TOKEN` — from @BotFather
-- `PARSE_APP_ID`, `PARSE_REST_API_KEY`, `PARSE_SERVER_URL` — Back4App credentials
-- `BOT_MODE` — `polling` (local dev) or `webhook` (production)
-- `BASE_URL` — used for periodic health ping (optional)
-
-Config validation: `configs.Validate()` (call at startup in main if desired).
-
-## Transaction Parser
-
-`modules/transaction/parser.go` — parses natural language like:
-- `"spent 1000 for food-rest from dbbl yesterday"`
-- `"lend 5000 to karim from brac"`
-- `"earn 65k fin-sal to dbbl on 2024-03-15"`
-
-Requires `ContactVerifier` and `AccountVerifier` function types for resolving names.
-
-## New Files Added (refactor)
-
-| File | Purpose |
-|------|---------|
-| `api/wizard/state.go` | Thread-safe wizard state store for /newtxn flow |
-| `api/handlers/undo.go` | /undo handler stub (needs TransactionService.Undo impl) |
-| `pkg/health/health.go` | JSON health endpoint (alternative to existing /healthz) |
-| `pkg/telegram/helpers.go` | SplitMessage(), FormatAmount() helpers |
-| `configs/validate.go` | Required env var validation |
-| `.env.example` | Environment variable template |
-| `.golangci.yml` | golangci-lint configuration |
-| `CHANGELOG.md` | Change log |
-
-## Pending Manual Implementation
-
-These features require code to be written — see CHANGELOG.md for details:
-
-1. `TransactionService.Undo(userID int64)` — soft-delete last transaction + revert balances
-2. Wire `api/wizard/state.go` into `/newtxn` handler to fix 64-byte callback_data limit
-3. Wire `pkg/telegram/SplitMessage()` into `/expense`, `/summary`, `/allsummary` handlers
-4. Register `/contacts` and `/undo` in `api/tele.go`
-5. Optimistic locking in `WalletRepo.UpdateBalance` using `Wallet.Version` field
-
-## Refactor Script
-
-The original automated refactor script is at `hack/refactor/main.go`.
-Run with: `go run hack/refactor/main.go --dry-run --verbose`
+## Learned
+- styx ORM cannot handle `*time.Time` pointer fields — use `int64` unix timestamps
+- `for { select { case <-ticker.C: } }` triggers gosimple S1000 — use `for range ticker.C`
+- golangci-lint v1.64+ removed `run.skip-dirs` — use `issues.exclude-dirs` instead
+- Parser test: "friends" contains "fri" which matches Friday — avoid day-name substrings in test inputs
+- `fmt.Fprintln` already adds newline — don't pass `"text\n"` (triggers go vet)
+- Cache types: `cache.CacheMap` (memory), `cache.CacheRedis` — no `CacheMemory`

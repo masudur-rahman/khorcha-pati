@@ -24,3 +24,5 @@ bin/
 .expense-tracker/expense-tracker.db
 .DS_Store
 .refactor*
+.claude/settings.local.json
+.claude/plan.md
