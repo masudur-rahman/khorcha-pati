@@ -4,7 +4,7 @@
 # Uses BuildKit cache mounts so Go modules and the build cache persist
 # between CI runs, dramatically reducing build time.
 # ══════════════════════════════════════════════════════════════════════════════
-FROM golang:1.24-bookworm AS builder
+FROM golang:1.26-bookworm AS builder
 
 ARG VERSION=dev
 ARG BUILD_DATE=unknown
