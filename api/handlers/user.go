@@ -20,7 +20,7 @@ func handleUserCallback(ctx telebot.Context, callbackOpts CallbackOptions) error
 	msg, err := ctx.Bot().Reply(ctx.Message(), `Reply to this Message with the following data
 
 <nick name> <full name> <email(optional)>
-i.e.: john "John Doe" john@doe.com
+i.e.: john John Doe john@doe.com
 `, &telebot.SendOptions{
 		ReplyTo: ctx.Message(),
 	})
