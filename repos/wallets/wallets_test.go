@@ -52,7 +52,7 @@ func seedWallet(t *testing.T, env testEnv) {
 }
 
 func TestAddNewWallet_success(t *testing.T) {
-	t.Parallel()
+
 	env := setupWalletRepo(t)
 
 	w := &models.Wallet{
@@ -67,7 +67,7 @@ func TestAddNewWallet_success(t *testing.T) {
 }
 
 func TestAddNewWallet_duplicate(t *testing.T) {
-	t.Parallel()
+
 	env := setupWalletRepo(t)
 	seedWallet(t, env)
 
@@ -84,7 +84,7 @@ func TestAddNewWallet_duplicate(t *testing.T) {
 }
 
 func TestGetWalletByShortName_success(t *testing.T) {
-	t.Parallel()
+
 	env := setupWalletRepo(t)
 	seedWallet(t, env)
 
@@ -96,7 +96,7 @@ func TestGetWalletByShortName_success(t *testing.T) {
 }
 
 func TestGetWalletByShortName_notFound(t *testing.T) {
-	t.Parallel()
+
 	env := setupWalletRepo(t)
 
 	w, err := env.repo.GetWalletByShortName(testUserID, "nope")
@@ -107,7 +107,7 @@ func TestGetWalletByShortName_notFound(t *testing.T) {
 }
 
 func TestListWallets_success(t *testing.T) {
-	t.Parallel()
+
 	env := setupWalletRepo(t)
 	seedWallet(t, env)
 
@@ -127,7 +127,7 @@ func TestListWallets_success(t *testing.T) {
 }
 
 func TestListWalletsByType_success(t *testing.T) {
-	t.Parallel()
+
 	env := setupWalletRepo(t)
 	seedWallet(t, env)
 
@@ -148,7 +148,7 @@ func TestListWalletsByType_success(t *testing.T) {
 }
 
 func TestUpdateWalletBalance_success(t *testing.T) {
-	t.Parallel()
+
 	env := setupWalletRepo(t)
 	seedWallet(t, env)
 
@@ -163,7 +163,7 @@ func TestUpdateWalletBalance_success(t *testing.T) {
 }
 
 func TestUpdateWalletBalance_consecutive(t *testing.T) {
-	t.Parallel()
+
 	env := setupWalletRepo(t)
 	seedWallet(t, env)
 
@@ -177,7 +177,7 @@ func TestUpdateWalletBalance_consecutive(t *testing.T) {
 }
 
 func TestUpdateWalletBalance_notFound(t *testing.T) {
-	t.Parallel()
+
 	env := setupWalletRepo(t)
 
 	err := env.repo.UpdateWalletBalance(testUserID, "nope", 100)
@@ -187,7 +187,7 @@ func TestUpdateWalletBalance_notFound(t *testing.T) {
 }
 
 func TestUpdateWalletBalance_optimisticLockMechanism(t *testing.T) {
-	t.Parallel()
+
 	env := setupWalletRepo(t)
 	seedWallet(t, env)
 
@@ -214,7 +214,7 @@ func TestUpdateWalletBalance_optimisticLockMechanism(t *testing.T) {
 }
 
 func TestDeleteWallet_success(t *testing.T) {
-	t.Parallel()
+
 	env := setupWalletRepo(t)
 	seedWallet(t, env)
 

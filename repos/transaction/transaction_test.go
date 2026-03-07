@@ -59,7 +59,7 @@ func seedTransaction(t *testing.T, env testEnv, txn models.Transaction) {
 }
 
 func TestAddTransaction_success(t *testing.T) {
-	t.Parallel()
+
 	env := setupTxnRepo(t)
 
 	txn := models.Transaction{
@@ -77,7 +77,7 @@ func TestAddTransaction_success(t *testing.T) {
 }
 
 func TestAddTransaction_setsTimestamp(t *testing.T) {
-	t.Parallel()
+
 	env := setupTxnRepo(t)
 
 	before := time.Now().Unix()
@@ -97,7 +97,7 @@ func TestAddTransaction_setsTimestamp(t *testing.T) {
 }
 
 func TestGetLastActiveTransaction_success(t *testing.T) {
-	t.Parallel()
+
 	env := setupTxnRepo(t)
 
 	seedTransaction(t, env, models.Transaction{
@@ -125,7 +125,7 @@ func TestGetLastActiveTransaction_success(t *testing.T) {
 }
 
 func TestGetLastActiveTransaction_noTransactions(t *testing.T) {
-	t.Parallel()
+
 	env := setupTxnRepo(t)
 
 	last, err := env.repo.GetLastActiveTransaction(testUserID)
@@ -136,7 +136,7 @@ func TestGetLastActiveTransaction_noTransactions(t *testing.T) {
 }
 
 func TestGetLastActiveTransaction_skipsDeleted(t *testing.T) {
-	t.Parallel()
+
 	env := setupTxnRepo(t)
 
 	seedTransaction(t, env, models.Transaction{
@@ -168,7 +168,7 @@ func TestGetLastActiveTransaction_skipsDeleted(t *testing.T) {
 }
 
 func TestSoftDeleteTransaction_success(t *testing.T) {
-	t.Parallel()
+
 	env := setupTxnRepo(t)
 
 	seedTransaction(t, env, models.Transaction{
@@ -193,7 +193,7 @@ func TestSoftDeleteTransaction_success(t *testing.T) {
 }
 
 func TestListTransactions_filtersDeleted(t *testing.T) {
-	t.Parallel()
+
 	env := setupTxnRepo(t)
 
 	seedTransaction(t, env, models.Transaction{
@@ -223,7 +223,7 @@ func TestListTransactions_filtersDeleted(t *testing.T) {
 }
 
 func TestListTransactionsByTime_success(t *testing.T) {
-	t.Parallel()
+
 	env := setupTxnRepo(t)
 
 	seedTransaction(t, env, models.Transaction{
@@ -262,7 +262,7 @@ func TestListTransactionsByTime_success(t *testing.T) {
 }
 
 func TestUpdateTxnCategories_success(t *testing.T) {
-	t.Parallel()
+
 	env := setupTxnRepo(t)
 
 	err := env.repo.UpdateTxnCategories()
@@ -279,7 +279,7 @@ func TestUpdateTxnCategories_success(t *testing.T) {
 }
 
 func TestGetTxnCategoryName_success(t *testing.T) {
-	t.Parallel()
+
 	env := setupTxnRepo(t)
 	require.NoError(t, env.repo.UpdateTxnCategories())
 
@@ -290,7 +290,7 @@ func TestGetTxnCategoryName_success(t *testing.T) {
 }
 
 func TestGetTxnCategoryName_notFound(t *testing.T) {
-	t.Parallel()
+
 	env := setupTxnRepo(t)
 
 	_, err := env.repo.GetTxnCategoryName("nonexistent")
@@ -299,7 +299,7 @@ func TestGetTxnCategoryName_notFound(t *testing.T) {
 }
 
 func TestGetTxnSubcategoryName_success(t *testing.T) {
-	t.Parallel()
+
 	env := setupTxnRepo(t)
 	require.NoError(t, env.repo.UpdateTxnCategories())
 
@@ -310,7 +310,7 @@ func TestGetTxnSubcategoryName_success(t *testing.T) {
 }
 
 func TestUpdateTxnCategories_idempotent(t *testing.T) {
-	t.Parallel()
+
 	env := setupTxnRepo(t)
 
 	require.NoError(t, env.repo.UpdateTxnCategories())
