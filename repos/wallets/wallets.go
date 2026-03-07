@@ -7,9 +7,9 @@ import (
 	"github.com/masudur-rahman/expense-tracker-bot/infra/logr"
 	"github.com/masudur-rahman/expense-tracker-bot/models"
 	"github.com/masudur-rahman/expense-tracker-bot/repos"
-	"github.com/masudur-rahman/styx/dberr"
 
 	"github.com/masudur-rahman/styx"
+	"github.com/masudur-rahman/styx/dberr"
 	isql "github.com/masudur-rahman/styx/sql"
 )
 

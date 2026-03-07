@@ -99,7 +99,7 @@ docker-build: # @HELP builds a single-arch Docker image using multi-stage Docker
 
 .PHONY: docker-build-push
 docker-build-push: # @HELP builds and pushes multi-arch image via buildx
-	docker buildx build --platform linux/amd64,linux/arm64 --output "type=image,push=true" --tag $(DOCKER_IMAGE):$(VERSION) --builder builder .
+	docker buildx build --platform linux/amd64,linux/arm64 --output "type=image,push=true" --tag $(DOCKER_IMAGE):$(VERSION) .
 
 .PHONY: release
 release: # @HELP builds and pushes multi-arch image for release
