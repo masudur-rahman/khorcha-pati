@@ -16,7 +16,7 @@ type SQLExpenseRepository struct {
 
 func NewSQLExpenseRepository(db isql.Engine, logger logr.Logger) *SQLExpenseRepository {
 	return &SQLExpenseRepository{
-		db:     db.Table("expense"),
+		db:     db.Table(models.Expense{}.TableName()),
 		logger: logger,
 	}
 }

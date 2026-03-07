@@ -20,14 +20,14 @@ type SQLTransactionRepository struct {
 
 func NewSQLTransactionRepository(db isql.Engine, logger logr.Logger) *SQLTransactionRepository {
 	return &SQLTransactionRepository{
-		db:     db.Table("transaction"),
+		db:     db.Table(models.Transaction{}.TableName()),
 		logger: logger,
 	}
 }
 
 func (t *SQLTransactionRepository) WithUnitOfWork(uow styx.UnitOfWork) repos.TransactionRepository {
 	return &SQLTransactionRepository{
-		db:     uow.SQL.Table("transaction"),
+		db:     uow.SQL.Table(models.Transaction{}.TableName()),
 		logger: t.logger,
 	}
 }
@@ -95,7 +95,7 @@ func (t *SQLTransactionRepository) ListTransactionsByTime(userID int64, txnType 
 
 func (t *SQLTransactionRepository) GetTxnCategoryName(catID string) (string, error) {
 	cat := models.TxnCategory{}
-	has, err := t.db.Table("txn_category").ID(catID).FindOne(&cat)
+	has, err := t.db.Table(models.TxnCategory{}.TableName()).ID(catID).FindOne(&cat)
 	if err != nil {
 		return "", err
 	} else if !has {
@@ -108,13 +108,13 @@ func (t *SQLTransactionRepository) GetTxnCategoryName(catID string) (string, err
 func (t *SQLTransactionRepository) ListTxnCategories() ([]models.TxnCategory, error) {
 	t.logger.Infow("list transaction category")
 	cats := make([]models.TxnCategory, 0)
-	err := t.db.Table("txn_category").FindMany(&cats)
+	err := t.db.Table(models.TxnCategory{}.TableName()).FindMany(&cats)
 	return cats, err
 }
 
 func (t *SQLTransactionRepository) GetTxnSubcategoryName(subcatID string) (string, error) {
 	subcat := models.TxnSubcategory{}
-	has, err := t.db.Table("txn_subcategory").ID(subcatID).FindOne(&subcat)
+	has, err := t.db.Table(models.TxnSubcategory{}.TableName()).ID(subcatID).FindOne(&subcat)
 	if err != nil {
 		return "", err
 	} else if !has {
@@ -127,12 +127,12 @@ func (t *SQLTransactionRepository) GetTxnSubcategoryName(subcatID string) (strin
 func (t *SQLTransactionRepository) ListTxnSubcategories(catID string) ([]models.TxnSubcategory, error) {
 	t.logger.Infow("list transaction category")
 	subcats := make([]models.TxnSubcategory, 0)
-	err := t.db.Table("txn_subcategory").FindMany(&subcats, models.TxnSubcategory{CatID: catID})
+	err := t.db.Table(models.TxnSubcategory{}.TableName()).FindMany(&subcats, models.TxnSubcategory{CatID: catID})
 	return subcats, err
 }
 
 func (t *SQLTransactionRepository) UpdateTxnCategories() error {
-	db := t.db.Table("txn_category")
+	db := t.db.Table(models.TxnCategory{}.TableName())
 	catt := models.TxnCategory{}
 	for _, cat := range models.TxnCategories {
 		if has, err := db.ID(cat.ID).FindOne(&catt); err != nil {
@@ -151,7 +151,7 @@ func (t *SQLTransactionRepository) UpdateTxnCategories() error {
 		}
 	}
 
-	db = t.db.Table("txn_subcategory")
+	db = t.db.Table(models.TxnSubcategory{}.TableName())
 	subcatt := models.TxnSubcategory{}
 	for _, subcat := range models.TxnSubcategories {
 		if has, err := db.ID(subcat.ID).FindOne(&subcatt); err != nil {

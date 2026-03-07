@@ -19,14 +19,14 @@ type SQLContactRepository struct {
 
 func NewSQLContactRepository(db isql.Engine, logger logr.Logger) *SQLContactRepository {
 	return &SQLContactRepository{
-		db:     db.Table("contacts"),
+		db:     db.Table(models.Contacts{}.TableName()),
 		logger: logger,
 	}
 }
 
 func (u *SQLContactRepository) WithUnitOfWork(uow styx.UnitOfWork) repos.ContactRepository {
 	return &SQLContactRepository{
-		db:     uow.SQL.Table("contacts"),
+		db:     uow.SQL.Table(models.Contacts{}.TableName()),
 		logger: u.logger,
 	}
 }

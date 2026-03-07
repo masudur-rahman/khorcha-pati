@@ -160,7 +160,7 @@ func LoadAICacheIntoMemory() {
 		return
 	}
 	var rows []models.AICache
-	if err := sqlDB.Table("ai_cache").FindMany(&rows); err != nil {
+	if err := sqlDB.Table(models.AICache{}.TableName()).FindMany(&rows); err != nil {
 		logr.DefaultLogger.Errorw("Failed to load AI cache", "error", err.Error())
 		return
 	}
@@ -184,6 +184,6 @@ func InsertAICache(entry models.AICache) error {
 	if sqlDB == nil {
 		return fmt.Errorf("database not initialized")
 	}
-	_, err := sqlDB.Table("ai_cache").InsertOne(entry)
+	_, err := sqlDB.Table(models.AICache{}.TableName()).InsertOne(entry)
 	return err
 }

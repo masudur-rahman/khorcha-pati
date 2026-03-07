@@ -8,3 +8,7 @@ type Expense struct {
 	Description string    `json:"description"`
 	Date        time.Time `json:"date"`
 }
+
+func (Expense) TableName() string {
+	return "expense"
+}

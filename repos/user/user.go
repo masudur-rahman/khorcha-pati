@@ -14,7 +14,7 @@ type SQLUserRepository struct {
 
 func NewSQLUserRepository(db isql.Engine, logger logr.Logger) *SQLUserRepository {
 	return &SQLUserRepository{
-		db:     db.Table("user"),
+		db:     db.Table(models.Profile{}.TableName()),
 		logger: logger,
 	}
 }

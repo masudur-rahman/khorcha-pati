@@ -24,9 +24,17 @@ type Wallet struct {
 	Version          int64 `db:"version"`
 }
 
+func (Wallet) TableName() string {
+	return "wallet"
+}
+
 type Event struct {
 	ID        int64 `db:"id,pk autoincr"`
 	UserID    int64
 	Message   string
 	Timestamp int64
+}
+
+func (Event) TableName() string {
+	return "event"
 }

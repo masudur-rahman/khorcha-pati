@@ -11,6 +11,10 @@ type Contacts struct {
 	LastTxnTimestamp int64
 }
 
+func (Contacts) TableName() string {
+	return "contacts"
+}
+
 type Profile struct {
 	ID         int64  `db:"id,pk"`
 	TelegramID int64  `db:",uq"`
@@ -18,6 +22,10 @@ type Profile struct {
 	FirstName  string
 	LastName   string
 	Timezone   string `db:"timezone"`
+}
+
+func (Profile) TableName() string {
+	return "profile"
 }
 
 //func (u *Contacts) APIFormat() gqtypes.Contacts {

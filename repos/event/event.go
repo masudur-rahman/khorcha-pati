@@ -14,7 +14,7 @@ type SQLEventRepository struct {
 
 func NewSQLEventRepository(db isql.Engine, logger logr.Logger) *SQLEventRepository {
 	return &SQLEventRepository{
-		db:     db.Table("event"),
+		db:     db.Table(models.Event{}.TableName()),
 		logger: logger,
 	}
 }

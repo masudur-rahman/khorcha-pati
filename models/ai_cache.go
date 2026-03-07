@@ -8,3 +8,7 @@ type AICache struct {
 	Confidence    float64 `db:"confidence"`
 	CreatedAt     int64   `db:"created_at"`
 }
+
+func (AICache) TableName() string {
+	return "ai_cache"
+}

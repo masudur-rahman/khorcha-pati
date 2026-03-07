@@ -18,14 +18,14 @@ type SQLWalletRepository struct {
 
 func NewSQLWalletRepository(db isql.Engine, logger logr.Logger) *SQLWalletRepository {
 	return &SQLWalletRepository{
-		db:     db.Table("wallet"),
+		db:     db.Table(models.Wallet{}.TableName()),
 		logger: logger,
 	}
 }
 
 func (a *SQLWalletRepository) WithUnitOfWork(uow styx.UnitOfWork) repos.WalletRepository {
 	return &SQLWalletRepository{
-		db:     uow.SQL.Table("wallet"),
+		db:     uow.SQL.Table(models.Wallet{}.TableName()),
 		logger: a.logger,
 	}
 }

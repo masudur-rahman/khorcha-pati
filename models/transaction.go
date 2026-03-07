@@ -43,6 +43,10 @@ type Transaction struct {
 	CreatedAt int64 `db:"created_at"` // unix timestamp of creation
 }
 
+func (Transaction) TableName() string {
+	return "transaction"
+}
+
 // Summary creates a user-friendly status message
 func (t Transaction) Summary() string {
 	var sb strings.Builder
@@ -116,10 +120,18 @@ type TxnCategory struct {
 	Name string
 }
 
+func (TxnCategory) TableName() string {
+	return "txn_category"
+}
+
 type TxnSubcategory struct {
 	ID    string `db:",pk"`
 	Name  string
 	CatID string
+}
+
+func (TxnSubcategory) TableName() string {
+	return "txn_subcategory"
 }
 
 var TxnCategories = []TxnCategory{
