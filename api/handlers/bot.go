@@ -112,6 +112,7 @@ Examples:
 <b>📊 Useful Commands</b>
 
 /new      – Add accounts or people
+/contacts – See contacts
 /balance  – See balances
 /summary  – Monthly summary
 /report   – PDF report

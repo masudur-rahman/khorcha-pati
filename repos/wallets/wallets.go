@@ -1,11 +1,13 @@
 package wallets
 
 import (
+	"errors"
 	"time"
 
 	"github.com/masudur-rahman/expense-tracker-bot/infra/logr"
 	"github.com/masudur-rahman/expense-tracker-bot/models"
 	"github.com/masudur-rahman/expense-tracker-bot/repos"
+	"github.com/masudur-rahman/styx/dberr"
 
 	"github.com/masudur-rahman/styx"
 	isql "github.com/masudur-rahman/styx/sql"
@@ -65,7 +67,7 @@ func (a *SQLWalletRepository) AddNewWallet(wallet *models.Wallet) error {
 	} else if !models.IsErrNotFound(err) {
 		return err
 	}
-	_, err = a.db.InsertOne(wallet)
+	_, err = a.db.MustCols("version").InsertOne(wallet)
 	return err
 }
 
@@ -80,22 +82,11 @@ func (a *SQLWalletRepository) UpdateWalletBalance(userID int64, shortName string
 	w.LastTxnAmount = txnAmount
 	w.LastTxnTimestamp = time.Now().Unix()
 	w.Version = oldVersion + 1
-
-	result, err := a.db.Exec(
-		`UPDATE "wallet" SET balance = ?, last_txn_amount = ?, last_txn_timestamp = ?, version = ? WHERE id = ? AND version = ?`,
-		w.Balance, w.LastTxnAmount, w.LastTxnTimestamp, w.Version, w.ID, oldVersion,
-	)
-	if err != nil {
-		return err
-	}
-	rowsAffected, err := result.RowsAffected()
-	if err != nil {
-		return err
-	}
-	if rowsAffected == 0 {
+	err = a.db.ID(w.ID).Where("version = ?", oldVersion).UpdateOne(w)
+	if errors.Is(err, dberr.DataNotFound) {
 		return models.ErrOptimisticLock
 	}
-	return nil
+	return err
 }
 
 func (a *SQLWalletRepository) DeleteWallet(userID int64, shortName string) error {

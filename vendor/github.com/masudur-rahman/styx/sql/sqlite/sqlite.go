@@ -8,6 +8,7 @@ import (
 	"reflect"
 	"strings"
 
+	"github.com/masudur-rahman/styx/dberr"
 	isql "github.com/masudur-rahman/styx/sql"
 	"github.com/masudur-rahman/styx/sql/sqlite/lib"
 
@@ -229,8 +230,18 @@ func (sq SQLite) UpdateOne(document any) error {
 	}
 
 	query := sq.statement.GenerateUpdateQuery(document)
-	_, err := sq.statement.ExecuteWriteQuery(sq.ctx, sq.conn, sq.tx, query)
-	return err
+	result, err := sq.statement.ExecuteWriteQuery(sq.ctx, sq.conn, sq.tx, query)
+	if err != nil {
+		return err
+	}
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rowsAffected == 0 {
+		return dberr.DataNotFound
+	}
+	return nil
 }
 
 func (sq SQLite) DeleteOne(filter ...any) error {
@@ -240,8 +251,18 @@ func (sq SQLite) DeleteOne(filter ...any) error {
 	}
 
 	query := sq.statement.GenerateDeleteQuery()
-	_, err := sq.statement.ExecuteWriteQuery(sq.ctx, sq.conn, sq.tx, query)
-	return err
+	result, err := sq.statement.ExecuteWriteQuery(sq.ctx, sq.conn, sq.tx, query)
+	if err != nil {
+		return err
+	}
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rowsAffected == 0 {
+		return dberr.DataNotFound
+	}
+	return nil
 }
 
 func (sq SQLite) Query(query string, args ...any) (*sql.Rows, error) {

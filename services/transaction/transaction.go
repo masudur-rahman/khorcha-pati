@@ -45,7 +45,7 @@ func (ts *txnService) AddTransaction(txn models.Transaction) error {
 	}
 	defer func() {
 		if err != nil {
-			err = uow.Rollback()
+			_ = uow.Rollback()
 			return
 		}
 		err = uow.Commit()

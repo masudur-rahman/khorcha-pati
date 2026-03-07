@@ -10,7 +10,7 @@ require (
 	github.com/graphql-go/graphql v0.8.1
 	github.com/jedib0t/go-pretty/v6 v6.4.6
 	github.com/masudur-rahman/go-oneliners v1.0.0
-	github.com/masudur-rahman/styx v1.2.3
+	github.com/masudur-rahman/styx v1.2.4
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/redis/go-redis/v9 v9.17.2
 	github.com/rs/xid v1.5.0

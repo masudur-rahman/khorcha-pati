@@ -73,7 +73,7 @@ func (u *SQLContactRepository) AddNewContact(contact *models.Contacts) error {
 	if contact.UserID == 0 {
 		return fmt.Errorf("user-id can't be empty")
 	}
-	_, err := u.db.InsertOne(contact)
+	_, err := u.db.MustCols("net_balance", "last_txn_timestamp").InsertOne(contact)
 	return err
 }
 

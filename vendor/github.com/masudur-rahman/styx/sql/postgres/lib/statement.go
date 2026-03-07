@@ -177,6 +177,7 @@ func (stmt Statement) ExecuteReadQuery(ctx context.Context, conn *sql.Conn, tx *
 }
 
 func (stmt Statement) GenerateInsertQuery(doc any) string {
+	stmt.mustColMap = stmt.generateMustColMap()
 	rvalue := reflect.ValueOf(doc)
 	if reflect.TypeOf(doc).Kind() == reflect.Pointer {
 		rvalue = rvalue.Elem()
@@ -184,11 +185,12 @@ func (stmt Statement) GenerateInsertQuery(doc any) string {
 	var cols, values []string
 	for idx := 0; idx < rvalue.NumField(); idx++ {
 		field := rvalue.Type().Field(idx)
-		if rvalue.Field(idx).IsZero() {
+		col := getFieldName(field)
+
+		if !(stmt.allCols || stmt.mustColMap[col] || !rvalue.Field(idx).IsZero()) {
 			continue
 		}
 
-		col := getFieldName(field)
 		value := formatValues(rvalue.Field(idx).Interface())
 		cols = append(cols, col)
 		values = append(values, value)

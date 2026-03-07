@@ -37,7 +37,7 @@ func (t *SQLTransactionRepository) AddTransaction(txn models.Transaction) error 
 	if txn.Timestamp == 0 {
 		txn.Timestamp = time.Now().Unix()
 	}
-	_, err := t.db.InsertOne(txn)
+	_, err := t.db.MustCols("deleted_at").InsertOne(txn)
 	return err
 }
 
