@@ -350,6 +350,8 @@ github.com/masudur-rahman/go-oneliners v1.0.0 h1:77T+jsdp0TGEWp//OAk6XkzwO/uAmya
 github.com/masudur-rahman/go-oneliners v1.0.0/go.mod h1:5i+VnhZ/R+APsPpo1lZyw19oiO90zXYvKYMLSrFyKec=
 github.com/masudur-rahman/styx v1.2.3 h1:DLdRgdjX5vswocjv8XJW+BGxYzYzSdWnE8aX4bjS4Us=
 github.com/masudur-rahman/styx v1.2.3/go.mod h1:FlSKoqNqoPcHx5rWbGMiIkQfgg3CMSreMPdtsNs0EWc=
+github.com/masudur-rahman/styx v1.2.4 h1:OTIlgIlpB4o1Gs2M2ZDbzURwZPPrHtD8uEunFi1DyEk=
+github.com/masudur-rahman/styx v1.2.4/go.mod h1:FlSKoqNqoPcHx5rWbGMiIkQfgg3CMSreMPdtsNs0EWc=
 github.com/mattn/go-colorable v0.0.9/go.mod h1:9vuHe8Xs5qXnSaW/c/ABM9alt+Vo+STaOChaDxuIBZU=
 github.com/mattn/go-colorable v0.1.4/go.mod h1:U0ppj6V5qS13XJ6of8GYAs25YV2eR4EVcfRqFIhoBtE=
 github.com/mattn/go-colorable v0.1.6/go.mod h1:u6P/XSegPjTcexA+o6vUJrdnUu04hMope9wVRipJSqc=

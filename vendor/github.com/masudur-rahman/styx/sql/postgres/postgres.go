@@ -8,6 +8,7 @@ import (
 	"reflect"
 	"strings"
 
+	"github.com/masudur-rahman/styx/dberr"
 	isql "github.com/masudur-rahman/styx/sql"
 	"github.com/masudur-rahman/styx/sql/postgres/lib"
 )
@@ -226,8 +227,18 @@ func (pg Postgres) UpdateOne(document any) error {
 	}
 
 	query := pg.statement.GenerateUpdateQuery(document)
-	_, err := pg.statement.ExecuteWriteQuery(pg.ctx, pg.conn, pg.tx, query)
-	return err
+	result, err := pg.statement.ExecuteWriteQuery(pg.ctx, pg.conn, pg.tx, query)
+	if err != nil {
+		return err
+	}
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rowsAffected == 0 {
+		return dberr.DataNotFound
+	}
+	return nil
 }
 
 func (pg Postgres) DeleteOne(filter ...any) error {
@@ -237,8 +248,18 @@ func (pg Postgres) DeleteOne(filter ...any) error {
 	}
 
 	query := pg.statement.GenerateDeleteQuery()
-	_, err := pg.statement.ExecuteWriteQuery(pg.ctx, pg.conn, pg.tx, query)
-	return err
+	result, err := pg.statement.ExecuteWriteQuery(pg.ctx, pg.conn, pg.tx, query)
+	if err != nil {
+		return err
+	}
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rowsAffected == 0 {
+		return dberr.DataNotFound
+	}
+	return nil
 }
 
 func (pg Postgres) Query(query string, args ...any) (*sql.Rows, error) {

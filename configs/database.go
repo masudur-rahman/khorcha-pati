@@ -72,9 +72,28 @@ func initializeSQLServices(uow styx.UnitOfWork) error {
 	if err := syncTables(uow.SQL); err != nil {
 		return err
 	}
+	if err := fixNullZeroValues(uow.SQL); err != nil {
+		return err
+	}
 	all.InitiateSQLServices(uow, logr.DefaultLogger)
 
 	return all.GetServices().Txn.UpdateTxnCategories()
+}
+
+// fixNullZeroValues patches existing rows where styx v1.2.3 inserted NULL for zero-value fields.
+func fixNullZeroValues(db isql.Engine) error {
+	stmts := []string{
+		`UPDATE "transaction" SET deleted_at = 0 WHERE deleted_at IS NULL`,
+		`UPDATE "wallet" SET version = 0 WHERE version IS NULL`,
+		`UPDATE "contacts" SET net_balance = 0 WHERE net_balance IS NULL`,
+		`UPDATE "contacts" SET last_txn_timestamp = 0 WHERE last_txn_timestamp IS NULL`,
+	}
+	for _, stmt := range stmts {
+		if _, err := db.Exec(stmt); err != nil {
+			return fmt.Errorf("fix null values: %w", err)
+		}
+	}
+	return nil
 }
 
 //func getServicesForSupabase(ctx context.Context) *all.Services {
