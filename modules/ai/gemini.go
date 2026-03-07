@@ -15,7 +15,7 @@ const (
 	Gemini3FlashPreview = "gemini-3-flash-preview"
 )
 
-func TxnSubcategoryClassifier(ctx context.Context, apiKey, userInput, taxonomyJson string, model ...string) (*ClassificationResult, error) {
+func TxnSubcategoryClassifier(ctx context.Context, apiKey, userInput, taxonomyJSON string, model ...string) (*ClassificationResult, error) {
 	classifier := Gemini25FlashLite
 	if len(model) > 0 {
 		classifier = model[0]
@@ -38,7 +38,7 @@ func TxnSubcategoryClassifier(ctx context.Context, apiKey, userInput, taxonomyJs
     %s
 
     User Input: "%s"
-`, taxonomyJson, userInput)
+`, taxonomyJSON, userInput)
 
 	resp, err := client.Models.GenerateContent(ctx, classifier, genai.Text(prompt), &genai.GenerateContentConfig{
 		ResponseMIMEType: "application/json",

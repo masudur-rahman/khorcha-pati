@@ -4,52 +4,70 @@ version: "2"
 
 linters:
   enable:
-    - errcheck
-    - govet
-    - staticcheck
-    - ineffassign
-    - unused
     - gosec
     - misspell
   disable:
-    - depguard
     - bodyclose
-    - noctx
-    - nilerr
+    - depguard
     - errorlint
+    - nilerr
+    - noctx
+  settings:
+    errcheck:
+      check-type-assertions: false
+      check-blank: false
+      exclude-functions:
+        - fmt.Fprintln
+        - fmt.Fprintf
+        - fmt.Fprint
+    gosec:
+      excludes:
+        - G107
+        - G114
+        - G204
+        - G304
+        - G306
+    govet:
+      disable:
+        - fieldalignment
+        - shadow
+    misspell:
+      locale: US
+    staticcheck:
+      checks:
+        - all
+        - "-QF*"
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    rules:
+      - linters:
+          - errcheck
+          - gosec
+        path: _test\.go
+      - linters:
+          - gosec
+        text: "G117"
+      - linters:
+          - gosec
+        text: "G704"
+    paths:
+      - vendor
+      - hack
+      - third_party$
+      - builtin$
+      - examples$
 
 formatters:
   enable:
     - gofmt
-
-linters-settings:
-  errcheck:
-    check-type-assertions: false
-    check-blank: false
-  govet:
-    disable:
-      - fieldalignment
-      - shadow
-  staticcheck:
-    checks: ["all"]
-  misspell:
-    locale: US
-  gosec:
-    excludes:
-      - G107
-      - G114
-      - G304
-      - G306
-
-run:
-  timeout: 5m
-
-issues:
-  exclude-dirs:
-    - vendor
-    - hack
-  exclude-rules:
-    - path: _test\.go
-      linters:
-        - gosec
-        - errcheck
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$

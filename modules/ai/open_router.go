@@ -103,7 +103,7 @@ func (c *Client) query(ctx context.Context, model OpenRouterModel, messages []ma
 	if err != nil {
 		return "", fmt.Errorf("API request failed: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -134,8 +134,8 @@ func (c *Client) query(ctx context.Context, model OpenRouterModel, messages []ma
 }
 
 // TxnSubcategoryClassifier Classify user input into taxonomy
-func (c *Client) TxnSubcategoryClassifier(ctx context.Context, userInput string, taxonomyJson string) (*ClassificationResult, error) {
-	messages := c.buildPrompt(taxonomyJson, userInput)
+func (c *Client) TxnSubcategoryClassifier(ctx context.Context, userInput string, taxonomyJSON string) (*ClassificationResult, error) {
+	messages := c.buildPrompt(taxonomyJSON, userInput)
 
 	result, err := c.query(ctx, NVDIANemotron30bFree, messages)
 	if err != nil {

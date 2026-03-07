@@ -69,7 +69,7 @@ func TxnCategoryGenerator(ctx context.Context, userInput string, ai ...Generator
 		return "", err
 	}
 
-	taxonomyJson, err := json.MarshalIndent(models.TxnSubcategories, "", "  ")
+	taxonomyJSON, err := json.MarshalIndent(models.TxnSubcategories, "", "  ")
 	if err != nil {
 		return "", err
 	}
@@ -80,7 +80,7 @@ func TxnCategoryGenerator(ctx context.Context, userInput string, ai ...Generator
 		if apiKey == "" {
 			return userInput, nil
 		}
-		result, err = TxnSubcategoryClassifier(ctx, apiKey, userInput, string(taxonomyJson))
+		result, err = TxnSubcategoryClassifier(ctx, apiKey, userInput, string(taxonomyJSON))
 		if err != nil {
 			return "", err
 		}
@@ -90,7 +90,7 @@ func TxnCategoryGenerator(ctx context.Context, userInput string, ai ...Generator
 			return userInput, nil
 		}
 		client := NewClient(apiKey)
-		result, err = client.TxnSubcategoryClassifier(ctx, userInput, string(taxonomyJson))
+		result, err = client.TxnSubcategoryClassifier(ctx, userInput, string(taxonomyJSON))
 		if err != nil {
 			return "", err
 		}

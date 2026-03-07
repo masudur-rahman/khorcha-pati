@@ -69,11 +69,12 @@ func ParseProtoAnyInto(src *anypb.Any, dst any) error {
 func EncodeToBase64(v interface{}) (string, error) {
 	var buf bytes.Buffer
 	encoder := base64.NewEncoder(base64.StdEncoding, &buf)
-	err := json.NewEncoder(encoder).Encode(v)
-	if err != nil {
+	if err := json.NewEncoder(encoder).Encode(v); err != nil {
 		return "", err
 	}
-	defer encoder.Close()
+	if err := encoder.Close(); err != nil {
+		return "", err
+	}
 	return buf.String(), nil
 }
 

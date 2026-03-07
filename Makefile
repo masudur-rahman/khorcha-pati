@@ -35,6 +35,15 @@ build: # @HELP compiles the binary
 run: # @HELP builds and runs locally using native Go (no Docker)
 	go run . serve
 
+# ── Format ───────────────────────────────────────────────────────────────────
+
+.PHONY: fmt
+fmt: # @HELP formats Go and shell source files
+	@which goimports-reviser >/dev/null 2>&1 || go install github.com/incu6us/goimports-reviser/v3@latest
+	goimports-reviser -recursive -company-prefixes=github.com/masudur-rahman -imports-order=std,project,company,general,blanked -format -excludes vendor ./...
+	@which shfmt >/dev/null 2>&1 || go install mvdan.cc/sh/v3/cmd/shfmt@latest
+	find . -path ./vendor -prune -o -name '*.sh' -exec shfmt -l -w -ci -i 4 {} \;
+
 # ── Test & Quality ────────────────────────────────────────────────────────────
 
 .PHONY: test

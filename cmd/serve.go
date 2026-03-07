@@ -65,7 +65,7 @@ to quickly create a Cobra application.`,
 		defer stop()
 
 		healthSrv := startHealthz()
-		go pingHealthzApiPeriodically()
+		go pingHealthzAPIPeriodically()
 		log.Println("Expense Tracker Bot started")
 
 		go bot.Start()
@@ -86,7 +86,7 @@ func init() {
 	rootCmd.AddCommand(serveCmd)
 }
 
-func pingHealthzApiPeriodically() {
+func pingHealthzAPIPeriodically() {
 	logger := logr.DefaultLogger
 	baseURL, ok := os.LookupEnv("BASE_URL")
 	if !ok {

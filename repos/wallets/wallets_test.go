@@ -9,10 +9,10 @@ import (
 	isql "github.com/masudur-rahman/styx/sql"
 	"github.com/masudur-rahman/styx/sql/sqlite"
 	"github.com/masudur-rahman/styx/sql/sqlite/lib"
-	"go.uber.org/zap"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/zap"
 )
 
 const testUserID int64 = 99

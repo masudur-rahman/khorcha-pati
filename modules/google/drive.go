@@ -62,7 +62,7 @@ func readFileFromDrive(svc *drive.Service, upstreamFilePath string) ([]byte, err
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	return io.ReadAll(resp.Body)
 }
@@ -84,7 +84,7 @@ func uploadFileToDrive(svc *drive.Service, upstreamFilePath string, localFilePat
 	if err != nil {
 		return err
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	gf, err := svc.Files.Create(fileMetadata).Media(file).Do()
 	if err != nil {

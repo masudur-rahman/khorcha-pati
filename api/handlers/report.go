@@ -59,7 +59,7 @@ func handleReportCallback(ctx telebot.Context, callbackOpts CallbackOptions) err
 		return ctx.Send(models.ErrCommonResponse(err))
 	}
 
-	//if err  = generateSampleJsonReport(report); err != nil {
+	//if err  = generateSampleJSONReport(report); err != nil {
 	//	return ctx.Send(models.ErrCommonResponse(err))
 	//}
 
@@ -73,7 +73,7 @@ func handleReportCallback(ctx telebot.Context, callbackOpts CallbackOptions) err
 	})
 }
 
-func generateSampleJsonReport(report gqtypes.Report) error { //nolint:unused // kept for local debugging
+func generateSampleJSONReport(report gqtypes.Report) error { //nolint:unused // kept for local debugging
 	data, err := json.MarshalIndent(report, "", "  ")
 	if err != nil {
 		return err
