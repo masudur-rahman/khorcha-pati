@@ -71,9 +71,9 @@ i.e.: %v
 
 func accountExample(typ models.WalletType) string {
 	if typ == models.CashAccount {
-		return "cash \"Cash in Hand\""
+		return "cash Cash in Hand"
 	}
-	return "brac \"BRAC Bank\""
+	return "brac BRAC Bank"
 }
 
 func processAccountCreation(ctx telebot.Context, aop AccountCallbackOptions) error {

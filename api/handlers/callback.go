@@ -3,6 +3,7 @@ package handlers
 import (
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/masudur-rahman/expense-tracker-bot/models"
 	"github.com/masudur-rahman/expense-tracker-bot/modules/cache"
@@ -231,11 +232,12 @@ func handleTransactionWithFlagTypeTextCallback(ctx telebot.Context, callbackOpts
 func handleAccountTypeTextCallback(ctx telebot.Context, callbackOpts CallbackOptions) error {
 	switch callbackOpts.Wallet.NextStep {
 	case StepAccountInfo:
-		info := pkg.SplitString(ctx.Text(), ' ')
-		if len(info) < 2 {
+		fields := strings.Fields(ctx.Text())
+		if len(fields) < 2 {
 			return ctx.Reply("must contain <id> <wallet name>")
 		}
-		callbackOpts.Wallet.ShortName, callbackOpts.Wallet.Name = info[0], info[1]
+		callbackOpts.Wallet.ShortName = fields[0]
+		callbackOpts.Wallet.Name = strings.Join(fields[1:], " ")
 		return processAccountCreation(ctx, callbackOpts.Wallet)
 	default:
 		return ctx.Reply("yet to be implemented")
