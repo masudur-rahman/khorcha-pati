@@ -8,7 +8,6 @@ import (
 	"github.com/masudur-rahman/expense-tracker-bot/models"
 	"github.com/masudur-rahman/expense-tracker-bot/modules/cache"
 	"github.com/masudur-rahman/expense-tracker-bot/modules/transaction"
-	"github.com/masudur-rahman/expense-tracker-bot/pkg"
 	"github.com/masudur-rahman/expense-tracker-bot/services/all"
 
 	"github.com/masudur-rahman/go-oneliners"
@@ -245,19 +244,16 @@ func handleAccountTypeTextCallback(ctx telebot.Context, callbackOpts CallbackOpt
 }
 
 func handleUserTypeTextCallback(ctx telebot.Context, callbackOpts CallbackOptions) error {
-	info := pkg.SplitString(ctx.Text(), ' ')
-	if len(info) < 2 {
-		return ctx.Reply("must contain <id> <name> <email>")
+	fields := strings.Fields(ctx.Text())
+	if len(fields) < 2 {
+		return ctx.Reply("must contain <id> <name> <email(optional)>")
 	}
-	callbackOpts.User = UserCallbackOptions{
-		NickName: info[0],
-		FullName: info[1],
-		Email: func() string {
-			if len(info) > 2 {
-				return info[2]
-			}
-			return ""
-		}(),
+	callbackOpts.User = UserCallbackOptions{NickName: fields[0]}
+	if len(fields) >= 3 && strings.Contains(fields[len(fields)-1], "@") {
+		callbackOpts.User.Email = fields[len(fields)-1]
+		callbackOpts.User.FullName = strings.Join(fields[1:len(fields)-1], " ")
+	} else {
+		callbackOpts.User.FullName = strings.Join(fields[1:], " ")
 	}
 	return processUserCreation(ctx, callbackOpts.User)
 }
