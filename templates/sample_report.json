@@ -298,6 +298,33 @@
       }
     }
   },
+  "typeSummary": [
+    {"name": "Expense", "amount": 10041100},
+    {"name": "Income", "amount": 80100},
+    {"name": "Transfer", "amount": 15000}
+  ],
+  "categorySummary": [
+    {"name": "Food", "amount": 10000000, "type": "Expense"},
+    {"name": "Miscellaneous", "amount": 60000, "type": "Income"},
+    {"name": "Financial", "amount": 21000, "type": "Expense"},
+    {"name": "Entertainment", "amount": 20000, "type": "Expense"},
+    {"name": "Financial", "amount": 15000, "type": "Transfer"},
+    {"name": "Financial", "amount": 20100, "type": "Income"},
+    {"name": "Travel", "amount": 100, "type": "Expense"}
+  ],
+  "subcategorySummary": [
+    {"name": "Snacks", "amount": 10000000, "type": "Expense"},
+    {"name": "Misc", "amount": 60000, "type": "Income"},
+    {"name": "Loan Repayment", "amount": 20000, "type": "Expense"},
+    {"name": "Recreation", "amount": 20000, "type": "Expense"},
+    {"name": "Withdraw", "amount": 15000, "type": "Transfer"},
+    {"name": "Borrow", "amount": 10100, "type": "Income"},
+    {"name": "Lend Recovery", "amount": 10000, "type": "Income"},
+    {"name": "Borrow Return", "amount": 1000, "type": "Expense"},
+    {"name": "Dining", "amount": 100, "type": "Expense"}
+  ],
+  "totalAmount": 10136200,
+  "netBalance": -9961000,
   "startDate": "2025-01-01T00:00:00+06:00",
   "endDate": "2025-03-28T12:33:04.363591+06:00"
 }

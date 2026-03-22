@@ -21,7 +21,6 @@
             table-layout: fixed;
             border-radius: 5px 5px 0 0;
             box-shadow: 0 0 20px rgba(0, 0, 0, 0.15);
-            page-break-inside: avoid !important;
         }
 
         .content-table thead tr {
@@ -45,7 +44,7 @@
         .content-table td {
             font-size: 0.85em;
         }
-        
+
         .content-table .date,
         .content-table .type,
         .content-table .category {
@@ -68,14 +67,36 @@
         .content-table tbody tr:last-of-type {
             border-bottom: 3px solid #009879;
         }
+
+        /* Color coding by transaction type */
+        tr.income td { color: #1a7f37; }
+        tr.transfer td { color: #0969da; }
+        tr.expense .amount { color: #cf222e; }
+        tr.income .amount { color: #1a7f37; }
+        tr.transfer .amount { color: #0969da; }
+
+        .totals-row td {
+            font-weight: bold;
+            border-top: 3px solid #009879;
+            font-size: 0.9em;
+        }
+
         .summary-section {
             margin-top: 30px;
         }
 
         /* Summary table adjustments */
         .summary-table {
-            width: 50%;
+            width: 60%;
             margin: 15px 0;
+            page-break-inside: avoid;
+        }
+
+        .net-balance {
+            font-size: 1.1em;
+            font-weight: bold;
+            margin: 10px 0 20px;
+            color: #333;
         }
 
         h2 {
@@ -127,7 +148,7 @@
         <tbody>
         {{ if .Transactions }}
         {{ range .Transactions }}
-        <tr>
+        <tr class="{{ .Type | toLower }}">
             <td class="date">{{ .Date.Format "Jan 02, '06" }}</td>
             <td class="type">{{ .Type }}</td>
             <td style="text-align: right" class="amount">৳{{ .Amount | formatBDT }}</td>
@@ -139,6 +160,11 @@
             <td>{{ .Remarks }}</td>
         </tr>
         {{ end }}
+        <tr class="totals-row">
+            <td colspan="2">Total</td>
+            <td style="text-align: right" class="amount">৳{{ .TotalAmount | formatBDT }}</td>
+            <td colspan="6"></td>
+        </tr>
         {{ else }}
         <tr>
             <td colspan="9" style="text-align: center; padding: 20px;">No transactions found for this period</td>
@@ -163,11 +189,11 @@
                 </tr>
                 </thead>
                 <tbody>
-                {{ if .Summary.Type }}
-                {{ range $type := .Summary.Type }}
-                <tr>
-                    <td>{{ $type.Name }}</td>
-                    <td style="text-align: right" class="amount">৳{{ $type.Amount | formatBDT }}</td>
+                {{ if .TypeSummary }}
+                {{ range .TypeSummary }}
+                <tr class="{{ .Name | toLower }}">
+                    <td>{{ .Name }}</td>
+                    <td style="text-align: right" class="amount">৳{{ .Amount | formatBDT }}</td>
                 </tr>
                 {{ end }}
                 {{ else }}
@@ -177,30 +203,36 @@
                 {{ end }}
                 </tbody>
             </table>
+            {{ if .TypeSummary }}
+            <div class="net-balance">Net Balance (Income − Expense): ৳{{ .NetBalance | formatBDT }}</div>
+            {{ end }}
         </div>
 
         <table class="content-table summary-table">
             <colgroup>
-                <col style="width: 60%">
                 <col style="width: 40%">
+                <col style="width: 25%">
+                <col style="width: 35%">
             </colgroup>
             <thead>
             <tr>
-                <th>Transaction Category</th>
+                <th>Category</th>
+                <th>Type</th>
                 <th style="text-align: right">Amount</th>
             </tr>
             </thead>
             <tbody>
-            {{ if .Summary.Category }}
-            {{ range $category := .Summary.Category }}
-            <tr>
-                <td>{{ $category.Name }}</td>
-                <td style="text-align: right" class="amount">৳{{ $category.Amount | formatBDT }}</td>
+            {{ if .CategorySummary }}
+            {{ range .CategorySummary }}
+            <tr class="{{ .Type | toLower }}">
+                <td>{{ .Name }}</td>
+                <td>{{ .Type }}</td>
+                <td style="text-align: right" class="amount">৳{{ .Amount | formatBDT }}</td>
             </tr>
             {{ end }}
             {{ else }}
             <tr>
-                <td colspan="2" style="text-align: center; font-style: italic;">No data to display</td>
+                <td colspan="3" style="text-align: center; font-style: italic;">No data to display</td>
             </tr>
             {{ end }}
             </tbody>
@@ -208,26 +240,29 @@
 
         <table class="content-table summary-table">
             <colgroup>
-                <col style="width: 60%">
                 <col style="width: 40%">
+                <col style="width: 25%">
+                <col style="width: 35%">
             </colgroup>
             <thead>
             <tr>
-                <th>Transaction Subcategory</th>
+                <th>Subcategory</th>
+                <th>Type</th>
                 <th style="text-align: right">Amount</th>
             </tr>
             </thead>
             <tbody>
-            {{ if .Summary.Subcategory }}
-            {{ range $subcategory := .Summary.Subcategory }}
-            <tr>
-                <td>{{ $subcategory.Name }}</td>
-                <td style="text-align: right" class="amount">৳{{ $subcategory.Amount | formatBDT }}</td>
+            {{ if .SubcategorySummary }}
+            {{ range .SubcategorySummary }}
+            <tr class="{{ .Type | toLower }}">
+                <td>{{ .Name }}</td>
+                <td>{{ .Type }}</td>
+                <td style="text-align: right" class="amount">৳{{ .Amount | formatBDT }}</td>
             </tr>
             {{ end }}
             {{ else }}
             <tr>
-                <td colspan="2" style="text-align: center; font-style: italic;">No data to display</td>
+                <td colspan="3" style="text-align: center; font-style: italic;">No data to display</td>
             </tr>
             {{ end }}
             </tbody>

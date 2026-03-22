@@ -44,6 +44,7 @@ Expense: %v
 type FieldCost struct {
 	Name   string  `json:"name"`
 	Amount float64 `json:"amount"`
+	Type   string  `json:"type,omitempty"`
 }
 
 type SummaryGroups struct {
@@ -58,10 +59,17 @@ type Report struct {
 	Summary      SummaryGroups `json:"summary"`
 	StartDate    time.Time     `json:"startDate"`
 	EndDate      time.Time     `json:"endDate"`
+
+	// Pre-computed sorted slices for template rendering
+	TypeSummary        []FieldCost `json:"typeSummary,omitempty"`
+	CategorySummary    []FieldCost `json:"categorySummary,omitempty"`
+	SubcategorySummary []FieldCost `json:"subcategorySummary,omitempty"`
+	TotalAmount        float64     `json:"totalAmount"`
+	NetBalance         float64     `json:"netBalance"`
 }
 
-// sortMapToSlice converts map to sorted slice (Amount Descending)
-func sortMapToSlice(input map[string]FieldCost) []FieldCost {
+// SortMapToSlice converts map to sorted slice (Amount Descending).
+func SortMapToSlice(input map[string]FieldCost) []FieldCost {
 	var sorted []FieldCost
 	for k, v := range input {
 		if v.Name == "" {
@@ -81,7 +89,7 @@ func printSection(w io.Writer, title string, data map[string]FieldCost) {
 	if len(data) == 0 {
 		return
 	}
-	items := sortMapToSlice(data)
+	items := SortMapToSlice(data)
 
 	maxNameLen := 0
 	for _, item := range items {
@@ -122,7 +130,7 @@ func (s SummaryGroups) MarkdownString() string {
 		if len(data) == 0 {
 			return
 		}
-		items := sortMapToSlice(data)
+		items := SortMapToSlice(data)
 		fmt.Fprintf(&buf, "\n### %s\n", title)
 		fmt.Fprintln(&buf, "| Name | Amount |")
 		fmt.Fprintln(&buf, "| --- | ---: |")
@@ -191,7 +199,7 @@ func (s SummaryGroups) PNG() ([]byte, error) {
 		if len(data) == 0 {
 			return
 		}
-		items := sortMapToSlice(data)
+		items := SortMapToSlice(data)
 
 		// Section Title (e.g., "BY CATEGORY")
 		dc.SetColor(textDarkCol)

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 	"text/template"
@@ -59,16 +60,14 @@ func handleReportCallback(ctx telebot.Context, callbackOpts CallbackOptions) err
 		return ctx.Send(models.ErrCommonResponse(err))
 	}
 
-	//if err  = generateSampleJSONReport(report); err != nil {
-	//	return ctx.Send(models.ErrCommonResponse(err))
-	//}
-
-	if err = generateTransactionReportFromTemplate(report, ""); err != nil {
+	pdfFile, err := generateTransactionReportFromTemplate(report)
+	if err != nil {
 		return ctx.Send(err.Error())
 	}
+	defer os.Remove(pdfFile)
 
 	return ctx.Send(&telebot.Document{
-		File:     telebot.FromDisk("/tmp/transaction_report.pdf"),
+		File:     telebot.FromDisk(pdfFile),
 		FileName: "transaction_report.pdf",
 	})
 }
@@ -105,26 +104,45 @@ func generateReport(ctx telebot.Context, rop ReportCallbackOptions) (gqtypes.Rep
 	for _, txn := range txns {
 		txnApis = append(txnApis, convert.ToTransactionAPIFormat(txn))
 	}
-
 	report.Transactions = txnApis
 
+	summary, err := buildSummary(svc, txns)
+	if err != nil {
+		return gqtypes.Report{}, err
+	}
+	report.Summary = summary
+
+	report.TypeSummary = gqtypes.SortMapToSlice(summary.Type)
+	report.CategorySummary, err = buildTypeSeparatedSummary(svc, txns, categoryKeyFn, svc.Txn.GetTxnCategoryName)
+	if err != nil {
+		return gqtypes.Report{}, err
+	}
+	report.SubcategorySummary, err = buildTypeSeparatedSummary(svc, txns, subcategoryKeyFn, svc.Txn.GetTxnSubcategoryName)
+	if err != nil {
+		return gqtypes.Report{}, err
+	}
+
+	report.TotalAmount, report.NetBalance = computeTotals(txns)
+
+	return report, nil
+}
+
+func buildSummary(svc *all.Services, txns []models.Transaction) (gqtypes.SummaryGroups, error) {
 	summary := gqtypes.SummaryGroups{
 		Type:        map[string]gqtypes.FieldCost{},
 		Category:    map[string]gqtypes.FieldCost{},
 		Subcategory: map[string]gqtypes.FieldCost{},
 	}
+
 	for _, txn := range txns {
-		// summarize transaction types
 		fc := summary.Type[string(txn.Type)]
 		fc.Amount += txn.Amount
 		summary.Type[string(txn.Type)] = fc
 
-		// summarize transaction subcategories
 		fc = summary.Subcategory[txn.SubcategoryID]
 		fc.Amount += txn.Amount
 		summary.Subcategory[txn.SubcategoryID] = fc
 
-		// summarize transaction categories
 		cat := strings.Split(txn.SubcategoryID, "-")[0]
 		fc = summary.Category[cat]
 		fc.Amount += txn.Amount
@@ -136,26 +154,83 @@ func generateReport(ctx telebot.Context, rop ReportCallbackOptions) (gqtypes.Rep
 		summary.Type[k] = fc
 	}
 
+	var err error
 	for k, fc := range summary.Category {
 		fc.Name, err = svc.Txn.GetTxnCategoryName(k)
 		if err != nil {
-			return gqtypes.Report{}, err
+			return gqtypes.SummaryGroups{}, err
 		}
-
 		summary.Category[k] = fc
 	}
 
 	for k, fc := range summary.Subcategory {
 		fc.Name, err = svc.Txn.GetTxnSubcategoryName(k)
 		if err != nil {
-			return gqtypes.Report{}, err
+			return gqtypes.SummaryGroups{}, err
 		}
-
 		summary.Subcategory[k] = fc
 	}
 
-	report.Summary = summary
-	return report, nil
+	return summary, nil
+}
+
+func categoryKeyFn(txn models.Transaction) string {
+	return strings.Split(txn.SubcategoryID, "-")[0]
+}
+
+func subcategoryKeyFn(txn models.Transaction) string {
+	return txn.SubcategoryID
+}
+
+// buildTypeSeparatedSummary aggregates by key+type, resolves names, and returns sorted slice.
+func buildTypeSeparatedSummary(
+	svc *all.Services,
+	txns []models.Transaction,
+	keyFn func(models.Transaction) string,
+	nameFn func(string) (string, error),
+) ([]gqtypes.FieldCost, error) {
+	type compositeKey struct {
+		key     string
+		txnType string
+	}
+
+	agg := map[compositeKey]float64{}
+	for _, txn := range txns {
+		k := compositeKey{key: keyFn(txn), txnType: string(txn.Type)}
+		agg[k] += txn.Amount
+	}
+
+	result := make([]gqtypes.FieldCost, 0, len(agg))
+	for ck, amount := range agg {
+		name, err := nameFn(ck.key)
+		if err != nil {
+			return nil, err
+		}
+		result = append(result, gqtypes.FieldCost{
+			Name:   name,
+			Amount: amount,
+			Type:   ck.txnType,
+		})
+	}
+
+	sort.Slice(result, func(i, j int) bool {
+		return result[i].Amount > result[j].Amount
+	})
+
+	return result, nil
+}
+
+func computeTotals(txns []models.Transaction) (totalAmount, netBalance float64) {
+	for _, txn := range txns {
+		totalAmount += txn.Amount
+		switch txn.Type {
+		case models.IncomeTransaction:
+			netBalance += txn.Amount
+		case models.ExpenseTransaction:
+			netBalance -= txn.Amount
+		}
+	}
+	return totalAmount, netBalance
 }
 
 func calculateStartTime(duration SummaryDuration) time.Time {
@@ -177,61 +252,73 @@ func calculateStartTime(duration SummaryDuration) time.Time {
 	return startTime
 }
 
-func generateTransactionReportFromTemplate(report gqtypes.Report, reportPdfFileName string) error {
+func generateTransactionReportFromTemplate(report gqtypes.Report) (string, error) {
+	converter := configs.TrackerConfig.System.PDFConverter
+
+	funcMap := template.FuncMap{
+		"formatBDT": FormatBDT,
+		"toLower":   strings.ToLower,
+	}
+
 	// Process body template
-	bodyData, err := templates.FS.ReadFile("transaction_report.tmpl")
+	bodyBytes, err := executeTemplate("transaction_report.tmpl", funcMap, &report)
 	if err != nil {
-		return err
-	}
-	bodyBuf := bytes.Buffer{}
-	funcMap := template.FuncMap{"formatBDT": FormatBDT}
-	bodyTmpl, err := template.New("report").Funcs(funcMap).Parse(string(bodyData))
-	if err != nil {
-		return err
-	}
-	if err = bodyTmpl.Execute(&bodyBuf, &report); err != nil {
-		return err
-	}
-	if err = os.WriteFile("/tmp/transaction_report.html", bodyBuf.Bytes(), 0644); err != nil { //nolint:gosec // temp file for PDF pipeline
-		return err
+		return "", err
 	}
 
-	// Process header template
-	headerData, err := templates.FS.ReadFile("header.tmpl")
+	// Select converter-specific header/footer templates
+	headerTmplName, footerTmplName := selectTemplateNames(converter)
+
+	headerBytes, err := executeTemplate(headerTmplName, funcMap, &report)
 	if err != nil {
-		return err
-	}
-	headerBuf := bytes.Buffer{}
-	headerTmpl, err := template.New("header").Funcs(funcMap).Parse(string(headerData))
-	if err != nil {
-		return err
-	}
-	if err = headerTmpl.Execute(&headerBuf, &report); err != nil {
-		return err
-	}
-	if err = os.WriteFile("/tmp/header.html", headerBuf.Bytes(), 0644); err != nil { //nolint:gosec // temp file for PDF pipeline
-		return err
+		return "", err
 	}
 
-	// Read footer template
-	footerData, err := templates.FS.ReadFile("footer.tmpl")
+	footerBytes, err := executeTemplate(footerTmplName, funcMap, &report)
 	if err != nil {
-		return err
-	}
-	if err = os.WriteFile("/tmp/footer.html", footerData, 0644); err != nil { //nolint:gosec // temp file for PDF pipeline
-		return err
+		return "", err
 	}
 
-	if reportPdfFileName == "" {
-		reportPdfFileName = "/tmp/transaction_report.pdf"
+	pdfFile, err := os.CreateTemp("", "transaction_report_*.pdf")
+	if err != nil {
+		return "", err
 	}
-	return pkg.ConvertHTMLToPDF(
-		configs.TrackerConfig.System.PDFConverter,
-		reportPdfFileName,
-		bodyBuf.Bytes(),
-		headerBuf.Bytes(),
-		footerData,
-	)
+	pdfFile.Close()
+
+	if err = pkg.ConvertHTMLToPDF(converter, pdfFile.Name(), bodyBytes, headerBytes, footerBytes); err != nil {
+		os.Remove(pdfFile.Name())
+		return "", err
+	}
+
+	return pdfFile.Name(), nil
+}
+
+// selectTemplateNames returns header and footer template names for the converter.
+func selectTemplateNames(converter string) (header, footer string) {
+	if converter == "chromedp" {
+		return "header_cdp.tmpl", "footer_cdp.tmpl"
+	}
+	return "header.tmpl", "footer.tmpl"
+}
+
+// executeTemplate reads and executes a named template from the embedded FS.
+func executeTemplate(name string, funcMap template.FuncMap, data any) ([]byte, error) {
+	raw, err := templates.FS.ReadFile(name)
+	if err != nil {
+		return nil, err
+	}
+
+	tmpl, err := template.New(name).Funcs(funcMap).Parse(string(raw))
+	if err != nil {
+		return nil, err
+	}
+
+	var buf bytes.Buffer
+	if err = tmpl.Execute(&buf, data); err != nil {
+		return nil, err
+	}
+
+	return buf.Bytes(), nil
 }
 
 func FormatBDT(amount float64) string {

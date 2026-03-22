@@ -13,15 +13,27 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestGenerateTransactionInvoice(t *testing.T) {
+func TestGenerateTransactionInvoice_Wkhtmltopdf(t *testing.T) {
 	if _, err := exec.LookPath("wkhtmltopdf"); err != nil {
 		t.Skip("wkhtmltopdf not installed, skipping")
 	}
 	report, err := generateSampleReport()
 	assert.NoError(t, err)
 	configs.TrackerConfig.System.PDFConverter = "wkhtmltopdf"
-	err = generateTransactionReportFromTemplate(report, "/tmp/transaction_report_test.pdf")
+	pdfPath, err := generateTransactionReportFromTemplate(report)
 	assert.NoError(t, err)
+	defer os.Remove(pdfPath)
+	assert.FileExists(t, pdfPath)
+}
+
+func TestGenerateTransactionInvoice_Chromedp(t *testing.T) {
+	report, err := generateSampleReport()
+	assert.NoError(t, err)
+	configs.TrackerConfig.System.PDFConverter = "chromedp"
+	pdfPath, err := generateTransactionReportFromTemplate(report)
+	assert.NoError(t, err)
+	defer os.Remove(pdfPath)
+	assert.FileExists(t, pdfPath)
 }
 
 func generateSampleReport() (gqtypes.Report, error) {
