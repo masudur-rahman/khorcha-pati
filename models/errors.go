@@ -155,6 +155,18 @@ func (err ErrAccountNotFound) Error() string {
 	}.Error()
 }
 
+type ErrBudgetNotFound struct {
+	UserID     int64
+	CategoryID string
+}
+
+func (err ErrBudgetNotFound) Error() string {
+	return StatusError{
+		Status:  http.StatusNotFound,
+		Message: fmt.Sprintf("budget not found for user: %v, category: %v", err.UserID, err.CategoryID),
+	}.Error()
+}
+
 type ErrAccountAlreadyExist struct {
 	ShortName string
 }
@@ -179,6 +191,8 @@ func IsErrNotFound(err error) bool {
 	case ErrAccountNotFound:
 		return true
 	case ErrContactNotFound:
+		return true
+	case ErrBudgetNotFound:
 		return true
 
 	default:

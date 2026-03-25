@@ -2,11 +2,13 @@ package all
 
 import (
 	"github.com/masudur-rahman/expense-tracker-bot/infra/logr"
+	"github.com/masudur-rahman/expense-tracker-bot/repos/budgets"
 	"github.com/masudur-rahman/expense-tracker-bot/repos/event"
 	"github.com/masudur-rahman/expense-tracker-bot/repos/transaction"
 	"github.com/masudur-rahman/expense-tracker-bot/repos/user"
 	"github.com/masudur-rahman/expense-tracker-bot/repos/wallets"
 	"github.com/masudur-rahman/expense-tracker-bot/services"
+	budgetsvc "github.com/masudur-rahman/expense-tracker-bot/services/budgets"
 	eventsvc "github.com/masudur-rahman/expense-tracker-bot/services/event"
 	txnsvc "github.com/masudur-rahman/expense-tracker-bot/services/transaction"
 	usersvc "github.com/masudur-rahman/expense-tracker-bot/services/user"
@@ -21,6 +23,7 @@ type Services struct {
 	Contact services.ContactService
 	Txn     services.TransactionService
 	Event   services.EventService
+	Budget  services.BudgetService
 }
 
 var svc *Services
@@ -35,12 +38,14 @@ func InitiateSQLServices(uow styx.UnitOfWork, logger logr.Logger) {
 	contactRepo := user.NewSQLContactRepository(uow.SQL, logger)
 	txnRepo := transaction.NewSQLTransactionRepository(uow.SQL, logger)
 	eventRepo := event.NewSQLEventRepository(uow.SQL, logger)
+	budgetRepo := budgets.NewSQLBudgetRepository(uow.SQL, logger)
 
 	userSvc := usersvc.NewProfileService(userRepo)
 	walletSvc := walletsvc.NewWalletService(walletRepo)
 	contactSvc := usersvc.NewContactService(contactRepo)
 	txnSvc := txnsvc.NewTxnService(uow, walletRepo, contactRepo, txnRepo, eventRepo)
 	eventSvc := eventsvc.NewEventService(eventRepo)
+	budgetSvc := budgetsvc.NewBudgetService(budgetRepo, txnRepo)
 
 	svc = &Services{
 		User:    userSvc,
@@ -48,5 +53,6 @@ func InitiateSQLServices(uow styx.UnitOfWork, logger logr.Logger) {
 		Contact: contactSvc,
 		Txn:     txnSvc,
 		Event:   eventSvc,
+		Budget:  budgetSvc,
 	}
 }
