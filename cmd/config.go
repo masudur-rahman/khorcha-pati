@@ -28,6 +28,8 @@ func initConfig() {
 		log.Fatalf("Unmarshaling PurrfectConfig, %v", err)
 	}
 
+	configs.TrackerConfig.OverrideWithEnv()
+
 	if configs.TrackerConfig.Telegram.User == "" {
 		configs.TrackerConfig.Telegram.User = "masudur_rahman"
 	}

@@ -98,6 +98,7 @@ docker-build: # @HELP builds a single-arch Docker image (PDF_GENERATOR=wkhtmltop
 	  --build-arg VERSION=$(VERSION) \
 	  --build-arg BUILD_DATE=$(commit_timestamp) \
 	  --build-arg GIT_COMMIT=$(commit_hash) \
+	  $(DOCKER_CACHE_ARGS) \
 	  -t $(DOCKER_IMAGE):$(VERSION)$(DOCKER_TAG_SUFFIX) \
 	  -f Dockerfile .
 

@@ -2,6 +2,7 @@ package logr
 
 import (
 	"log"
+	"os"
 
 	"go.uber.org/zap"
 )
@@ -16,12 +17,23 @@ type Logger interface {
 
 	Errorf(format string, args ...interface{})
 	Errorw(msg string, keysAndValues ...interface{})
+
+	Fatalf(format string, v ...interface{})
+	Fatalw(msg string, keysAndValues ...interface{})
 }
 
 var DefaultLogger Logger
 
 func init() {
-	logger, err := zap.NewDevelopment()
+	var (
+		logger *zap.Logger
+		err    error
+	)
+	if os.Getenv("ENV") == "production" {
+		logger, err = zap.NewProduction()
+	} else {
+		logger, err = zap.NewDevelopment()
+	}
 	if err != nil {
 		log.Fatal(err)
 	}

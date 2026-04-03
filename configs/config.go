@@ -2,6 +2,7 @@ package configs
 
 import (
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/masudur-rahman/expense-tracker-bot/modules/cache"
@@ -76,4 +77,25 @@ type DBConfigSQLite struct {
 
 func (cp DBConfigPostgres) String() string {
 	return fmt.Sprintf("user=%v password=%v dbname=%v host=%v port=%v sslmode=%v", cp.User, cp.Password, cp.Name, cp.Host, cp.Port, cp.SSLMode)
+}
+
+func (c *ExpenseConfiguration) OverrideWithEnv() {
+	if token := os.Getenv("EXPENSE_BOT_TOKEN"); token != "" {
+		c.Telegram.Secret = token
+	}
+	if user := os.Getenv("EXPENSE_BOT_USER"); user != "" {
+		c.Telegram.User = user
+	}
+
+	if dbPass := os.Getenv("EXPENSE_DB_PASS"); dbPass != "" {
+		if c.Database.Type == DatabasePostgres {
+			c.Database.Postgres.Password = dbPass
+		} else if c.Database.Type == DatabaseArangoDB {
+			//c.Database.ArangoDB.Password = dbPass
+		}
+	}
+
+	if redisPass := os.Getenv("EXPENSE_REDIS_PASS"); redisPass != "" {
+		c.Cache.Redis.Password = redisPass
+	}
 }
