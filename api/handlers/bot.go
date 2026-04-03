@@ -13,7 +13,6 @@ import (
 	pkgtg "github.com/masudur-rahman/expense-tracker-bot/pkg/telegram"
 	"github.com/masudur-rahman/expense-tracker-bot/services/all"
 
-	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/spf13/pflag"
 	"gopkg.in/telebot.v3"
 )
@@ -354,18 +353,34 @@ func ListTransactions(ctx telebot.Context) error {
 		return ctx.Send(models.ErrCommonResponse(err))
 	}
 
-	txns, err := all.GetServices().Txn.ListTransactions(user.ID)
+	// Fetch transactions from the last 30 days only
+	startTime := time.Now().AddDate(0, 0, -30).Unix()
+	txns, err := all.GetServices().Txn.ListTransactionsByTime(user.ID, "", startTime, time.Now().Unix())
 	if err != nil {
 		return err
 	}
 
-	printer := configs.GetDefaultPrinter()
-	printer.WithStyle(table.StyleLight)
-	printer.WithExceptColumns([]string{"ID"})
-	defer printer.ClearColumns()
-	printer.PrintDocuments(txns)
+	if len(txns) == 0 {
+		return ctx.Send("No transactions found in the last 30 days.")
+	}
 
-	return sendSplitMessage(ctx, printTransactionList(txns))
+	pageSize := 10
+	page := 1
+
+	formatted := pkgtg.FormatTransactionList(txns, page, pageSize)
+	callbackOpts := CallbackOptions{
+		Type: ListPaginationTypeCallback,
+		Pagination: PaginationCallbackOptions{
+			Page: page,
+		},
+	}
+
+	return ctx.Send(formatted, &telebot.SendOptions{
+		ParseMode: telebot.ModeMarkdown,
+		ReplyMarkup: &telebot.ReplyMarkup{
+			InlineKeyboard: generatePaginationKeyboard(callbackOpts, page, len(txns) > pageSize),
+		},
+	})
 }
 
 func ListExpenses(ctx telebot.Context) error {
@@ -374,42 +389,33 @@ func ListExpenses(ctx telebot.Context) error {
 		return ctx.Send(models.ErrCommonResponse(err))
 	}
 
-	txns, err := all.GetServices().Txn.ListTransactionsByTime(user.ID, models.ExpenseTransaction, pkg.StartOfMonth().Unix(), time.Now().Unix())
+	txns, err := all.GetServices().Txn.ListTransactionsByTime(user.ID, models.ExpenseTransaction, 0, time.Now().Unix())
 	if err != nil {
 		return err
 	}
 
-	printer := configs.GetDefaultPrinter()
-	printer.WithStyle(table.StyleLight)
-	printer.WithExceptColumns([]string{"ID"})
-	defer printer.ClearColumns()
-	printer.PrintDocuments(txns)
-
-	return sendSplitMessage(ctx, printTransactionList(txns))
-}
-
-// sendSplitMessage sends text in chunks that fit Telegram's message size limit.
-func sendSplitMessage(ctx telebot.Context, text string) error {
-	for _, chunk := range pkgtg.SplitMessage(text) {
-		if err := ctx.Send(chunk, telebot.ModeMarkdown); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func printTransactionList(txns []models.Transaction) string {
 	if len(txns) == 0 {
-		return "No transactions found."
+		return ctx.Send("No expenses found.")
 	}
-	var sb strings.Builder
-	for i, txn := range txns {
-		sb.WriteString(txn.Summary())
-		if i < len(txns)-1 {
-			sb.WriteString(models.Separator + "\n\n")
-		}
+
+	pageSize := 10
+	page := 1
+
+	formatted := pkgtg.FormatTransactionList(txns, page, pageSize)
+	callbackOpts := CallbackOptions{
+		Type: ListPaginationTypeCallback,
+		Pagination: PaginationCallbackOptions{
+			Page:   page,
+			IsExps: true,
+		},
 	}
-	return sb.String()
+
+	return ctx.Send(formatted, &telebot.SendOptions{
+		ParseMode: telebot.ModeMarkdown,
+		ReplyMarkup: &telebot.ReplyMarkup{
+			InlineKeyboard: generatePaginationKeyboard(callbackOpts, page, len(txns) > pageSize),
+		},
+	})
 }
 
 func SyncSQLiteDatabase(ctx telebot.Context) error {

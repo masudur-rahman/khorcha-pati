@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"bytes"
 	"fmt"
 	"strings"
 	"time"
@@ -53,20 +52,13 @@ func TransactionSummary(ctx telebot.Context) error {
 	}
 
 	summary := generateSummary(txns)
-	for _, chunk := range pkgtg.SplitMessage(summary.String()) {
-		if err := ctx.Send(chunk, &telebot.SendOptions{ParseMode: telebot.ModeHTML}); err != nil {
+	formatted := pkgtg.FormatSummary(summary, "Transaction Summary (This Month)")
+	for _, chunk := range pkgtg.SplitMessage(formatted) {
+		if err := ctx.Send(chunk, telebot.ModeMarkdown); err != nil {
 			return err
 		}
 	}
 	return nil
-
-	//pngBytes, err := summary.PNG()
-	//if err != nil {
-	//	return err
-	//}
-	//
-	//photo := &telebot.Photo{File: telebot.FromReader(bytes.NewReader(pngBytes)), Caption: "Here is your transaction summary."}
-	//return ctx.Send(photo)
 }
 
 func generateSummary(txns []models.Transaction) gqtypes.SummaryGroups {
@@ -95,15 +87,13 @@ func TransactionSummaryCallback(ctx telebot.Context) error {
 	inlineButtons := make([]telebot.InlineButton, 0, 3)
 	for _, groupBy := range groupBies {
 		callbackOpts.Summary.GroupBy = groupBy
-		btn := generateInlineButton(callbackOpts, groupBy)
+		btn := generateInlineButton(callbackOpts, string(groupBy))
 		inlineButtons = append(inlineButtons, btn)
 	}
 
 	return ctx.Send("Select Summarization Group", &telebot.SendOptions{
-		ReplyTo: ctx.Message(),
 		ReplyMarkup: &telebot.ReplyMarkup{
 			InlineKeyboard: generateInlineKeyboard(inlineButtons),
-			ForceReply:     true,
 		},
 	})
 }
@@ -119,17 +109,10 @@ func handleSummaryCallback(ctx telebot.Context, callbackOpts CallbackOptions) er
 			return ctx.Send(models.ErrCommonResponse(err))
 		}
 
-		//return ctx.Send(sg.String(), &telebot.SendOptions{ParseMode: telebot.ModeHTML})
+		title := fmt.Sprintf("Summary: %s (by %s)", summary.Duration, summary.GroupBy)
+		formatted := pkgtg.FormatSummary(sg, title)
 
-		pngBytes, err := sg.PNG()
-		if err != nil {
-			return err
-		}
-		photo := &telebot.Photo{
-			File:    telebot.FromReader(bytes.NewReader(pngBytes)),
-			Caption: fmt.Sprintf("Transaction summary of \"%s\".", summary.Duration),
-		}
-		return ctx.Send(photo)
+		return ctx.Send(formatted, telebot.ModeMarkdown)
 	default:
 		return ctx.Send("⚠️ Invalid step.")
 	}

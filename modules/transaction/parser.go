@@ -524,8 +524,11 @@ func (p *transactionParser) isVerbKeyword(keyword string) bool {
 	case "flexi", "recharge", "top-up":
 		p.txnType = models.ExpenseTransaction
 		p.subcategory = "fin-flexi"
-	case "income", "earn", "earned", "received", "gained":
+	case "income", "earn", "earned", "received", "gained", "add", "plus":
 		p.txnType = models.IncomeTransaction
+		if keyword == "add" || keyword == "plus" {
+			p.subcategory = "misc-init"
+		}
 	case "borrow", "borrowed":
 		p.txnType = models.IncomeTransaction
 		p.subcategory = models.BorrowSubID

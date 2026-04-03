@@ -4,10 +4,13 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/masudur-rahman/expense-tracker-bot/models"
 	"github.com/masudur-rahman/expense-tracker-bot/modules/cache"
 	"github.com/masudur-rahman/expense-tracker-bot/modules/transaction"
+	"github.com/masudur-rahman/expense-tracker-bot/pkg"
+	pkgtg "github.com/masudur-rahman/expense-tracker-bot/pkg/telegram"
 	"github.com/masudur-rahman/expense-tracker-bot/services/all"
 
 	"github.com/masudur-rahman/go-oneliners"
@@ -30,6 +33,7 @@ const (
 	AccountTypeCallback         CallbackType = "💳 Wallet"
 	UserTypeCallback            CallbackType = "👤 Contact"
 	BudgetTypeCallback          CallbackType = "Budget"
+	ListPaginationTypeCallback  CallbackType = "list-pagination"
 
 	StepTxnType     NextStep = "txn-type"
 	StepAmount      NextStep = "txn-amount"
@@ -51,7 +55,14 @@ type CallbackOptions struct {
 	User              UserCallbackOptions        `json:"user,omitempty"`
 	Category          TxnCategoryCallbackOptions `json:"category,omitempty"`
 	Budget            BudgetCallbackOptions      `json:"budget,omitempty"`
+	Pagination        PaginationCallbackOptions  `json:"pagination,omitempty"`
 	LastSelectedValue string
+}
+
+type PaginationCallbackOptions struct {
+	Page   int                    `json:"page"`
+	Type   models.TransactionType `json:"type,omitempty"`
+	IsExps bool                   `json:"isExps,omitempty"`
 }
 
 type TransactionCallbackOptions struct {
@@ -119,6 +130,8 @@ func Callback(ctx telebot.Context) error {
 		return handleUserCallback(ctx, callbackOpts)
 	case BudgetTypeCallback:
 		return handleBudgetCallback(ctx, callbackOpts)
+	case ListPaginationTypeCallback:
+		return HandleListPagination(ctx, callbackOpts)
 	default:
 		return ctx.Send("⚠️ Unknown action.")
 	}
@@ -297,4 +310,73 @@ func handleTransactionFromRegularText(ctx telebot.Context) (string, error) {
 	}
 	summary := txn.Summary() + FormatBudgetAlerts(user.ID, txn.Type, txn.SubcategoryID)
 	return summary, nil
+}
+
+func HandleListPagination(ctx telebot.Context, callbackOpts CallbackOptions) error {
+	pag := callbackOpts.Pagination
+	if pag.Page < 1 {
+		pag.Page = 1
+	}
+	pageSize := 10
+
+	user, err := all.GetServices().User.GetUserByTelegramID(ctx.Sender().ID)
+	if err != nil {
+		return ctx.Edit(models.ErrCommonResponse(err))
+	}
+
+	var txns []models.Transaction
+	txnSvc := all.GetServices().Txn
+	if pag.IsExps {
+		txns, err = txnSvc.ListTransactionsByTime(user.ID, models.ExpenseTransaction, pkg.StartOfMonth().Unix(), time.Now().Unix())
+	} else if pag.Type != "" {
+		txns, err = txnSvc.ListTransactionsByType(user.ID, pag.Type)
+	} else {
+		// Fetch transactions from the last 30 days only
+		startTime := time.Now().AddDate(0, 0, -30).Unix()
+		txns, err = txnSvc.ListTransactionsByTime(user.ID, "", startTime, time.Now().Unix())
+	}
+
+	if err != nil {
+		return ctx.Edit(models.ErrCommonResponse(err))
+	}
+
+	// FormatTransactionList will sort them descending
+	start := (pag.Page - 1) * pageSize
+	if start >= len(txns) {
+		return ctx.Respond(&telebot.CallbackResponse{Text: "No more items."})
+	}
+	
+	formatted := pkgtg.FormatTransactionList(txns, pag.Page, pageSize)
+	
+	// Recalculate end index for navigation logic
+	end := start + pageSize
+	if end > len(txns) {
+		end = len(txns)
+	}
+
+	return ctx.Edit(formatted, &telebot.SendOptions{
+		ParseMode: telebot.ModeMarkdown,
+		ReplyMarkup: &telebot.ReplyMarkup{
+			InlineKeyboard: generatePaginationKeyboard(callbackOpts, pag.Page, len(txns) > end),
+		},
+	})
+}
+
+func generatePaginationKeyboard(opts CallbackOptions, page int, hasNext bool) [][]telebot.InlineButton {
+	var row []telebot.InlineButton
+	if page > 1 {
+		prevOpts := opts
+		prevOpts.Pagination.Page = page - 1
+		row = append(row, generateInlineButton(prevOpts, "⬅️ Previous"))
+	}
+	if hasNext {
+		nextOpts := opts
+		nextOpts.Pagination.Page = page + 1
+		row = append(row, generateInlineButton(nextOpts, "Next ➡️"))
+	}
+
+	if len(row) == 0 {
+		return nil
+	}
+	return [][]telebot.InlineButton{row}
 }

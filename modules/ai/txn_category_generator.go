@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"os"
 
+	"github.com/masudur-rahman/expense-tracker-bot/configs"
 	"github.com/masudur-rahman/expense-tracker-bot/models"
 
 	"golang.org/x/time/rate"
@@ -33,12 +33,12 @@ type ClassificationResult struct {
 }
 
 func TxnCategoryGenerator(ctx context.Context, userInput string, ai ...GeneratorAI) (result *ClassificationResult, err error) {
-	generator := GeneratorOpenRouter
+	generator := GeneratorAI(configs.TrackerConfig.System.AIGenerator)
 	if len(ai) > 0 {
 		generator = ai[0]
 	}
 
-	if err := limiter.Wait(ctx); err != nil {
+	if err = limiter.Wait(ctx); err != nil {
 		return nil, err
 	}
 
@@ -49,7 +49,7 @@ func TxnCategoryGenerator(ctx context.Context, userInput string, ai ...Generator
 
 	switch generator {
 	case GeneratorGemini:
-		apiKey := os.Getenv("GEMINI_API_KEY")
+		apiKey := configs.TrackerConfig.System.GeminiKey
 		if apiKey == "" {
 			return &ClassificationResult{Subcategory: userInput}, nil
 		}
@@ -57,8 +57,8 @@ func TxnCategoryGenerator(ctx context.Context, userInput string, ai ...Generator
 		if err != nil {
 			return nil, err
 		}
-	default:
-		apiKey := os.Getenv("OPENROUTER_API_KEY")
+	case GeneratorOpenRouter:
+		apiKey := configs.TrackerConfig.System.OpenRouterKey
 		if apiKey == "" {
 			return &ClassificationResult{Subcategory: userInput}, nil
 		}
@@ -67,6 +67,8 @@ func TxnCategoryGenerator(ctx context.Context, userInput string, ai ...Generator
 		if err != nil {
 			return nil, err
 		}
+	default:
+		return &ClassificationResult{Subcategory: userInput}, nil
 	}
 
 	fmt.Printf("Matched: %s > %s (Intent: %s, Confidence: %v)\n", result.Category, result.Subcategory, result.Intent, result.Confidence)

@@ -41,6 +41,9 @@ const (
 
 type SystemConfig struct {
 	PDFGenerator PDFGenerator `json:"pdfGenerator" yaml:"pdfGenerator"`
+	AIGenerator  string       `json:"aiGenerator" yaml:"aiGenerator"`
+	GeminiKey    string       `json:"geminiKey" yaml:"geminiKey"`
+	OpenRouterKey string      `json:"openRouterKey" yaml:"openRouterKey"`
 }
 
 type DatabaseType string
@@ -90,12 +93,24 @@ func (c *ExpenseConfiguration) OverrideWithEnv() {
 	if dbPass := os.Getenv("EXPENSE_DB_PASS"); dbPass != "" {
 		if c.Database.Type == DatabasePostgres {
 			c.Database.Postgres.Password = dbPass
-		} else if c.Database.Type == DatabaseArangoDB {
-			//c.Database.ArangoDB.Password = dbPass
 		}
 	}
 
 	if redisPass := os.Getenv("EXPENSE_REDIS_PASS"); redisPass != "" {
 		c.Cache.Redis.Password = redisPass
+	}
+
+	// AI Configuration Overrides
+	if geminiKey := os.Getenv("GEMINI_API_KEY"); geminiKey != "" {
+		c.System.GeminiKey = geminiKey
+		if c.System.AIGenerator == "" {
+			c.System.AIGenerator = "gemini"
+		}
+	}
+	if orKey := os.Getenv("OPENROUTER_API_KEY"); orKey != "" {
+		c.System.OpenRouterKey = orKey
+		if c.System.AIGenerator == "" {
+			c.System.AIGenerator = "open-router"
+		}
 	}
 }
