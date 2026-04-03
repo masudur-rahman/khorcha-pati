@@ -39,7 +39,7 @@ func (e *SQLExpenseRepository) AddNewExpense(expense *models.Expense) error {
 		expense.ID = xid.New().String()
 	}
 
-	id, err := e.db.InsertOne(expense)
+	id, err := e.db.MustCols("amount").InsertOne(expense)
 	if err != nil {
 		return err
 	}

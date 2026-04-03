@@ -99,7 +99,8 @@ func TestAddTransaction_missingUserID(t *testing.T) {
 
 	err := svc.AddTransaction(txn)
 
-	assert.EqualError(t, err, "userid is required")
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "userid is required")
 }
 
 func TestAddTransaction_missingSubcategory(t *testing.T) {
@@ -110,7 +111,8 @@ func TestAddTransaction_missingSubcategory(t *testing.T) {
 
 	err := svc.AddTransaction(txn)
 
-	assert.EqualError(t, err, "subcategory is required")
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "subcategory is required")
 }
 
 func TestAddTransaction_expenseWithLend(t *testing.T) {

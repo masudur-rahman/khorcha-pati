@@ -67,7 +67,7 @@ func (a *SQLWalletRepository) AddNewWallet(wallet *models.Wallet) error {
 	} else if !models.IsErrNotFound(err) {
 		return err
 	}
-	_, err = a.db.MustCols("version").InsertOne(wallet)
+	_, err = a.db.MustCols("version", "balance", "last_txn_amount").InsertOne(wallet)
 	return err
 }
 
@@ -82,7 +82,7 @@ func (a *SQLWalletRepository) UpdateWalletBalance(userID int64, shortName string
 	w.LastTxnAmount = txnAmount
 	w.LastTxnTimestamp = time.Now().Unix()
 	w.Version = oldVersion + 1
-	err = a.db.ID(w.ID).Where("version = ?", oldVersion).UpdateOne(w)
+	err = a.db.ID(w.ID).Where("version = ?", oldVersion).MustCols("balance", "last_txn_amount", "version").UpdateOne(w)
 	if errors.Is(err, dberr.DataNotFound) {
 		return models.ErrOptimisticLock
 	}

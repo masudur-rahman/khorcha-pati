@@ -66,7 +66,7 @@ func (u *SQLContactRepository) UpdateContactBalance(id int64, txnAmount float64)
 	}
 	c.NetBalance += txnAmount
 	c.LastTxnTimestamp = time.Now().Unix()
-	return u.db.ID(c.ID).MustCols("net_balance").UpdateOne(c)
+	return u.db.ID(c.ID).MustCols("net_balance", "last_txn_timestamp").UpdateOne(c)
 }
 
 func (u *SQLContactRepository) AddNewContact(contact *models.Contacts) error {

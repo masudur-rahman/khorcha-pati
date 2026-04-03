@@ -28,7 +28,7 @@ func NewTxnService(uow styx.UnitOfWork, walletRepo repos.WalletRepository, conta
 	}
 }
 
-func (ts *txnService) AddTransaction(txn models.Transaction) error {
+func (ts *txnService) AddTransaction(txn models.Transaction) (err error) {
 	if txn.UserID == 0 {
 		return models.ErrInvalidTransaction{Reason: "userid is required"}
 	}
@@ -87,12 +87,13 @@ func (ts *txnService) AddTransaction(txn models.Transaction) error {
 			return err
 		}
 	}
-	return ts.txnRepo.WithUnitOfWork(uow).AddTransaction(txn)
+	err = ts.txnRepo.WithUnitOfWork(uow).AddTransaction(txn)
+	return err
 }
 
 // Undo soft-deletes the last active transaction and reverses wallet/contact balances.
-func (ts *txnService) Undo(userID int64) (*models.Transaction, error) {
-	txn, err := ts.txnRepo.GetLastActiveTransaction(userID)
+func (ts *txnService) Undo(userID int64) (txn *models.Transaction, err error) {
+	txn, err = ts.txnRepo.GetLastActiveTransaction(userID)
 	if err != nil {
 		return nil, fmt.Errorf("nothing to undo: %w", err)
 	}
@@ -113,11 +114,8 @@ func (ts *txnService) Undo(userID int64) (*models.Transaction, error) {
 		return nil, err
 	}
 
-	if err = ts.txnRepo.WithUnitOfWork(uow).SoftDeleteTransaction(txn.ID, time.Now().Unix()); err != nil {
-		return nil, err
-	}
-
-	return txn, nil
+	err = ts.txnRepo.WithUnitOfWork(uow).SoftDeleteTransaction(txn.ID, time.Now().Unix())
+	return txn, err
 }
 
 func (ts *txnService) reverseBalances(uow styx.UnitOfWork, txn models.Transaction) error {

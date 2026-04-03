@@ -62,7 +62,7 @@ func (r *SQLBudgetRepository) UpsertBudget(budget *models.Budget) error {
 		existing.Amount = budget.Amount
 		existing.AlertAt = budget.AlertAt
 		existing.UpdatedAt = now
-		return r.db.ID(existing.ID).UpdateOne(existing)
+		return r.db.ID(existing.ID).MustCols("amount", "alert_at", "category_id").UpdateOne(existing)
 	}
 
 	budget.CreatedAt = now
