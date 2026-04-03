@@ -2,6 +2,7 @@ package transaction
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"regexp"
 	"strconv"
@@ -195,26 +196,52 @@ func (p *transactionParser) subcategoryAIParser() error {
 	}
 
 	p.subcategory = strings.ToLower(p.subcategory)
-	if subcat, exist := cache.GetCache(p.subcategory); exist {
-		p.subcategory = subcat
+	if cached, exist := cache.GetCache(p.subcategory); exist {
+		var result ai.ClassificationResult
+		if err := json.Unmarshal([]byte(cached), &result); err == nil {
+			p.subcategory = result.Subcategory
+			p.setIntent(result.Intent)
+			return nil
+		}
+		// Fallback for old cache format
+		p.subcategory = cached
 		return nil
 	}
+
 	inputText := p.subcategory
-	subcat, err := ai.TxnCategoryGenerator(context.Background(), inputText)
+	result, err := ai.TxnCategoryGenerator(context.Background(), inputText)
 	if err != nil {
 		return err
 	}
 
-	_ = cache.SetCache(inputText, subcat, -1)
+	// Persist the full result in cache
+	resultJSON, _ := json.Marshal(result)
+	_ = cache.SetCache(inputText, string(resultJSON), -1)
 	if dbErr := configs.InsertAICache(models.AICache{
 		InputText:     inputText,
-		SubcategoryID: subcat,
+		SubcategoryID: result.Subcategory,
 		CreatedAt:     time.Now().Unix(),
 	}); dbErr != nil {
 		logr.DefaultLogger.Errorw("Failed to persist AI cache", "error", dbErr.Error())
 	}
-	p.subcategory = subcat
+
+	p.subcategory = result.Subcategory
+	p.setIntent(result.Intent)
 	return nil
+}
+
+func (p *transactionParser) setIntent(intent string) {
+	if intent == "" {
+		return
+	}
+	switch strings.ToLower(intent) {
+	case "income":
+		p.txnType = models.IncomeTransaction
+	case "expense":
+		p.txnType = models.ExpenseTransaction
+	case "transfer":
+		p.txnType = models.TransferTransaction
+	}
 }
 
 func (p *transactionParser) finalizeMapping(isContact ContactVerifier, isAccount AccountVerifier) {
@@ -224,6 +251,13 @@ func (p *transactionParser) finalizeMapping(isContact ContactVerifier, isAccount
 		}
 		cleanVal := strings.ToLower(val)
 
+		// 1. Match with Contact first
+		if isContact(cleanVal) {
+			p.txn.ContactName = cleanVal
+			return
+		}
+
+		// 2. Match with Wallet (Account) name
 		if isAccount(cleanVal) {
 			if isSource {
 				p.txn.SrcID = cleanVal
@@ -233,14 +267,7 @@ func (p *transactionParser) finalizeMapping(isContact ContactVerifier, isAccount
 			return
 		}
 
-		if isDebtTransaction(p.subcategory) {
-			if isContact(cleanVal) {
-				p.txn.ContactName = cleanVal
-				return
-			}
-			return
-		}
-
+		// 3. Fallback to Remarks
 		prefix := "to"
 		if isSource {
 			prefix = "from"
@@ -256,9 +283,16 @@ func (p *transactionParser) finalizeMapping(isContact ContactVerifier, isAccount
 	processField(p.toValue, false)
 
 	if p.txnType == models.TransferTransaction && p.txn.DstID == "" {
-		p.txnType = models.ExpenseTransaction
-		if p.subcategory == "fin-transfer" {
-			p.subcategory = "misc-misc"
+		// If it was supposed to be a transfer but no destination wallet found,
+		// it's likely an expense or the user mentioned a contact.
+		if p.txn.SrcID != "" && p.txn.ContactName != "" {
+			// This could be a Debt transaction (Lend/Recover)
+			// The subcategoryAIParser should have set the correct type and subcategory.
+		} else {
+			p.txnType = models.ExpenseTransaction
+			if p.subcategory == "fin-transfer" {
+				p.subcategory = "misc-misc"
+			}
 		}
 	}
 
@@ -380,10 +414,10 @@ func isDebtTransaction(subID string) bool {
 func (p *transactionParser) ensureTypeMatchesCategory() {
 	// List of Subcategories that are ALWAYS Income
 	switch p.subcategory {
-	case "fin-sal", "fin-prof", "fin-interest", "fin-borrow", "fin-recover":
+	case "fin-sal", "fin-prof", "fin-interest", "fin-borrow", "fin-recover", "fin-loan", "misc-init":
 		p.txnType = models.IncomeTransaction
 	// List of Subcategories that are ALWAYS Expense
-	case "fin-repay", "fin-lend", "fin-return":
+	case "fin-repay", "fin-lend", "fin-return", "fin-tax", "fin-charge", "fin-ins":
 		p.txnType = models.ExpenseTransaction
 	}
 }

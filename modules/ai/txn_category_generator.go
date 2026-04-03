@@ -6,44 +6,17 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"sync"
-	"time"
 
 	"github.com/masudur-rahman/expense-tracker-bot/models"
+
+	"golang.org/x/time/rate"
 )
 
 const aiRateLimit = 5 // max requests per second
 
 var (
-	aiMu       sync.Mutex
-	aiTokens   = aiRateLimit
-	aiLastFill = time.Now()
+	limiter = rate.NewLimiter(rate.Limit(aiRateLimit), aiRateLimit)
 )
-
-// waitForRateLimit blocks until a rate limit token is available.
-func waitForRateLimit(ctx context.Context) error {
-	for {
-		aiMu.Lock()
-		now := time.Now()
-		elapsed := now.Sub(aiLastFill)
-		if elapsed >= time.Second {
-			aiTokens = aiRateLimit
-			aiLastFill = now
-		}
-		if aiTokens > 0 {
-			aiTokens--
-			aiMu.Unlock()
-			return nil
-		}
-		aiMu.Unlock()
-
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		case <-time.After(100 * time.Millisecond):
-		}
-	}
-}
 
 type GeneratorAI string
 
@@ -53,56 +26,56 @@ const (
 )
 
 type ClassificationResult struct {
+	Intent      string  `json:"intent"`
 	Category    string  `json:"category_id"`
 	Subcategory string  `json:"subcategory_id"`
-	Confidence  float64 `json:"confidence"` // Optional: ask for reasoning/confidence
+	Confidence  float64 `json:"confidence"`
 }
 
-func TxnCategoryGenerator(ctx context.Context, userInput string, ai ...GeneratorAI) (subCatID string, err error) {
-	var result *ClassificationResult
+func TxnCategoryGenerator(ctx context.Context, userInput string, ai ...GeneratorAI) (result *ClassificationResult, err error) {
 	generator := GeneratorOpenRouter
 	if len(ai) > 0 {
 		generator = ai[0]
 	}
 
-	if err := waitForRateLimit(ctx); err != nil {
-		return "", err
+	if err := limiter.Wait(ctx); err != nil {
+		return nil, err
 	}
 
 	taxonomyJSON, err := json.MarshalIndent(models.TxnSubcategories, "", "  ")
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	switch generator {
 	case GeneratorGemini:
 		apiKey := os.Getenv("GEMINI_API_KEY")
 		if apiKey == "" {
-			return userInput, nil
+			return &ClassificationResult{Subcategory: userInput}, nil
 		}
 		result, err = TxnSubcategoryClassifier(ctx, apiKey, userInput, string(taxonomyJSON))
 		if err != nil {
-			return "", err
+			return nil, err
 		}
 	default:
 		apiKey := os.Getenv("OPENROUTER_API_KEY")
 		if apiKey == "" {
-			return userInput, nil
+			return &ClassificationResult{Subcategory: userInput}, nil
 		}
 		client := NewClient(apiKey)
 		result, err = client.TxnSubcategoryClassifier(ctx, userInput, string(taxonomyJSON))
 		if err != nil {
-			return "", err
+			return nil, err
 		}
 	}
 
-	fmt.Printf("Matched: %s > %s (Confidence: %v)\n", result.Category, result.Subcategory, result.Confidence)
+	fmt.Printf("Matched: %s > %s (Intent: %s, Confidence: %v)\n", result.Category, result.Subcategory, result.Intent, result.Confidence)
 	if _, valid := models.SubCatNameMap[result.Subcategory]; !valid && result.Subcategory != "" {
 		fmt.Printf("AI returned invalid subcategory ID %q, falling back to misc-misc\n", result.Subcategory)
 		result.Subcategory = "misc-misc"
 	}
 	if result.Subcategory == "" {
-		return "", errors.New("transaction category can't be determined")
+		return nil, errors.New("transaction category can't be determined")
 	}
-	return result.Subcategory, nil
+	return result, nil
 }

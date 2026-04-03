@@ -81,12 +81,16 @@ func initCache() {
 func TestParseTransaction(t *testing.T) {
 	initCache()
 	mockContacts := func(name string) bool {
-		return strings.ToLower(name) == "unknown"
+		switch strings.ToLower(name) {
+		case "unknown", "masud", "rahim", "ammu", "karim", "rifat":
+			return true
+		}
+		return false
 	}
 
 	mockAccounts := func(name string) bool {
 		switch strings.ToLower(name) {
-		case "brac", "city", "bkash", "dbbl":
+		case "brac", "city", "bkash", "dbbl", "ebl", "cash", "nagad":
 			return true
 		}
 		return false
@@ -102,6 +106,20 @@ func TestParseTransaction(t *testing.T) {
 		want    models.Transaction
 		wantErr bool
 	}{
+		{
+			name: "scenarios",
+			args: args{
+				texts: []string{
+					"Add 500 taka",
+					"Get 500 from masud",
+					"cash 500 from ebl",
+				},
+				contacts: mockContacts,
+				accounts: mockAccounts,
+			},
+			want:    models.Transaction{},
+			wantErr: false,
+		},
 		{
 			name: "test",
 			args: args{

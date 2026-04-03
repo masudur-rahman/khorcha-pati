@@ -47,18 +47,18 @@ func TestTxnCategoryGenerator(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			start := time.Now()
-			gotSubCatID, err := TxnCategoryGenerator(tt.args.ctx, tt.args.userInput, tt.args.ai...)
+			result, err := TxnCategoryGenerator(tt.args.ctx, tt.args.userInput, tt.args.ai...)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("TxnCategoryGenerator() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			// If API key is missing, it returns the input text
-			if gotSubCatID == tt.args.userInput {
-				t.Logf("API key missing or request failed, returned input text: %v", gotSubCatID)
+			// If API key is missing, it returns the input text in subcategory
+			if result != nil && result.Subcategory == tt.args.userInput {
+				t.Logf("API key missing or request failed, returned input text: %v", result.Subcategory)
 				return
 			}
-			if gotSubCatID != tt.wantSubCatID {
-				t.Errorf("TxnCategoryGenerator() gotSubCatID = %v, want %v", gotSubCatID, tt.wantSubCatID)
+			if result != nil && result.Subcategory != tt.wantSubCatID {
+				t.Errorf("TxnCategoryGenerator() gotSubCatID = %v, want %v", result.Subcategory, tt.wantSubCatID)
 			}
 
 			fmt.Println("Time Taken: ", time.Since(start).String())

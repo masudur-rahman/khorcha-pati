@@ -62,18 +62,25 @@ func NewClient(apiKey string) *Client {
 func (c *Client) buildPrompt(taxonomyJSON, userInput string) []map[string]any {
 	return []map[string]any{
 		{"role": "system", "content": `You are a personal expense classification system for a Bangladeshi user.
-Each subcategory has a "Hint" field with keywords and examples — use it to match the user input.
+Each subcategory has a "Hint" field with keywords and examples — use it to match the input.
 Pick the subcategory whose Hint best matches the input. Only fall back to misc-misc if nothing else fits.
-Use ONLY the exact subcategory IDs from the taxonomy. Never invent or modify IDs.
+
+Constraints:
+1. Output must be valid JSON matching the Schema.
+2. The selected SubcategoryID must exist under the selected CategoryID in the Taxonomy.
+3. Match against Hint keywords first, then Name, then general reasoning.
+4. Use ONLY the exact subcategory IDs from the Taxonomy. Never invent new IDs.
+5. Identify the "intent" of the transaction: "income", "expense", or "transfer".
 
 Always respond with valid JSON matching this exact schema:
 {
+	"intent": "income" | "expense" | "transfer",
 	"category_id": "string",
 	"subcategory_id": "string",
 	"confidence": number
 }
 Only return the JSON object, no other text.`},
-		{"role": "user", "content": fmt.Sprintf("Taxonomy:\n%s\n\nUser Input: \"%s\"\n\nClassify this into the best matching subcategory using the Hint keywords.", taxonomyJSON, userInput)},
+		{"role": "user", "content": fmt.Sprintf("Taxonomy:\n%s\n\nUser Input: \"%s\"\n\nClassify this into the best matching subcategory using the Hint keywords and determine the intent.", taxonomyJSON, userInput)},
 	}
 }
 
