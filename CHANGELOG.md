@@ -8,40 +8,23 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## [Unreleased] — natural branch
 
 ### Added
-- **Naming refactor**: Account → Wallet, Debtor/Creditor → Contact, User (bot owner) → Profile
-- **Soft-delete**: Transaction.DeletedAt field; /undo command to reverse the most recent transaction
-- **Optimistic locking**: Wallet.Version field to prevent concurrent balance race conditions
-- **Wizard state store**: Server-side state for /newtxn flow (fixes 64-byte callback_data limit)
-- **Message splitting**: SplitMessage() helper to stay within Telegram's 4096-byte message limit
-- **Health endpoint**: pkg/health HTTP handler for Railway / Docker HEALTHCHECK
-- **TTL cache**: pkg/cache for wallet lists and category taxonomy (reduces Back4App round-trips)
-- **Config validation**: configs.Validate() fails fast on startup if required env vars are missing
-- **.env.example**: Template listing all required/optional environment variables
-- **.golangci.yml**: Comprehensive lint configuration
-- **Multi-arch Docker**: Makefile docker-buildx target and CI release.yml using docker/build-push-action
-- **Cross-compilation**: Makefile cross-build target for linux, darwin, windows (amd64 + arm64)
-- **ldflags**: VERSION, BUILD_DATE, GIT_COMMIT embedded into binary at build time
-- **BuildKit**: DOCKER_BUILDKIT=1 enabled globally in Makefile; cache mounts in Dockerfile
-- **Distroless runtime**: Dockerfile now uses gcr.io/distroless/static:nonroot (from Alpine)
-- **Non-root container**: USER nonroot:nonroot in Dockerfile
-- **CI pipeline**: .github/workflows/ci.yml with test, lint, vuln scan, build jobs
-- **Release pipeline**: .github/workflows/release.yml with multi-arch Docker + GitHub Release
-- **Parser tests**: modules/parser_test.go with table-driven cases
-- **CHANGELOG.md**: This file
+- **Unit of Work (UoW) Fix**: Refactored service layer to use named return variables, ensuring robust error capturing and transactional integrity for all balance-modifying operations.
+- **Bot UX Overhaul**: Replaced boxed tables and images with premium hierarchical MarkdownV2 summaries using tree connectors (├, └).
+- **Stateful Pagination**: Implemented `⬅️ Previous` and `Next ➡️` navigation for `/list` and `/expense` commands.
+- **AutoKeyboardReset Middleware**: Automatically removes sticky `ForceReply` or `ReplyKeyboardMarkup` when switching between commands.
+- **Natural Language Refinement**: Added `add` and `plus` keywords to quickly initialize or adjust balances; improved entity disambiguation hierarchy (Contact > Wallet > Remark).
+- **Architecture**: Centralized AI provider selection (Gemini/OpenRouter) and keys into a configuration-driven model with secure environment overrides.
+- **Scenario Testing**: Added end-to-end "User Journey" tests simulating full cycles of income, expenses, and lending.
+- **Docker Optimization**: 
+    - Optimized build context via strict `.dockerignore` (246MB -> <1MB).
+    - Implemented a "Base Layer" pattern for Chromium dependencies to speed up builds.
+    - Fixed architecture-aware `wkhtmltopdf` downloads for ARM64/AMD64 compatibility.
+- **Security**: Integrated `govulncheck` into the CI/CD pipeline.
 
 ### Changed
-- /users command renamed to /contacts
-- Menu labels: "Account" → "Wallet", "Person" → "Contact"
-- Contact.Balance renamed to Contact.NetBalance (positive = they owe you)
-- Contact struct gains Handle field (short name for text parsing)
-- Profile struct gains Timezone field
-
-### Natural branch parser improvements
-- Wider action-verb vocabulary (paid, received, repaid, collected, ...)
-- Quoted note fields: note "Lunch with team"
-- Relative date expressions: yesterday, last monday, -3d
-- Fuzzy wallet name matching (partial names resolve if unambiguous)
-- Descriptive error messages on parse failure
+- /list command now limits output to the **last 30 days** for improved performance and scalability.
+- Default AI selection now prefers **Gemini** if the API key is provided in the environment.
+- Deprecated `pkg/printer.go` and `pkg/formatter.go` for Telegram-based responses.
 
 ---
 

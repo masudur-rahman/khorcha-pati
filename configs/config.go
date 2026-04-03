@@ -40,10 +40,10 @@ const (
 )
 
 type SystemConfig struct {
-	PDFGenerator PDFGenerator `json:"pdfGenerator" yaml:"pdfGenerator"`
-	AIGenerator  string       `json:"aiGenerator" yaml:"aiGenerator"`
-	GeminiKey    string       `json:"geminiKey" yaml:"geminiKey"`
-	OpenRouterKey string      `json:"openRouterKey" yaml:"openRouterKey"`
+	PDFGenerator  PDFGenerator `json:"pdfGenerator" yaml:"pdfGenerator"`
+	AIGenerator   string       `json:"aiGenerator" yaml:"aiGenerator"`
+	GeminiKey     string       `json:"geminiKey" yaml:"geminiKey"`
+	OpenRouterKey string       `json:"openRouterKey" yaml:"openRouterKey"`
 }
 
 type DatabaseType string

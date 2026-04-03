@@ -6,10 +6,18 @@ A Telegram Bot to track your expenses.
 ## Features
 
 - **Expense Tracking**: Keep track of your daily expenses, income, and balance transfers between accounts.
-- **Flexible Input**: Add transactions interactively by selecting options or simply send a text describing your transaction.
+- **Flexible Input**: Add transactions interactively by selecting options or simply send a text describing your transaction. The bot supports natural language parsing (e.g., "add 500", "lunch 250").
 - **Lending and Borrowing**: Track lendings and borrowings with other individuals.
-- **Transaction Summary**: Retrieve transaction summaries based on type, category, or subcategory for your preferred duration.
+- **Paginated Lists**: View your transactions and expenses in clean, paginated Markdown lists with easy navigation.
+- **Hierarchical Summaries**: Retrieve transaction summaries formatted with beautiful hierarchical tree connectors for better readability on mobile.
 - **Transaction Reports**: Generate transaction reports in PDF format for your chosen duration.
+
+## Premium User Experience
+
+- **Auto Keyboard Cleanup**: Automatically removes sticky `ForceReply` or `ReplyKeyboardMarkup` states when switching between commands.
+- **Smart NLP**: Understands natural phrases like `add 500` or `plus 1000` to quickly initialize or adjust your balances.
+- **Fast Pagination**: Command responses like `/list` and `/expense` use stateful pagination to keep your chat clean and responsive.
+- **Mobile-First Formatting**: Summaries and lists are formatted with hierarchical tree connectors for perfect readability on mobile screens.
 
 ## Usage
 The `Expense Tracker Bot` is now available for public use.
@@ -42,6 +50,7 @@ You just need to mention:
 
 **Examples:**
 ```
+add 500
 lunch 250
 groceries 1.5k
 bought a new shirt for 2500
@@ -102,7 +111,7 @@ Financial (fin):
 - Mobile Recharge (fin-flexi)
 - Credit Card Payment (fin-ccpay)
 - DPS (fin-dps)
-- Bank Loan (Taken) (fin-loan-get)
+- Bank Loan (Taken) (fin-loan)
 - Bank Repayment (fin-repay)
 - Lending (Given) (fin-lend)
 - Lend Recovery (Received) (fin-recover)
@@ -180,7 +189,7 @@ Festival (fest):
 - Fest Feast (fest-food)
 
 Miscellaneous (misc):
-- Initial Amount (misc-initial)
+- Initial Amount (misc-init)
 - General Gifts (misc-gift)
 - General Charity (misc-charity)
 - Office/Work Exp (misc-office)
@@ -195,31 +204,16 @@ You always can send `/cat` command to list the subcategory
 
 ### Available commands:
 - `/new` - Add new Wallet or Contact
-  - `Wallet` - Add new wallet (Cash, Bank)
-    - i.e: `brac "BRAC Bank"`
-    - i.e: `cash "Cash in Hand"`
-  - `Contact` - Add a person for lending/borrowing
-
 - `/newtxn` - Add new transaction (Interactive)
 - `/undo` - Undo last transaction (soft-delete + revert balances)
-- `/contacts` - List contacts
-  - list all the people involved in lending/borrowing with you
-- `/balance` - List Wallet Balances
-  - list all the registered wallets and their balance
-- `/list` - List recent transactions
-- `/expense` - Fetch Expense of Current month
-  - list transactions of current month
-- `/summary` - Transaction summary of current month
-  - list transaction summary of current month
-- `/allsummary` - Transaction summary based on Type, Category, Subcategory
-  - list transaction summary based on Type, Category, Subcategory
-  - with a duration query parameter
-- `/report` - Transaction Report
-  - list transaction report
-  - with a duration query parameter
-- `/cat` - List Transaction categories
-  - list all the registered categories
-  - by selecting a category, list all the registered subcategories of that category
+- `/contacts` - List contacts involved in lending/borrowing
+- `/balance` - List current wallet balances
+- `/list` - List transactions from the last 30 days (Paginated)
+- `/expense` - List expenses of the current month (Paginated)
+- `/summary` - Hierarchical summary of the current month
+- `/allsummary` - Detailed summary based on Type, Category, or Subcategory
+- `/report` - Generate a PDF Transaction Report
+- `/cat` - List Transaction categories and subcategories
 - `/sync` - Sync database to Google Drive (if configured)
 - `/help` - Show Usage page
 
@@ -233,7 +227,8 @@ https://github.com/masudur-rahman/expense-tracker-bot/assets/13915755/83db45c8-1
 A list of possible future work:
 - [x] Add support for undoing a transaction
 - [x] Add Database backup and restore support (Google Drive sync)
-- [ ] Add support for multiple users
+- [x] Support for multi-arch Docker builds (AMD64/ARM64)
+- [x] Add support for multiple users
 
 ## Self Hosting
 

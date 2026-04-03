@@ -2,7 +2,7 @@
 # ══════════════════════════════════════════════════════════════════════════════
 # Stage 1 · Build
 # ══════════════════════════════════════════════════════════════════════════════
-FROM golang:1.24-bookworm AS builder
+FROM golang:1.26-bookworm AS builder
 
 ARG VERSION=dev
 ARG BUILD_DATE=unknown
@@ -72,19 +72,27 @@ CMD ["serve"]
 # ══════════════════════════════════════════════════════════════════════════════
 FROM runtime-base AS wkhtmltopdf
 
-ARG TARGETARCH=amd64
+ARG TARGETARCH
 ARG WKHTMLTOPDF_VERSION=0.12.6.1-3
 ARG DEBIAN_RELEASE_NAME=bookworm
 
-# Cache the heavy download
+# Cache the heavy download and install dependencies properly
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
     set -x && \
+    # Map TARGETARCH to wkhtmltopdf arch naming
+    case "${TARGETARCH}" in \
+        "amd64") WK_ARCH="amd64" ;; \
+        "arm64") WK_ARCH="arm64" ;; \
+        *) WK_ARCH="amd64" ;; \
+    esac && \
     apt-get update && \
-    wget -q https://github.com/wkhtmltopdf/packaging/releases/download/${WKHTMLTOPDF_VERSION}/wkhtmltox_${WKHTMLTOPDF_VERSION}.${DEBIAN_RELEASE_NAME}_${TARGETARCH}.deb && \
-    apt-get install -y --no-install-recommends ./wkhtmltox_${WKHTMLTOPDF_VERSION}.${DEBIAN_RELEASE_NAME}_${TARGETARCH}.deb && \
+    apt-get install -y --no-install-recommends \
+      libxrender1 libxtst6 libfontconfig1 libjpeg62-turbo xfonts-75dpi xfonts-base && \
+    wget -q https://github.com/wkhtmltopdf/packaging/releases/download/${WKHTMLTOPDF_VERSION}/wkhtmltox_${WKHTMLTOPDF_VERSION}.${DEBIAN_RELEASE_NAME}_${WK_ARCH}.deb && \
+    dpkg -i wkhtmltox_${WKHTMLTOPDF_VERSION}.${DEBIAN_RELEASE_NAME}_${WK_ARCH}.deb && \
     ldconfig && \
-    rm wkhtmltox_${WKHTMLTOPDF_VERSION}.${DEBIAN_RELEASE_NAME}_${TARGETARCH}.deb
+    rm wkhtmltox_${WKHTMLTOPDF_VERSION}.${DEBIAN_RELEASE_NAME}_${WK_ARCH}.deb
 
 RUN mkdir -p /app/configs /app/.sqlite && \
     chown -R 65535:65535 /app

@@ -113,6 +113,11 @@ func TestParseTransaction(t *testing.T) {
 					"Add 500 taka",
 					"Get 500 from masud",
 					"cash 500 from ebl",
+					"plus 1000",
+					"100 taka baksheesh",
+					"50 taka rickshaw",
+					"ammu ke 5000 pathalam",           // Banglish: "Sent 5000 to Ammu"
+					"brac theke city te 10k transfer", // Banglish: "Transfer 10k from BRAC to City"
 				},
 				contacts: mockContacts,
 				accounts: mockAccounts,

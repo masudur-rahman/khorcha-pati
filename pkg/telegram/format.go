@@ -22,7 +22,7 @@ func FormatSummary(sg gqtypes.SummaryGroups, title string) string {
 			return
 		}
 		sb.WriteString(fmt.Sprintf("%s *%s*\n", emoji, header))
-		
+
 		// Sort keys for consistent output
 		keys := make([]string, 0, len(m))
 		for k := range m {
@@ -92,7 +92,7 @@ func FormatTransactionList(txns []models.Transaction, page, pageSize int) string
 		}
 
 		dateStr := time.Unix(txn.Timestamp, 0).Format("02 Jan")
-		
+
 		sb.WriteString(fmt.Sprintf("%d. %s *%.2f* | %s\n", start+i+1, emoji, txn.Amount, subName))
 		sb.WriteString(fmt.Sprintf("   `[%s]`", dateStr))
 		if txn.Remarks != "" {

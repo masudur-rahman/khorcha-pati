@@ -345,9 +345,9 @@ func HandleListPagination(ctx telebot.Context, callbackOpts CallbackOptions) err
 	if start >= len(txns) {
 		return ctx.Respond(&telebot.CallbackResponse{Text: "No more items."})
 	}
-	
+
 	formatted := pkgtg.FormatTransactionList(txns, pag.Page, pageSize)
-	
+
 	// Recalculate end index for navigation logic
 	end := start + pageSize
 	if end > len(txns) {
