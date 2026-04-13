@@ -81,6 +81,7 @@ func (u *SQLUserRepository) UpdateUser(id int64, us *models.Profile) error {
 	user.Username = us.Username
 	user.FirstName = us.FirstName
 	user.LastName = us.LastName
+	user.MobileNumber = us.MobileNumber
 
 	return u.db.ID(id).UpdateOne(user)
 }

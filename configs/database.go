@@ -88,6 +88,7 @@ func fixNullZeroValues(db isql.Engine) error {
 		`UPDATE "contacts" SET net_balance = 0 WHERE net_balance IS NULL`,
 		`UPDATE "contacts" SET last_txn_timestamp = 0 WHERE last_txn_timestamp IS NULL`,
 		`UPDATE "budget" SET alert_at = 80 WHERE alert_at IS NULL`,
+		`UPDATE "refresh_token" SET revoked = 0 WHERE revoked IS NULL`,
 	}
 	for _, stmt := range stmts {
 		if _, err := db.Exec(stmt); err != nil {
@@ -172,6 +173,7 @@ func syncTables(db isql.Engine) error {
 		models.Event{},
 		models.AICache{},
 		models.Budget{},
+		models.RefreshToken{},
 	)
 }
 

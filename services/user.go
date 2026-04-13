@@ -17,8 +17,10 @@ type ProfileService interface {
 	GetUserByID(id int64) (*models.Profile, error)
 	GetUserByTelegramID(id int64) (*models.Profile, error)
 	GetUserByUsername(username string) (*models.Profile, error)
+	GetUserByIdentifier(identifier string) (*models.Profile, error)
 	ListUsers() ([]models.Profile, error)
 	SignUp(user *models.Profile) error
 	UpdateUser(id int64, user *models.Profile) error
+	UpdateMobileNumber(userID int64, mobile string) error
 	DeleteUser(id int64) error
 }

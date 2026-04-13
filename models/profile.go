@@ -16,12 +16,13 @@ func (Contacts) TableName() string {
 }
 
 type Profile struct {
-	ID         int64  `db:"id,pk"`
-	TelegramID int64  `db:",uq"`
-	Username   string `db:",uq"`
-	FirstName  string
-	LastName   string
-	Timezone   string `db:"timezone"`
+	ID           int64  `db:"id,pk"`
+	TelegramID   int64  `db:",uq"`
+	Username     string `db:",uq"`
+	FirstName    string
+	LastName     string
+	Timezone     string `db:"timezone"`
+	MobileNumber string `db:"mobile_number"`
 }
 
 func (Profile) TableName() string {
