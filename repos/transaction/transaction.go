@@ -41,6 +41,26 @@ func (t *SQLTransactionRepository) AddTransaction(txn models.Transaction) error 
 	return err
 }
 
+// GetTransactionByID returns a transaction by its primary key.
+func (t *SQLTransactionRepository) GetTransactionByID(id int64) (*models.Transaction, error) {
+	t.logger.Infow("get transaction by ID", "id", id)
+	var txn models.Transaction
+	found, err := t.db.ID(id).FindOne(&txn)
+	if err != nil {
+		return nil, err
+	}
+	if !found {
+		return nil, fmt.Errorf("transaction %d not found", id)
+	}
+	return &txn, nil
+}
+
+// UpdateTransaction updates a transaction record by ID.
+func (t *SQLTransactionRepository) UpdateTransaction(id int64, txn *models.Transaction) error {
+	t.logger.Infow("updating transaction", "id", id)
+	return t.db.ID(id).MustCols("deleted_at", "amount", "timestamp").UpdateOne(txn)
+}
+
 // GetLastActiveTransaction returns the most recent non-deleted transaction for a user.
 func (t *SQLTransactionRepository) GetLastActiveTransaction(userID int64) (*models.Transaction, error) {
 	t.logger.Infow("get last active transaction", "userID", userID)

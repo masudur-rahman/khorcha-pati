@@ -24,6 +24,18 @@ func (m *TransactionRepo) AddTransaction(txn models.Transaction) error {
 	return m.Called(txn).Error(0)
 }
 
+func (m *TransactionRepo) GetTransactionByID(id int64) (*models.Transaction, error) {
+	args := m.Called(id)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*models.Transaction), args.Error(1)
+}
+
+func (m *TransactionRepo) UpdateTransaction(id int64, txn *models.Transaction) error {
+	return m.Called(id, txn).Error(0)
+}
+
 func (m *TransactionRepo) GetLastActiveTransaction(userID int64) (*models.Transaction, error) {
 	args := m.Called(userID)
 	if args.Get(0) == nil {
