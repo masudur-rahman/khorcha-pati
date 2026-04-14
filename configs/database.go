@@ -24,6 +24,11 @@ import (
 // sqlDB holds a reference to the database engine for utility functions.
 var sqlDB isql.Engine
 
+// GetUnitOfWork returns a UnitOfWork wrapping the active database engine.
+func GetUnitOfWork() styx.UnitOfWork {
+	return styx.UnitOfWork{SQL: sqlDB}
+}
+
 func InitiateCache() {
 	cache.Init(TrackerConfig.Cache)
 }

@@ -26,6 +26,7 @@ type WebDashboardConfig struct {
 	JWTSecret     string `json:"jwtSecret" yaml:"jwtSecret"`
 	RefreshSecret string `json:"refreshSecret" yaml:"refreshSecret"`
 	BotUsername   string `json:"botUsername" yaml:"botUsername"`
+	CORSOrigin   string `json:"corsOrigin" yaml:"corsOrigin"`
 	Port          string `json:"port" yaml:"port"`
 }
 
@@ -133,6 +134,9 @@ func (c *ExpenseConfiguration) OverrideWithEnv() {
 	}
 	if secret := os.Getenv("WEB_REFRESH_SECRET"); secret != "" {
 		c.WebDashboard.RefreshSecret = secret
+	}
+	if origin := os.Getenv("WEB_CORS_ORIGIN"); origin != "" {
+		c.WebDashboard.CORSOrigin = origin
 	}
 	if username := os.Getenv("WEB_BOT_USERNAME"); username != "" {
 		c.WebDashboard.BotUsername = username

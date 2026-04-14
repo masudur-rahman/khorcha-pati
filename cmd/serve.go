@@ -30,8 +30,10 @@ import (
 	"time"
 
 	"github.com/masudur-rahman/expense-tracker-bot/api"
+	"github.com/masudur-rahman/expense-tracker-bot/api/web"
 	"github.com/masudur-rahman/expense-tracker-bot/configs"
 	"github.com/masudur-rahman/expense-tracker-bot/infra/logr"
+	"github.com/masudur-rahman/expense-tracker-bot/services/all"
 
 	"github.com/spf13/cobra"
 )
@@ -64,6 +66,26 @@ to quickly create a Cobra application.`,
 		ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 		defer stop()
 
+		var webSrv *http.Server
+		if cfg := configs.TrackerConfig.WebDashboard; cfg.Enabled {
+			messenger := api.NewBotMessenger(bot)
+			uow := configs.GetUnitOfWork()
+			all.InitiateWebServices(messenger, cfg.JWTSecret, cfg.RefreshSecret, cfg.BotUsername, uow, logr.DefaultLogger)
+
+			port := cfg.Port
+			if port == "" {
+				port = ":8081"
+			}
+			router := web.NewRouter(cfg.JWTSecret, cfg.CORSOrigin)
+			webSrv = &http.Server{Addr: port, Handler: router, ReadHeaderTimeout: 10 * time.Second}
+			go func() {
+				log.Printf("Web dashboard started at %s", port)
+				if err := webSrv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+					log.Printf("Web server error: %v", err)
+				}
+			}()
+		}
+
 		healthSrv := startHealthz()
 		go pingHealthzAPIPeriodically()
 		log.Println("Expense Tracker Bot started")
@@ -76,6 +98,11 @@ to quickly create a Cobra application.`,
 
 		shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
+		if webSrv != nil {
+			if err := webSrv.Shutdown(shutdownCtx); err != nil {
+				log.Printf("Web server shutdown error: %v", err)
+			}
+		}
 		if err := healthSrv.Shutdown(shutdownCtx); err != nil {
 			log.Printf("Health server shutdown error: %v", err)
 		}
