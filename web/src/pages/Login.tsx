@@ -53,7 +53,7 @@ function OTPLogin() {
     setLoading(true)
     try {
       const data = await verifyOTP(identifier, code)
-      login(data.accessToken)
+      login(data.accessToken, (data as any).refreshToken)
       navigate('/')
     } catch (e: any) {
       setError(e.message)
@@ -122,7 +122,7 @@ function QRLogin() {
         const data = await pollQR(sessionID)
         if (data.status === 'approved' && data.accessToken) {
           clearInterval(interval)
-          login(data.accessToken)
+          login(data.accessToken, (data as any).refreshToken)
           setStatus('approved')
           navigate('/')
         } else if (data.status === 'expired') {
@@ -157,7 +157,7 @@ function QRLogin() {
     <div className="text-center space-y-4">
       <QRCodeSVG value={deepLink} size={200} className="mx-auto" />
       <p className="text-sm text-gray-600">
-        Open Telegram and scan this code, or <a href={deepLink} className="text-blue-600 underline" target="_blank" rel="noopener noreferrer">click here</a> on mobile.
+        Scan this QR with your phone camera, or <a href={deepLink} className="text-blue-600 underline" target="_blank" rel="noopener noreferrer">click here</a> on mobile.
       </p>
       <p className="text-xs text-gray-400 animate-pulse">Waiting for confirmation...</p>
     </div>

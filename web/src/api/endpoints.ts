@@ -1,4 +1,4 @@
-import { apiFetch } from './client'
+import { apiFetch, getRefreshToken } from './client'
 import type {
   Transaction, Wallet, Contact, BudgetStatus, BudgetAlert,
   ChartData, TxnCategory, Profile,
@@ -11,7 +11,7 @@ export const requestOTP = (identifier: string) =>
   apiFetch(`${API}/auth/request-otp`, { method: 'POST', body: JSON.stringify({ identifier }) })
 
 export const verifyOTP = (identifier: string, code: string) =>
-  apiFetch<{ accessToken: string }>(`${API}/auth/verify-otp`, {
+  apiFetch<{ accessToken: string; refreshToken: string }>(`${API}/auth/verify-otp`, {
     method: 'POST', body: JSON.stringify({ identifier, code }),
   })
 
@@ -19,15 +19,18 @@ export const initQR = () =>
   apiFetch<{ sessionID: string; deepLink: string }>(`${API}/auth/qr/init`, { method: 'POST' })
 
 export const pollQR = (session: string) =>
-  apiFetch<{ status: string; accessToken?: string }>(`${API}/auth/qr/status?session=${session}`)
+  apiFetch<{ status: string; accessToken?: string; refreshToken?: string }>(`${API}/auth/qr/status?session=${session}`)
 
 export const logout = () =>
-  apiFetch(`${API}/auth/logout`, { method: 'POST' })
+  apiFetch(`${API}/auth/logout`, {
+    method: 'POST',
+    body: JSON.stringify({ refreshToken: getRefreshToken() }),
+  })
 
 // Transactions
 export const listTransactions = (params?: Record<string, string>) => {
   const qs = params ? '?' + new URLSearchParams(params).toString() : ''
-  return apiFetch<Transaction[]>(`${API}/transactions${qs}`)
+  return apiFetch<{ data: Transaction[]; pagination: any }>(`${API}/transactions${qs}`)
 }
 
 export const createTransaction = (txn: Partial<Transaction>) =>
@@ -42,8 +45,14 @@ export const deleteTransaction = (id: number) =>
 // Wallets
 export const listWallets = () => apiFetch<Wallet[]>(`${API}/wallets`)
 
+export const createWallet = (wallet: Partial<Wallet>) =>
+  apiFetch<Wallet>(`${API}/wallets`, { method: 'POST', body: JSON.stringify(wallet) })
+
 // Contacts
 export const listContacts = () => apiFetch<Contact[]>(`${API}/contacts`)
+
+export const createContact = (contact: Partial<Contact>) =>
+  apiFetch<Contact>(`${API}/contacts`, { method: 'POST', body: JSON.stringify(contact) })
 
 // Budgets
 export const listBudgets = () => apiFetch<BudgetStatus[]>(`${API}/budgets`)
@@ -65,8 +74,21 @@ export const getChartData = (year?: number, month?: number, months?: number) => 
   return apiFetch<ChartData>(`${API}/summary/charts?${params}`)
 }
 
+export const downloadReport = (duration: string) => {
+  const url = `/api/v1/summary/report?duration=${duration}`
+  return apiFetch<Blob>(url, { headers: { 'Accept': 'application/pdf' } })
+}
+
 // Categories
 export const listCategories = () => apiFetch<TxnCategory[]>(`${API}/categories`)
 
+export const listSubcategories = (catId?: string) => {
+  const qs = catId ? `?catId=${catId}` : ''
+  return apiFetch<{ id: string; name: string; catId: string }[]>(`${API}/subcategories${qs}`)
+}
+
 // Profile
 export const getProfile = () => apiFetch<Profile>(`${API}/profile`)
+
+export const updateProfile = (data: Partial<Profile>) =>
+  apiFetch<Profile>(`${API}/profile`, { method: 'PUT', body: JSON.stringify(data) })

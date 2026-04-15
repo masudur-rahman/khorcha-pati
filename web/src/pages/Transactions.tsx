@@ -1,38 +1,44 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useTransactions, useCreateTransaction, useUpdateTransaction, useDeleteTransaction } from '../hooks/useTransactions'
+import { useWallets } from '../hooks/useWallets'
+import { useContacts } from '../hooks/useContacts'
 import { useQuery } from '@tanstack/react-query'
-import { listWallets, listContacts, listCategories } from '../api/endpoints'
+import { listCategories, listSubcategories } from '../api/endpoints'
 import type { Transaction, Wallet, Contact, TxnCategory } from '../types'
 
 type TxnType = 'Expense' | 'Income' | 'Transfer'
-
 const typeOptions: TxnType[] = ['Expense', 'Income', 'Transfer']
 
 export default function Transactions() {
-  const { data: txns, isLoading } = useTransactions()
-  const { data: wallets } = useQuery({ queryKey: ['wallets'], queryFn: listWallets })
-  const { data: contacts } = useQuery({ queryKey: ['contacts'], queryFn: listContacts })
+  const { data: resp, isLoading } = useTransactions()
+  const txns = resp?.data ?? []
+  const { data: wallets } = useWallets()
+  const { data: contacts } = useContacts()
   const { data: categories } = useQuery({ queryKey: ['categories'], queryFn: listCategories })
+  const { data: subcategories } = useQuery({ queryKey: ['subcategories'], queryFn: () => listSubcategories() })
 
   const [filterType, setFilterType] = useState<string>('')
   const [showAdd, setShowAdd] = useState(false)
   const [editTxn, setEditTxn] = useState<Transaction | null>(null)
   const [deleteTxn, setDeleteTxn] = useState<Transaction | null>(null)
 
+  const subcatMap = useMemo(() => {
+    const m = new Map<string, string>()
+    subcategories?.forEach(s => m.set(s.id, s.name))
+    return m
+  }, [subcategories])
+
   if (isLoading) return <p className="text-gray-500">Loading...</p>
 
-  const filtered = (txns ?? []).filter(t => !filterType || t.type === filterType)
+  const filtered = txns.filter(t => !filterType || t.type === filterType)
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-4">
         <h1 className="text-2xl font-bold">Transactions</h1>
-        <button
-          className="bg-blue-600 text-white px-4 py-2 rounded text-sm hover:bg-blue-700"
-          onClick={() => setShowAdd(true)}
-        >
-          + Add
-        </button>
+        <div className="flex gap-2">
+          <button onClick={() => setShowAdd(true)} className="bg-blue-600 text-white px-4 py-2 rounded text-sm hover:bg-blue-700">+ Add Txn</button>
+        </div>
       </div>
 
       <div className="flex gap-2">
@@ -48,7 +54,7 @@ export default function Transactions() {
             <tr className="text-left text-gray-500 border-b">
               <th className="p-3">Type</th>
               <th className="p-3">Amount</th>
-              <th className="p-3">Category</th>
+              <th className="p-3">Sub Category</th>
               <th className="p-3">From</th>
               <th className="p-3">To</th>
               <th className="p-3">Date</th>
@@ -65,7 +71,7 @@ export default function Transactions() {
                 <td className={`p-3 font-medium ${t.type === 'Income' ? 'text-green-600' : 'text-red-600'}`}>
                   {t.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                 </td>
-                <td className="p-3">{t.subcategoryId}</td>
+                <td className="p-3">{subcatMap.get(t.subcategoryId) || t.subcategoryId}</td>
                 <td className="p-3">{t.srcId}</td>
                 <td className="p-3">{t.dstId}</td>
                 <td className="p-3 text-gray-500">{new Date(t.timestamp * 1000).toLocaleDateString()}</td>
@@ -85,6 +91,7 @@ export default function Transactions() {
           wallets={wallets ?? []}
           contacts={contacts ?? []}
           categories={categories ?? []}
+          subcategories={subcategories ?? []}
           onClose={() => setShowAdd(false)}
         />
       )}
@@ -94,12 +101,11 @@ export default function Transactions() {
           wallets={wallets ?? []}
           contacts={contacts ?? []}
           categories={categories ?? []}
+          subcategories={subcategories ?? []}
           onClose={() => setEditTxn(null)}
         />
       )}
-      {deleteTxn && (
-        <DeleteDialog txn={deleteTxn} onClose={() => setDeleteTxn(null)} />
-      )}
+      {deleteTxn && <DeleteDialog txn={deleteTxn} onClose={() => setDeleteTxn(null)} />}
     </div>
   )
 }
@@ -120,21 +126,32 @@ interface TxnDialogProps {
   wallets: Wallet[]
   contacts: Contact[]
   categories: TxnCategory[]
+  subcategories: { id: string; name: string; catId: string }[]
   onClose: () => void
 }
 
-function TxnDialog({ txn, wallets, contacts, categories, onClose }: TxnDialogProps) {
+function TxnDialog({ txn, wallets, contacts, categories, subcategories, onClose }: TxnDialogProps) {
   const create = useCreateTransaction()
   const update = useUpdateTransaction()
   const isEdit = !!txn
 
   const [type, setType] = useState<TxnType>(txn?.type ?? 'Expense')
   const [amount, setAmount] = useState(txn?.amount?.toString() ?? '')
+  const [catId, setCatId] = useState(() => {
+    if (txn?.subcategoryId) {
+      return subcategories.find(s => s.id === txn.subcategoryId)?.catId || ''
+    }
+    return ''
+  })
   const [subcategoryId, setSubcategoryId] = useState(txn?.subcategoryId ?? '')
   const [srcId, setSrcId] = useState(txn?.srcId ?? '')
   const [dstId, setDstId] = useState(txn?.dstId ?? '')
   const [contactName, setContactName] = useState(txn?.contactName ?? '')
   const [remarks, setRemarks] = useState(txn?.remarks ?? '')
+
+  const filteredSubs = useMemo(() => {
+    return subcategories.filter(s => !catId || s.catId === catId)
+  }, [subcategories, catId])
 
   const handleSubmit = () => {
     const payload: Partial<Transaction> = {
@@ -159,7 +176,8 @@ function TxnDialog({ txn, wallets, contacts, categories, onClose }: TxnDialogPro
       <div className="space-y-3">
         <Select label="Type" value={type} onChange={v => setType(v as TxnType)} options={typeOptions.map(t => ({ value: t, label: t }))} />
         <Input label="Amount" type="number" value={amount} onChange={setAmount} />
-        <Select label="Category" value={subcategoryId} onChange={setSubcategoryId} options={categories.map(c => ({ value: c.id, label: c.name }))} />
+        <Select label="Category" value={catId} onChange={v => { setCatId(v); setSubcategoryId(''); }} options={categories.map(c => ({ value: c.id, label: c.name }))} />
+        <Select label="Sub Category" value={subcategoryId} onChange={setSubcategoryId} options={filteredSubs.map(s => ({ value: s.id, label: s.name }))} />
         <Select label="From (Wallet)" value={srcId} onChange={setSrcId} options={wallets.map(w => ({ value: w.shortName, label: w.name }))} />
         <Select
           label={type === 'Transfer' ? 'To (Wallet)' : 'To'}
@@ -192,7 +210,7 @@ function DeleteDialog({ txn, onClose }: { txn: Transaction; onClose: () => void 
     <Overlay onClose={onClose}>
       <h2 className="text-lg font-bold mb-2">Delete Transaction?</h2>
       <p className="text-sm text-gray-500 mb-4">
-        {txn.type} of {txn.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })} — {txn.subcategoryId}
+        {txn.type} of {txn.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
       </p>
       <div className="flex gap-2 justify-end">
         <button className="px-4 py-2 rounded text-sm bg-gray-100 hover:bg-gray-200" onClick={onClose}>Cancel</button>

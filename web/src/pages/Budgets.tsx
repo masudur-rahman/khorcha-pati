@@ -122,7 +122,7 @@ function SetBudgetDialog({ categories, existingIds, onClose }: SetBudgetDialogPr
               value={categoryId}
               onChange={e => setCategoryId(e.target.value)}
             >
-              <option value="">-- select --</option>
+              <option value="">Overall</option>
               {available.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
           </label>
