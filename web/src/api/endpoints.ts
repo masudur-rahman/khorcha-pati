@@ -21,6 +21,11 @@ export const initQR = () =>
 export const pollQR = (session: string) =>
   apiFetch<{ status: string; accessToken?: string; refreshToken?: string }>(`${API}/auth/qr/status?session=${session}`)
 
+export const verifyMagicLink = (token: string) =>
+  apiFetch<{ accessToken: string; refreshToken: string }>(`${API}/auth/magic-link`, {
+    method: 'POST', body: JSON.stringify({ token }),
+  })
+
 export const logout = () =>
   apiFetch(`${API}/auth/logout`, {
     method: 'POST',

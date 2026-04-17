@@ -3,7 +3,8 @@ import { useQuery } from '@tanstack/react-query'
 import { listWallets, listContacts } from '../api/endpoints'
 import { useCreateWallet } from '../hooks/useWallets'
 import { useCreateContact } from '../hooks/useContacts'
-import { Plus } from 'lucide-react'
+import { Plus, CreditCard, Banknote } from 'lucide-react'
+import { fmt } from '../lib/formatter'
 
 export default function Wallets() {
   const { data: wallets, isLoading: wLoading } = useQuery({ queryKey: ['wallets'], queryFn: listWallets })
@@ -15,32 +16,45 @@ export default function Wallets() {
   if (wLoading || cLoading) return <p className="text-gray-500">Loading...</p>
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-12 pb-8">
       <section>
-        <div className="flex items-center justify-between mb-4">
-          <h1 className="text-2xl font-bold">Wallets</h1>
+        <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Wallets</h1>
+            <p className="text-gray-500 text-sm mt-1">Manage your bank accounts and cash</p>
+          </div>
           <button
             onClick={() => setShowAddWallet(true)}
-            className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors shadow-sm"
+            className="flex items-center justify-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-2xl text-sm font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-100 group cursor-pointer"
           >
-            <Plus size={18} />
+            <Plus size={18} className="group-hover:rotate-90 transition-transform" />
             Add Wallet
           </button>
-        </div>
+        </header>
+
         {(!wallets || wallets.length === 0) ? (
-          <p className="text-gray-400 text-sm">No wallets</p>
+          <div className="bg-white rounded-3xl p-12 text-center border border-dashed border-gray-200">
+            <div className="text-4xl mb-4">💳</div>
+            <p className="text-gray-400 font-medium">No wallets found. Add one to get started.</p>
+          </div>
         ) : (
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {wallets.map(w => (
-              <div key={w.id} className="bg-white rounded-lg shadow p-4 border-l-4 border-blue-500">
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="font-semibold">{w.name}</h3>
-                  <span className="text-xs bg-gray-100 px-2 py-0.5 rounded font-medium text-gray-600">{w.type}</span>
+              <div key={w.id} className="bg-white rounded-[2rem] shadow-sm p-8 border border-gray-100 hover:border-blue-200 transition-all group relative overflow-hidden cursor-pointer">
+                <div className="absolute top-0 right-0 p-6 opacity-5 group-hover:opacity-10 transition-opacity">
+                    {w.type === 'Bank' ? <CreditCard size={80} /> : <Banknote size={80} />}
                 </div>
-                <p className={`text-xl font-bold ${w.balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  {w.balance.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                <div className="flex items-center justify-between mb-6">
+                  <div className={`p-3 rounded-2xl ${w.type === 'Bank' ? 'bg-blue-50 text-blue-600' : 'bg-emerald-50 text-emerald-600'}`}>
+                    {w.type === 'Bank' ? <CreditCard size={20} /> : <Banknote size={20} />}
+                  </div>
+                  <span className="text-[10px] bg-gray-50 px-2.5 py-1 rounded-lg font-bold text-gray-400 uppercase tracking-widest">{w.type}</span>
+                </div>
+                <h3 className="text-lg font-bold text-gray-900 mb-1">{w.name}</h3>
+                <p className="text-xs text-gray-400 font-bold uppercase tracking-widest mb-4">{w.shortName}</p>
+                <p className={`text-3xl font-bold whitespace-nowrap ${w.balance >= 0 ? 'text-gray-900' : 'text-red-600'}`}>
+                  {fmt(w.balance)}
                 </p>
-                <p className="text-xs text-gray-400 mt-1 font-mono">{w.shortName}</p>
               </div>
             ))}
           </div>
@@ -48,42 +62,57 @@ export default function Wallets() {
       </section>
 
       <section>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-bold">Contacts</h2>
+        <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900 tracking-tight">Contacts</h2>
+            <p className="text-gray-500 text-sm mt-1">People you transact with frequently</p>
+          </div>
           <button
             onClick={() => setShowAddContact(true)}
-            className="flex items-center gap-2 bg-gray-100 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors"
+            className="flex items-center justify-center gap-2 bg-gray-900 text-white px-6 py-3 rounded-2xl text-sm font-bold hover:bg-black transition-all shadow-lg shadow-gray-200 group cursor-pointer"
           >
-            <Plus size={18} />
+            <Plus size={18} className="group-hover:rotate-90 transition-transform" />
             Add Contact
           </button>
-        </div>
+        </header>
+
         {(!contacts || contacts.length === 0) ? (
-          <p className="text-gray-400 text-sm">No contacts</p>
+          <div className="bg-white rounded-3xl p-12 text-center border border-dashed border-gray-200">
+            <div className="text-4xl mb-4">👥</div>
+            <p className="text-gray-400 font-medium">No contacts found.</p>
+          </div>
         ) : (
-          <div className="bg-white rounded-lg shadow overflow-hidden border border-gray-100">
+          <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="text-left text-gray-500 bg-gray-50 border-b">
-                    <th className="p-4 font-semibold">Nickname</th>
-                    <th className="p-4 font-semibold">Full Name</th>
-                    <th className="p-4 font-semibold">Email</th>
-                    <th className="p-4 font-semibold">Net Balance</th>
-                    <th className="p-4 font-semibold">Last Txn</th>
+                  <tr className="text-left text-gray-400 border-b border-gray-50 uppercase text-[10px] tracking-widest font-bold">
+                    <th className="px-8 py-5">Contact</th>
+                    <th className="px-8 py-5">Email</th>
+                    <th className="px-8 py-5">Net Balance</th>
+                    <th className="px-8 py-5">Last Transaction</th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody className="divide-y divide-gray-50">
                   {contacts.map(c => (
-                    <tr key={c.id} className="border-b last:border-0 hover:bg-gray-50 transition-colors">
-                      <td className="p-4 font-medium">{c.nickName}</td>
-                      <td className="p-4">{c.fullName}</td>
-                      <td className="p-4 text-gray-500">{c.email || '-'}</td>
-                      <td className={`p-4 font-bold ${c.netBalance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                        {c.netBalance.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                    <tr key={c.id} className="hover:bg-gray-50/50 transition-colors group cursor-pointer">
+                      <td className="px-8 py-5">
+                        <div className="flex items-center gap-4">
+                            <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center text-gray-400 font-bold uppercase">
+                                {c.nickName.slice(0, 2)}
+                            </div>
+                            <div>
+                                <div className="font-bold text-gray-900">{c.fullName || c.nickName}</div>
+                                <div className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">{c.nickName}</div>
+                            </div>
+                        </div>
                       </td>
-                      <td className="p-4 text-gray-500">
-                        {c.lastTxnTimestamp ? new Date(c.lastTxnTimestamp * 1000).toLocaleDateString() : '-'}
+                      <td className="px-8 py-5 text-gray-500 font-medium">{c.email || '—'}</td>
+                      <td className={`px-8 py-5 font-bold text-base whitespace-nowrap ${c.netBalance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                        {c.netBalance >= 0 ? '+' : ''}{fmt(c.netBalance)}
+                      </td>
+                      <td className="px-8 py-5 text-gray-400 font-bold text-xs uppercase">
+                        {c.lastTxnTimestamp ? new Date(c.lastTxnTimestamp * 1000).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : 'Never'}
                       </td>
                     </tr>
                   ))}
@@ -113,15 +142,21 @@ function AddWalletDialog({ onClose }: { onClose: () => void }) {
 
   return (
     <Overlay onClose={onClose}>
-      <h2 className="text-lg font-bold mb-4">Add Wallet</h2>
-      <div className="space-y-3">
-        <Select label="Type" value={type} onChange={setType} options={[{ value: 'Bank', label: 'Bank' }, { value: 'Cash', label: 'Cash' }]} />
-        <Input label="Short Name (e.g. brac)" value={shortName} onChange={setShortName} />
-        <Input label="Full Name" value={name} onChange={setName} />
+      <h2 className="text-xl font-bold text-gray-900 mb-6">Add New Wallet</h2>
+      <div className="space-y-4">
+        <Select label="Type" value={type} onChange={setType} options={[{ value: 'Bank', label: 'Bank Account' }, { value: 'Cash', label: 'Cash / Other' }]} />
+        <Input label="Short Name (e.g. brac, cash)" value={shortName} onChange={setShortName} />
+        <Input label="Display Name" value={name} onChange={setName} />
         <Input label="Initial Balance" type="number" value={balance} onChange={setBalance} />
-        <div className="flex gap-2 justify-end pt-2">
-          <button className="px-4 py-2 rounded text-sm bg-gray-100 hover:bg-gray-200" onClick={onClose}>Cancel</button>
-          <button className="px-4 py-2 rounded text-sm bg-blue-600 text-white hover:bg-blue-700" onClick={handleSubmit}>Create</button>
+        <div className="flex gap-3 justify-end pt-4">
+          <button className="px-6 py-3 rounded-2xl text-sm font-bold text-gray-400 hover:text-gray-600 hover:bg-gray-50 transition-colors cursor-pointer" onClick={onClose}>Cancel</button>
+          <button 
+            className="px-8 py-3 rounded-2xl text-sm font-bold bg-blue-600 text-white hover:bg-blue-700 transition-all shadow-lg shadow-blue-100 cursor-pointer" 
+            onClick={handleSubmit}
+            disabled={!name || !shortName || !balance}
+          >
+            Create Wallet
+          </button>
         </div>
       </div>
     </Overlay>
@@ -140,14 +175,20 @@ function AddContactDialog({ onClose }: { onClose: () => void }) {
 
   return (
     <Overlay onClose={onClose}>
-      <h2 className="text-lg font-bold mb-4">Add Contact</h2>
-      <div className="space-y-3">
-        <Input label="Nick Name" value={nickName} onChange={setNickName} />
+      <h2 className="text-xl font-bold text-gray-900 mb-6">Add New Contact</h2>
+      <div className="space-y-4">
+        <Input label="Nick Name (Unique)" value={nickName} onChange={setNickName} />
         <Input label="Full Name" value={fullName} onChange={setFullName} />
-        <Input label="Email" value={email} onChange={setEmail} />
-        <div className="flex gap-2 justify-end pt-2">
-          <button className="px-4 py-2 rounded text-sm bg-gray-100 hover:bg-gray-200" onClick={onClose}>Cancel</button>
-          <button className="px-4 py-2 rounded text-sm bg-blue-600 text-white hover:bg-blue-700" onClick={handleSubmit}>Create</button>
+        <Input label="Email Address" value={email} onChange={setEmail} />
+        <div className="flex gap-3 justify-end pt-4">
+          <button className="px-6 py-3 rounded-2xl text-sm font-bold text-gray-400 hover:text-gray-600 hover:bg-gray-50 transition-colors cursor-pointer" onClick={onClose}>Cancel</button>
+          <button 
+            className="px-8 py-3 rounded-2xl text-sm font-bold bg-gray-900 text-white hover:bg-black transition-all shadow-lg shadow-gray-200 cursor-pointer" 
+            onClick={handleSubmit}
+            disabled={!nickName}
+          >
+            Create Contact
+          </button>
         </div>
       </div>
     </Overlay>
@@ -156,8 +197,8 @@ function AddContactDialog({ onClose }: { onClose: () => void }) {
 
 function Overlay({ children, onClose }: { children: React.ReactNode; onClose: () => void }) {
   return (
-    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4" onClick={onClose}>
-      <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-md" onClick={e => e.stopPropagation()}>
+    <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={onClose}>
+      <div className="bg-white rounded-[2rem] shadow-2xl p-8 w-full max-w-md animate-in fade-in zoom-in duration-200" onClick={e => e.stopPropagation()}>
         {children}
       </div>
     </div>
@@ -166,10 +207,10 @@ function Overlay({ children, onClose }: { children: React.ReactNode; onClose: ()
 
 function Input({ label, value, onChange, type }: { label: string; value: string; onChange: (v: string) => void; type?: string }) {
   return (
-    <label className="block text-sm">
-      <span className="text-gray-600 font-medium">{label}</span>
+    <label className="block space-y-1.5">
+      <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 ml-1">{label}</span>
       <input 
-        className="mt-1 block w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all" 
+        className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-4 py-3 text-sm focus:ring-2 focus:ring-blue-100 focus:border-blue-400 transition-all outline-none font-medium" 
         type={type} 
         value={value} 
         onChange={e => onChange(e.target.value)} 
@@ -180,14 +221,14 @@ function Input({ label, value, onChange, type }: { label: string; value: string;
 
 function Select({ label, value, onChange, options }: { label: string; value: string; onChange: (v: string) => void; options: { value: string; label: string }[] }) {
   return (
-    <label className="block text-sm">
-      <span className="text-gray-600 font-medium">{label}</span>
+    <label className="block space-y-1.5">
+      <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 ml-1">{label}</span>
       <select 
-        className="mt-1 block w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all" 
+        className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-4 py-3 text-sm focus:ring-2 focus:ring-blue-100 focus:border-blue-400 transition-all outline-none font-medium appearance-none cursor-pointer" 
         value={value} 
         onChange={e => onChange(e.target.value)}
       >
-        <option value="">-- select --</option>
+        <option value="">Select...</option>
         {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
       </select>
     </label>

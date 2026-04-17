@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { AuthProvider } from './context/AuthContext'
 import { useAuth } from './hooks/useAuth'
 import AppLayout from './components/layout/AppLayout'
+import Landing from './pages/Landing'
 import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
 import Transactions from './pages/Transactions'
@@ -40,8 +41,9 @@ function AppRoutes() {
   if (!isAuthenticated) {
     return (
       <Routes>
+        <Route path="/" element={<Landing />} />
         <Route path="/login" element={<Login />} />
-        <Route path="*" element={<Navigate to="/login" replace />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     )
   }

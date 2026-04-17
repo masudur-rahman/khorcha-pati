@@ -13,28 +13,39 @@ const links = [
 export default function Sidebar() {
   const { logout } = useAuth()
   return (
-    <aside className="hidden md:flex flex-col w-56 bg-gray-900 text-gray-300 min-h-screen p-4">
-      <h2 className="text-lg font-bold text-white mb-8">Expense Tracker</h2>
-      <nav className="flex-1 space-y-1">
+    <aside className="hidden md:flex flex-col w-64 bg-gray-900 text-gray-300 h-screen sticky top-0 p-4 border-r border-gray-800">
+      <div className="flex items-center gap-3 px-3 mb-10 mt-2">
+        <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold">E</div>
+        <h2 className="text-xl font-bold text-white tracking-tight">Expense<span className="text-blue-500"> Tracker</span></h2>
+      </div>
+      
+      <nav className="flex-1 space-y-2">
         {links.map(({ to, icon: Icon, label }) => (
           <NavLink
             key={to}
             to={to}
             className={({ isActive }) =>
-              `flex items-center gap-3 px-3 py-2 rounded text-sm ${isActive ? 'bg-gray-800 text-white' : 'hover:bg-gray-800'}`
+              `flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all cursor-pointer ${
+                isActive 
+                  ? 'bg-blue-600/10 text-blue-500 shadow-sm shadow-blue-900/20' 
+                  : 'hover:bg-gray-800 hover:text-white'
+              }`
             }
           >
-            <Icon size={18} />
+            <Icon size={20} />
             {label}
           </NavLink>
         ))}
       </nav>
-      <button
-        className="flex items-center gap-3 px-3 py-2 rounded text-sm hover:bg-gray-800 text-red-400"
-        onClick={logout}
-      >
-        <LogOut size={18} /> Logout
-      </button>
+
+      <div className="pt-4 border-t border-gray-800 mt-4">
+        <button
+          className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold hover:bg-red-500/10 text-gray-400 hover:text-red-500 transition-all cursor-pointer"
+          onClick={logout}
+        >
+          <LogOut size={20} /> Logout
+        </button>
+      </div>
     </aside>
   )
 }
