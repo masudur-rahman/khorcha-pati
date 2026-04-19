@@ -30,3 +30,5 @@ bin/
 .refactor*
 .claude/settings.local.json
 .claude/plan.md
+# Added by code-review-graph
+.code-review-graph/
