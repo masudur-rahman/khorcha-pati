@@ -43,8 +43,8 @@ func HandleSetBudget(w http.ResponseWriter, r *http.Request) {
 		WriteError(w, http.StatusBadRequest, "bad_request", "invalid request body")
 		return
 	}
-	if req.CategoryID == "" || req.Amount <= 0 {
-		WriteError(w, http.StatusBadRequest, "bad_request", "categoryId and positive amount required")
+	if req.Amount <= 0 {
+		WriteError(w, http.StatusBadRequest, "bad_request", "positive amount required")
 		return
 	}
 
@@ -84,7 +84,7 @@ func HandleBudgetAlerts(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	alerts, err := all.GetServices().Budget.CheckBudgetAlerts(claims.UserID, "")
+	alerts, err := all.GetServices().Budget.ListAllBudgetAlerts(claims.UserID)
 	if err != nil {
 		WriteError(w, http.StatusInternalServerError, "alerts_failed", err.Error())
 		return

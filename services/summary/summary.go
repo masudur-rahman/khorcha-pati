@@ -158,12 +158,15 @@ func computeBudgetUsage(budgetRepo repos.BudgetRepository, userID int64, txns []
 	}
 
 	catSpent := make(map[string]float64)
+	var overallSpent float64
 	for _, t := range txns {
 		if t.Type == models.ExpenseTransaction {
 			catID := extractCategoryID(t.SubcategoryID)
 			catSpent[catID] += t.Amount
+			overallSpent += t.Amount
 		}
 	}
+	catSpent[""] = overallSpent // "" key = overall budget
 
 	var totalBudget, totalSpent float64
 	for _, b := range budgets {

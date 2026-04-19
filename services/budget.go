@@ -9,4 +9,5 @@ type BudgetService interface {
 	ListBudgetStatuses(userID int64) ([]models.BudgetStatus, error)
 	DeleteBudget(userID int64, categoryID string) error
 	CheckBudgetAlerts(userID int64, subcategoryID string) ([]models.BudgetAlert, error)
+	ListAllBudgetAlerts(userID int64) ([]models.BudgetAlert, error)
 }

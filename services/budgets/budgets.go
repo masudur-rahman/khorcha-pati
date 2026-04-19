@@ -125,6 +125,43 @@ func (s *budgetService) CheckBudgetAlerts(userID int64, subcategoryID string) ([
 	return alerts, nil
 }
 
+// ListAllBudgetAlerts returns all triggered alerts across all budgets for the user.
+func (s *budgetService) ListAllBudgetAlerts(userID int64) ([]models.BudgetAlert, error) {
+	budgets, err := s.budgetRepo.ListBudgets(userID)
+	if err != nil {
+		return nil, err
+	}
+	if len(budgets) == 0 {
+		return nil, nil
+	}
+
+	spentByCategory, err := s.computeSpentByCategory(userID)
+	if err != nil {
+		return nil, err
+	}
+
+	var alerts []models.BudgetAlert
+	for _, b := range budgets {
+		if b.Amount <= 0 {
+			continue
+		}
+		spent := spentByCategory[b.CategoryID]
+		pct := spent / b.Amount * 100
+		if pct < float64(b.AlertAt) {
+			continue
+		}
+		alerts = append(alerts, models.BudgetAlert{
+			CategoryID:   b.CategoryID,
+			CategoryName: s.resolveName(b.CategoryID),
+			Spent:        spent,
+			BudgetAmount: b.Amount,
+			Percent:      pct,
+			Exceeded:     pct >= 100,
+		})
+	}
+	return alerts, nil
+}
+
 // computeSpent returns total expense amount for a category in the current month.
 func (s *budgetService) computeSpent(userID int64, categoryID string) (float64, error) {
 	spentMap, err := s.computeSpentByCategory(userID)
@@ -157,7 +194,7 @@ func (s *budgetService) computeSpentByCategory(userID int64) (map[string]float64
 
 // resolveName returns a display name for a category ID.
 func (s *budgetService) resolveName(categoryID string) string {
-	if categoryID == "" {
+	if categoryID == "" || strings.EqualFold(categoryID, "overall") {
 		return "Overall"
 	}
 	name, err := s.txnRepo.GetTxnCategoryName(categoryID)
