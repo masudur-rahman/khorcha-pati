@@ -1,7 +1,7 @@
 import { apiFetch, getRefreshToken } from './client'
 import type {
   Transaction, Wallet, Contact, BudgetStatus, BudgetAlert,
-  ChartData, TxnCategory, Profile,
+  ChartData, TxnCategory, Profile, StatementReport,
 } from '../types'
 
 const API = '/api/v1'
@@ -83,6 +83,9 @@ export const downloadReport = (duration: string) => {
   const url = `/api/v1/summary/report?duration=${duration}`
   return apiFetch<Blob>(url, { headers: { 'Accept': 'application/pdf' } })
 }
+
+export const fetchReportData = (duration: string) =>
+  apiFetch<StatementReport>(`${API}/summary/report-data?duration=${duration}`)
 
 // Categories
 export const listCategories = () => apiFetch<TxnCategory[]>(`${API}/categories`)

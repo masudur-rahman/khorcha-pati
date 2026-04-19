@@ -10,6 +10,7 @@ import Transactions from './pages/Transactions'
 import Wallets from './pages/Wallets'
 import Budgets from './pages/Budgets'
 import Settings from './pages/Settings'
+import Statement from './pages/Statement'
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, staleTime: 30_000 } },
@@ -50,6 +51,7 @@ function AppRoutes() {
 
   return (
     <Routes>
+      <Route path="/statement" element={<Statement />} />
       <Route element={<AppLayout />}>
         <Route path="/" element={<Dashboard />} />
         <Route path="/transactions" element={<Transactions />} />

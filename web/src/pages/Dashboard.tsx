@@ -1,12 +1,12 @@
 import {useMemo, useState} from 'react'
 import { Link } from 'react-router-dom'
 import {useQuery} from '@tanstack/react-query'
-import {downloadReport, getChartData, listCategories, listSubcategories} from '../api/endpoints'
+import {getChartData, listCategories, listSubcategories} from '../api/endpoints'
 import ExpenseDonut from '../components/charts/ExpenseDonut'
 import IncomeVsExpense from '../components/charts/IncomeVsExpense'
 import BudgetGauge from '../components/charts/BudgetGauge'
 import {useTransactions} from '../hooks/useTransactions'
-import {Download, FileText} from 'lucide-react'
+import {FileText} from 'lucide-react'
 import { fmt } from '../lib/formatter'
 
 export default function Dashboard() {
@@ -19,7 +19,6 @@ export default function Dashboard() {
     const {data: subcategories, isLoading: isSubsLoading} = useQuery({queryKey: ['subcategories'], queryFn: () => listSubcategories()})
     const {data: allCategories, isLoading: isCatsLoading} = useQuery({queryKey: ['categories'], queryFn: () => listCategories()})
     const [showReportModal, setShowReportModal] = useState(false)
-    const [isDownloading, setIsDownloading] = useState(false)
 
     const isLoading = isChartsLoading || isSubsLoading || isCatsLoading
 
@@ -50,24 +49,9 @@ export default function Dashboard() {
     const comparison = charts.comparison || []
     const recentTxns = [...txns].sort((a, b) => b.timestamp - a.timestamp).slice(0, 10)
 
-    const handleDownloadReport = async (duration: string) => {
-        try {
-            setIsDownloading(true)
-            const blob = await downloadReport(duration)
-            const url = window.URL.createObjectURL(blob as any)
-            const a = document.createElement('a')
-            a.href = url
-            a.download = `expense-statement.pdf`
-            document.body.appendChild(a)
-            a.click()
-            document.body.removeChild(a)
-            window.URL.revokeObjectURL(url)
-            setShowReportModal(false)
-        } catch (err) {
-            alert('Failed to generate statement: ' + err)
-        } finally {
-            setIsDownloading(false)
-        }
+    const handlePreviewStatement = (duration: string) => {
+        window.open(`/statement?duration=${duration}`, '_blank')
+        setShowReportModal(false)
     }
 
     return (
@@ -81,8 +65,8 @@ export default function Dashboard() {
                     onClick={() => setShowReportModal(true)}
                     className="flex items-center justify-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-2xl text-sm font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-100 group cursor-pointer"
                 >
-                    <Download size={18} className="group-hover:translate-y-0.5 transition-transform"/>
-                    Generate Statement
+                    <FileText size={18} className="group-hover:scale-105 transition-transform"/>
+                    Statement
                 </button>
             </header>
 
@@ -149,30 +133,44 @@ export default function Dashboard() {
                         <table className="w-full text-sm">
                             <thead>
                                 <tr className="text-left text-gray-400 border-b border-gray-50 uppercase text-[10px] tracking-widest font-bold">
-                                    <th className="px-6 py-4">Type</th>
-                                    <th className="px-6 py-4">Category</th>
-                                    <th className="px-6 py-4">Amount</th>
-                                    <th className="px-6 py-4">Date</th>
+                                    <th className="px-6 py-5">Date</th>
+                                    <th className="px-6 py-5">Type</th>
+                                    <th className="px-6 py-5">Category</th>
+                                    <th className="px-6 py-5 text-right">Amount</th>
+                                    <th className="px-6 py-5">Wallets / Contact</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-50">
                                 {recentTxns.map(t => (
-                                    <tr key={t.id} className="hover:bg-gray-50 transition-colors group">
+                                    <tr key={t.id} className="hover:bg-gray-50/50 transition-colors">
+                                        <td className="px-6 py-4 text-gray-400 font-bold text-xs uppercase whitespace-nowrap">
+                                            {new Date(t.timestamp * 1000).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                                        </td>
                                         <td className="px-6 py-4">
-                                            <span className={`px-2 py-1 rounded-md text-[10px] font-bold uppercase ${
-                                                t.type === 'Income' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                                            <span className={`px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase ${
+                                                t.type === 'Income' ? 'bg-green-100 text-green-700' :
+                                                t.type === 'Transfer' ? 'bg-blue-100 text-blue-700' :
+                                                'bg-red-100 text-red-700'
                                             }`}>
                                                 {t.type}
                                             </span>
                                         </td>
-                                        <td className="px-6 py-4 font-medium text-gray-700">
-                                            {subcatMap.get(t.subcategoryId) || t.subcategoryId}
+                                        <td className="px-6 py-4">
+                                            <div className="font-bold text-gray-900">{subcatMap.get(t.subcategoryId) || <span className="text-gray-400 italic">{t.subcategoryId}</span>}</div>
                                         </td>
-                                        <td className={`px-6 py-4 font-bold whitespace-nowrap ${t.type === 'Income' ? 'text-green-600' : 'text-red-600'}`}>
-                                            {t.type === 'Income' ? '+' : '-'}{fmt(t.amount)}
+                                        <td className={`px-6 py-4 font-bold text-base whitespace-nowrap text-right ${
+                                            t.type === 'Income' ? 'text-green-600' :
+                                            t.type === 'Transfer' ? 'text-blue-600' :
+                                            'text-red-600'
+                                        }`}>
+                                            {t.type === 'Income' ? '+' : t.type === 'Transfer' ? '' : '-'}{fmt(t.amount)}
                                         </td>
-                                        <td className="px-6 py-4 text-gray-400 font-medium">
-                                            {new Date(t.timestamp * 1000).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                                        <td className="px-6 py-4">
+                                            <div className="flex items-center gap-2 text-xs font-medium text-gray-500">
+                                                <span className="bg-gray-100 px-1.5 py-0.5 rounded uppercase tracking-tighter font-bold">{t.srcId || '-'}</span>
+                                                <span className="text-gray-300">→</span>
+                                                <span className="bg-gray-100 px-1.5 py-0.5 rounded uppercase tracking-tighter font-bold">{t.dstId || t.contactName || '-'}</span>
+                                            </div>
                                         </td>
                                     </tr>
                                 ))}
@@ -191,20 +189,15 @@ export default function Dashboard() {
                             <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-3">
                                 <FileText size={24}/>
                             </div>
-                            <h2 className="text-xl font-bold">Generate Statement</h2>
-                            <p className="text-blue-100 text-xs mt-1">Select a timeframe for your PDF statement</p>
+                            <h2 className="text-xl font-bold">Preview Statement</h2>
+                            <p className="text-blue-100 text-xs mt-1">Select a timeframe to preview and save as PDF</p>
                         </div>
                         <div className="p-6 space-y-3">
-                            <ReportOption label="This Month" duration="this_month" onSelect={handleDownloadReport}
-                                          disabled={isDownloading}/>
-                            <ReportOption label="Last 30 Days" duration="one_month" onSelect={handleDownloadReport}
-                                          disabled={isDownloading}/>
-                            <ReportOption label="Last 7 Days" duration="one_week" onSelect={handleDownloadReport}
-                                          disabled={isDownloading}/>
-                            <ReportOption label="Last 6 Months" duration="half_year" onSelect={handleDownloadReport}
-                                          disabled={isDownloading}/>
-                            <ReportOption label="This Year" duration="this_year" onSelect={handleDownloadReport}
-                                          disabled={isDownloading}/>
+                            <ReportOption label="This Month" duration="this_month" onSelect={handlePreviewStatement}/>
+                            <ReportOption label="Last 30 Days" duration="one_month" onSelect={handlePreviewStatement}/>
+                            <ReportOption label="Last 7 Days" duration="one_week" onSelect={handlePreviewStatement}/>
+                            <ReportOption label="Last 6 Months" duration="half_year" onSelect={handlePreviewStatement}/>
+                            <ReportOption label="This Year" duration="this_year" onSelect={handlePreviewStatement}/>
                             <button
                                 onClick={() => setShowReportModal(false)}
                                 className="w-full mt-4 py-2 text-sm font-bold text-gray-400 hover:text-gray-600 transition-colors cursor-pointer"
@@ -231,20 +224,18 @@ function Card({label, value, color, icon}: { label: string; value: string; color
     )
 }
 
-function ReportOption({label, duration, onSelect, disabled}: {
+function ReportOption({label, duration, onSelect}: {
     label: string;
     duration: string;
     onSelect: (d: string) => void;
-    disabled: boolean
 }) {
     return (
         <button
             onClick={() => onSelect(duration)}
-            disabled={disabled}
             className="w-full flex items-center justify-between p-4 rounded-xl border border-gray-100 hover:bg-blue-50 hover:border-blue-200 transition-all text-sm font-bold group cursor-pointer"
         >
             <span>{label}</span>
-            <Download size={16} className="text-gray-400 group-hover:text-blue-500"/>
+            <FileText size={16} className="text-gray-400 group-hover:text-blue-500"/>
         </button>
     )
 }

@@ -51,6 +51,7 @@ func NewRouter(jwtSecret, corsOrigin string) chi.Router {
 
 			r.Get("/summary/charts", HandleChartData)
 			r.Get("/summary/report", HandleGetReport)
+			r.Get("/summary/report-data", HandleGetReportData)
 			r.Get("/categories", HandleListCategories)
 			r.Get("/subcategories", HandleListSubcategories)
 			r.Get("/profile", HandleGetProfile)

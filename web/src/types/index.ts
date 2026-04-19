@@ -98,3 +98,57 @@ export interface ChartData {
   categories: CategorySpend[]
   comparison: MonthlyComparison[]
 }
+
+export interface FieldCost {
+  name: string
+  amount: number
+  type?: string
+}
+
+export interface SummaryGroups {
+  type: Record<string, FieldCost>
+  category: Record<string, FieldCost>
+  subcategory: Record<string, FieldCost>
+}
+
+export interface StatementTransaction {
+  date: string
+  type: string
+  amount: number
+  source: string
+  destination: string
+  person: string
+  category: string
+  subcategory: string
+  remarks: string
+}
+
+export interface StatementWallet {
+  id: number
+  type: string
+  shortName: string
+  name: string
+  balance: number
+}
+
+export interface StatementContact {
+  id: number
+  nickName: string
+  fullName: string
+  netBalance: number
+}
+
+export interface StatementReport {
+  name: string
+  transactions: StatementTransaction[]
+  summary: SummaryGroups
+  wallets?: StatementWallet[]
+  contacts?: StatementContact[]
+  startDate: string
+  endDate: string
+  typeSummary?: FieldCost[]
+  categorySummary?: FieldCost[]
+  subcategorySummary?: FieldCost[]
+  totalAmount: number
+  netBalance: number
+}

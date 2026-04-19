@@ -67,7 +67,6 @@ export default function Budgets() {
       {showAdd && (
         <SetBudgetDialog
           categories={categories ?? []}
-          existingIds={(budgets ?? []).map(b => b.categoryId)}
           onClose={() => setShowAdd(false)}
         />
       )}
@@ -127,22 +126,21 @@ function BudgetCard({ budget }: { budget: import('../types').BudgetStatus }) {
 
 interface SetBudgetDialogProps {
   categories: import('../types').TxnCategory[]
-  existingIds: string[]
   onClose: () => void
 }
 
-function SetBudgetDialog({ categories, existingIds, onClose }: SetBudgetDialogProps) {
+function SetBudgetDialog({ categories, onClose }: SetBudgetDialogProps) {
   const setBudget = useSetBudget()
   const [categoryId, setCategoryId] = useState('')
   const [amount, setAmount] = useState('')
   const [alertAt, setAlertAt] = useState('80')
 
-  const available = categories.filter(c => !existingIds.includes(c.id))
+  const available = categories
 
   const handleSubmit = () => {
     if (!amount) return
     setBudget.mutate(
-      { categoryId: categoryId || 'overall', amount: parseFloat(amount), alertAt: parseInt(alertAt) },
+      { categoryId: categoryId, amount: parseFloat(amount), alertAt: parseInt(alertAt) },
       { onSuccess: onClose },
     )
   }
