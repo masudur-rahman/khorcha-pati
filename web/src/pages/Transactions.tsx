@@ -1,17 +1,29 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { useTransactions, useCreateTransaction, useUpdateTransaction, useDeleteTransaction } from '../hooks/useTransactions'
+import { useSearch } from '../context/SearchContext'
 import { useWallets } from '../hooks/useWallets'
 import { useContacts } from '../hooks/useContacts'
 import { useQuery } from '@tanstack/react-query'
 import { listCategories, listSubcategories } from '../api/endpoints'
 import type { Transaction, Wallet, Contact, TxnCategory } from '../types'
-import { Plus, Edit2, Trash2 } from 'lucide-react'
 import { fmt } from '../lib/formatter'
+
+import TopBar from '../components/layout/TopBar'
+import Card from '../components/ui/Card'
+import Badge from '../components/ui/Badge'
+import Button from '../components/ui/Button'
+import Modal from '../components/ui/Modal'
+import Input from '../components/ui/Input'
+import Select from '../components/ui/Select'
+import { ICONS } from '../components/ui/Icons'
 
 type TxnType = 'Expense' | 'Income' | 'Transfer'
 const typeOptions: TxnType[] = ['Expense', 'Income', 'Transfer']
 
 export default function Transactions() {
+  const [searchParams, setSearchParams] = useSearchParams()
+  const { searchTerm } = useSearch()
   const { data: resp, isLoading } = useTransactions()
   const txns = resp?.data ?? []
   const { data: wallets } = useWallets()
@@ -21,8 +33,20 @@ export default function Transactions() {
 
   const [filterType, setFilterType] = useState<string>('')
   const [showAdd, setShowAdd] = useState(false)
+  const [initialType, setInitialType] = useState<TxnType | undefined>()
   const [editTxn, setEditTxn] = useState<Transaction | null>(null)
   const [deleteTxn, setDeleteTxn] = useState<Transaction | null>(null)
+
+  useEffect(() => {
+    const addType = searchParams.get('add') as TxnType
+    if (addType && typeOptions.includes(addType)) {
+      setInitialType(addType)
+      setShowAdd(true)
+      // Clear the param after opening
+      searchParams.delete('add')
+      setSearchParams(searchParams, { replace: true })
+    }
+  }, [searchParams, setSearchParams])
 
   const subcatMap = useMemo(() => {
     const m = new Map<string, string>()
@@ -33,116 +57,154 @@ export default function Transactions() {
   if (isLoading) return <p className="text-gray-500">Loading...</p>
 
   const filtered = txns
-    .filter(t => !filterType || t.type === filterType)
+    .filter(t => {
+      const matchesType = !filterType || t.type === filterType
+      const matchesSearch = !searchTerm || 
+        t.remarks?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        t.subcategoryId.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        subcatMap.get(t.subcategoryId)?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        t.amount.toString().includes(searchTerm) ||
+        t.contactName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        t.srcId?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        t.dstId?.toLowerCase().includes(searchTerm.toLowerCase())
+      
+      return matchesType && matchesSearch
+    })
     .sort((a, b) => b.timestamp - a.timestamp)
 
-  return (
-    <div className="space-y-8 pb-8">
-      <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-            <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Transactions</h1>
-            <p className="text-gray-500 text-sm mt-1">Detailed history of your financial movements</p>
-        </div>
-        <button 
-          onClick={() => setShowAdd(true)} 
-          className="flex items-center justify-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-2xl text-sm font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-100 group cursor-pointer"
-        >
-          <Plus size={18} className="group-hover:rotate-90 transition-transform" />
-          Add Transaction
-        </button>
-      </header>
+  const totals = {
+    income: txns.filter(t => t.type === 'Income').reduce((s, t) => s + t.amount, 0),
+    expense: txns.filter(t => t.type === 'Expense').reduce((s, t) => s + t.amount, 0),
+    transfers: txns.filter(t => t.type === 'Transfer').reduce((s, t) => s + t.amount, 0),
+  }
 
-      <div className="flex flex-wrap items-center gap-2 bg-white p-2 rounded-2xl border border-gray-100 shadow-sm w-fit">
-        <FilterButton label="All" active={filterType === ''} onClick={() => setFilterType('')} />
-        {typeOptions.map(t => (
-          <FilterButton key={t} label={t} active={filterType === t} onClick={() => setFilterType(t)} />
-        ))}
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+      <TopBar title="Transactions" subtitle="Detailed history of your financial movements" />
+
+      {/* Summary Cards */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 16 }}>
+        <Card style={{ borderLeft: '4px solid var(--color-success)' }}>
+          <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--color-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 8px' }}>Total Income</p>
+          <p style={{ fontSize: 24, fontWeight: 700, color: 'var(--color-success)', margin: 0 }}>+{fmt(totals.income)}</p>
+          <p style={{ fontSize: 11, color: 'var(--color-text-tertiary)', margin: '6px 0 0' }}>{txns.filter(t => t.type === 'Income').length} transactions</p>
+        </Card>
+        <Card style={{ borderLeft: '4px solid var(--color-danger)' }}>
+          <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--color-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 8px' }}>Total Expense</p>
+          <p style={{ fontSize: 24, fontWeight: 700, color: 'var(--color-danger)', margin: 0 }}>-{fmt(totals.expense)}</p>
+          <p style={{ fontSize: 11, color: 'var(--color-text-tertiary)', margin: '6px 0 0' }}>{txns.filter(t => t.type === 'Expense').length} transactions</p>
+        </Card>
+        <Card style={{ borderLeft: '4px solid var(--color-primary)' }}>
+          <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--color-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 8px' }}>Transfers</p>
+          <p style={{ fontSize: 24, fontWeight: 700, color: 'var(--color-primary)', margin: 0 }}>{fmt(totals.transfers)}</p>
+          <p style={{ fontSize: 11, color: 'var(--color-text-tertiary)', margin: '6px 0 0' }}>{txns.filter(t => t.type === 'Transfer').length} transactions</p>
+        </Card>
       </div>
 
-      <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+      <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 32 }}>
+        <div>
+          <h2 style={{ fontSize: 18, fontWeight: 700, color: 'var(--color-text-primary)' }}>Transaction History</h2>
+          <p style={{ fontSize: 13, color: 'var(--color-text-tertiary)', marginTop: 2 }}>Detailed history of your financial movements</p>
+        </div>
+      </header>
+
+      {/* Filter Bar */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
+        <div style={{ display: 'flex', background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 12, padding: 4, gap: 2 }}>
+          {['', ...typeOptions].map(f => (
+            <button 
+              key={f || 'all'} 
+              onClick={() => setFilterType(f)}
+              style={{
+                padding: '8px 18px', borderRadius: 10, fontSize: 12, fontWeight: 600, border: 'none', cursor: 'pointer',
+                transition: 'all 0.15s',
+                background: filterType === f ? 'var(--color-primary)' : 'transparent',
+                color: filterType === f ? 'white' : 'var(--color-text-tertiary)',
+              }}>
+              {f || 'All'}
+            </button>
+          ))}
+        </div>
+        <Button onClick={() => setShowAdd(true)} icon={ICONS.plus(16)}>Add Transaction</Button>
+      </div>
+
+      {/* Table */}
+      <Card padding={0}>
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
             <thead>
-              <tr className="text-left text-gray-400 border-b border-gray-50 uppercase text-[10px] tracking-widest font-bold">
-                <th className="px-6 py-5">Date</th>
-                <th className="px-6 py-5">Type</th>
-                <th className="px-6 py-5">Category</th>
-                <th className="px-6 py-5 text-right">Amount</th>
-                <th className="px-6 py-5">Wallets / Contact</th>
-                <th className="px-6 py-5">Remarks</th>
-                <th className="px-6 py-5 text-right">Actions</th>
+              <tr style={{ borderBottom: '1px solid var(--color-border)' }}>
+                {['Date', 'Type', 'Category', 'Amount', 'Wallets', 'Remarks', ''].map(h => (
+                  <th key={h || 'actions'} style={{ padding: '14px 24px', textAlign: h === 'Amount' ? 'right' : 'left', fontSize: 10, fontWeight: 700, color: 'var(--color-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{h}</th>
+                ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-50">
-              {filtered.length === 0 ? (
-                <tr><td colSpan={7} className="p-20 text-center text-gray-400 font-medium">No transactions found</td></tr>
-              ) : filtered.map(t => (
-                <tr key={t.id} className="hover:bg-gray-50/50 transition-colors group">
-                  <td className="px-6 py-4 text-gray-400 font-bold text-xs uppercase whitespace-nowrap">
-                    {new Date(t.timestamp * 1000).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+            <tbody>
+              {filtered.map(t => (
+                <tr key={t.id} style={{ borderBottom: '1px solid var(--color-border)' }}
+                  className="hover-row transition-colors">
+                  <td style={{ padding: '14px 24px', color: 'var(--color-text-tertiary)', fontSize: 12, fontWeight: 600, whiteSpace: 'nowrap' }}>
+                    {new Date(t.timestamp * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                   </td>
-                  <td className="px-6 py-4">
-                    <span className={`px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase ${
-                        t.type === 'Income' ? 'bg-green-100 text-green-700' :
-                        t.type === 'Transfer' ? 'bg-blue-100 text-blue-700' :
-                        'bg-red-100 text-red-700'
-                    }`}>
-                        {t.type}
-                    </span>
+                  <td style={{ padding: '14px 24px' }}><Badge type={t.type as any} /></td>
+                  <td style={{ padding: '14px 24px', fontWeight: 600, color: 'var(--color-text-primary)' }}>
+                    {subcatMap.get(t.subcategoryId) || t.subcategoryId}
                   </td>
-                  <td className="px-6 py-4">
-                    <div className="font-bold text-gray-900">{subcatMap.get(t.subcategoryId) || <span className="text-gray-400 italic">{t.subcategoryId}</span>}</div>
-                  </td>
-                  <td className={`px-6 py-4 font-bold text-base whitespace-nowrap text-right ${
-                    t.type === 'Income' ? 'text-green-600' :
-                    t.type === 'Transfer' ? 'text-blue-600' :
-                    'text-red-600'
-                  }`}>
+                  <td style={{
+                    padding: '14px 24px', textAlign: 'right', fontWeight: 700, fontSize: 14,
+                    color: t.type === 'Income' ? 'var(--color-success)' : t.type === 'Transfer' ? 'var(--color-primary)' : 'var(--color-danger)',
+                  }}>
                     {t.type === 'Income' ? '+' : t.type === 'Transfer' ? '' : '-'}{fmt(t.amount)}
                   </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-2 text-xs font-medium text-gray-500">
-                      <span className="bg-gray-100 px-1.5 py-0.5 rounded uppercase tracking-tighter font-bold">{t.srcId || '-'}</span>
-                      <span className="text-gray-300">→</span>
-                      <span className="bg-gray-100 px-1.5 py-0.5 rounded uppercase tracking-tighter font-bold">{t.dstId || t.contactName || '-'}</span>
+                  <td style={{ padding: '14px 24px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <span style={{ fontSize: 10, fontWeight: 700, background: 'var(--color-bg)', padding: '2px 8px', borderRadius: 5, color: 'var(--color-text-tertiary)' }}>{t.srcId || '—'}</span>
+                      <span style={{ color: 'var(--color-border)', fontSize: 10 }}>→</span>
+                      <span style={{ fontSize: 10, fontWeight: 700, background: 'var(--color-bg)', padding: '2px 8px', borderRadius: 5, color: 'var(--color-text-tertiary)' }}>{t.dstId || t.contactName || '—'}</span>
                     </div>
                   </td>
-                  <td className="px-6 py-4">
-                    <p className="text-gray-500 text-xs truncate max-w-[120px] font-medium italic">{t.remarks || 'No remarks'}</p>
+                  <td style={{ padding: '14px 24px', color: 'var(--color-text-tertiary)', fontSize: 12, fontStyle: 'italic', maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {t.remarks || '—'}
                   </td>
-                  <td className="px-6 py-4 text-right">
-                    <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button 
-                            className="p-2 text-blue-600 hover:bg-blue-50 rounded-xl transition-colors cursor-pointer" 
-                            onClick={() => setEditTxn(t)}
-                            title="Edit"
-                        >
-                            <Edit2 size={16} />
-                        </button>
-                        <button 
-                            className="p-2 text-red-600 hover:bg-red-50 rounded-xl transition-colors cursor-pointer" 
-                            onClick={() => setDeleteTxn(t)}
-                            title="Delete"
-                        >
-                            <Trash2 size={16} />
-                        </button>
+                  <td style={{ padding: '14px 24px', textAlign: 'right' }}>
+                    <div style={{ display: 'flex', gap: 4, justifyContent: 'flex-end' }}>
+                      <button 
+                        onClick={() => setEditTxn(t)}
+                        style={{ width: 32, height: 32, borderRadius: 8, border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--color-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.15s' }}
+                        onMouseEnter={e => e.currentTarget.style.background = 'var(--color-primary-subtle)'}
+                        onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                      >
+                        {ICONS.edit(14)}
+                      </button>
+                      <button 
+                        onClick={() => setDeleteTxn(t)}
+                        style={{ width: 32, height: 32, borderRadius: 8, border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--color-danger)', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.15s' }}
+                        onMouseEnter={e => e.currentTarget.style.background = 'var(--color-danger-subtle)'}
+                        onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                      >
+                        {ICONS.trash(14)}
+                      </button>
                     </div>
                   </td>
                 </tr>
               ))}
+              {filtered.length === 0 && (
+                <tr><td colSpan={7} style={{ padding: '60px', textAlign: 'center', color: 'var(--color-text-tertiary)' }}>No transactions found</td></tr>
+              )}
             </tbody>
           </table>
         </div>
-      </div>
+      </Card>
 
       {(showAdd || editTxn) && (
         <TxnDialog
           txn={editTxn || undefined}
+          initialType={initialType}
           wallets={wallets ?? []}
           contacts={contacts ?? []}
           categories={categories ?? []}
           subcategories={subcategories ?? []}
-          onClose={() => { setShowAdd(false); setEditTxn(null); }}
+          onClose={() => { setShowAdd(false); setEditTxn(null); setInitialType(undefined); }}
         />
       )}
       {deleteTxn && <DeleteDialog txn={deleteTxn} onClose={() => setDeleteTxn(null)} />}
@@ -150,23 +212,9 @@ export default function Transactions() {
   )
 }
 
-function FilterButton({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
-  return (
-    <button
-      className={`px-6 py-2 rounded-xl text-sm font-bold transition-all cursor-pointer ${
-        active 
-          ? 'bg-blue-600 text-white shadow-md shadow-blue-100' 
-          : 'text-gray-400 hover:text-gray-600 hover:bg-gray-50'
-      }`}
-      onClick={onClick}
-    >
-      {label}
-    </button>
-  )
-}
-
 interface TxnDialogProps {
   txn?: Transaction
+  initialType?: TxnType
   wallets: Wallet[]
   contacts: Contact[]
   categories: TxnCategory[]
@@ -174,13 +222,14 @@ interface TxnDialogProps {
   onClose: () => void
 }
 
-function TxnDialog({ txn, wallets, contacts, categories, subcategories, onClose }: TxnDialogProps) {
+function TxnDialog({ txn, initialType, wallets, contacts, categories, subcategories, onClose }: TxnDialogProps) {
   const create = useCreateTransaction()
   const update = useUpdateTransaction()
   const isEdit = !!txn
 
-  const [type, setType] = useState<TxnType>(txn?.type ?? 'Expense')
+  const [type, setType] = useState<TxnType>(txn?.type as any ?? initialType ?? 'Expense')
   const [amount, setAmount] = useState(txn?.amount?.toString() ?? '')
+  
   const [catId, setCatId] = useState(() => {
     if (txn?.subcategoryId) {
       return subcategories.find(s => s.id === txn.subcategoryId)?.catId || ''
@@ -193,9 +242,48 @@ function TxnDialog({ txn, wallets, contacts, categories, subcategories, onClose 
   const [contactName, setContactName] = useState(txn?.contactName ?? '')
   const [remarks, setRemarks] = useState(txn?.remarks ?? '')
 
+  // Handle smart defaults when type changes
+  useEffect(() => {
+    if (isEdit) return
+
+    if (type === 'Transfer') {
+      const finCat = categories.find(c => c.name.toLowerCase() === 'financial')
+      if (finCat) {
+        setCatId(finCat.id)
+        const transSub = subcategories.find(s => s.catId === finCat.id && s.name.toLowerCase().includes('transfer'))
+        if (transSub) setSubcategoryId(transSub.id)
+      }
+    } else {
+        // Reset category if it was auto-set for transfer
+        const finCat = categories.find(c => c.name.toLowerCase() === 'financial')
+        if (catId === finCat?.id) {
+            setCatId('')
+            setSubcategoryId('')
+        }
+    }
+  }, [type, categories, subcategories, isEdit])
+
+  // Subcategory filter logic
   const filteredSubs = useMemo(() => {
-    return subcategories.filter(s => !catId || s.catId === catId)
-  }, [subcategories, catId])
+    let subs = subcategories
+    if (catId) {
+      subs = subs.filter(s => s.catId === catId)
+    }
+    if (type === 'Transfer') {
+      subs = subs.filter(s => s.name.toLowerCase().includes('transfer') || s.name.toLowerCase().includes('withdraw') || s.name.toLowerCase().includes('deposit'))
+    }
+    return subs
+  }, [subcategories, catId, type])
+
+  // Handle withdraw to cash
+  useEffect(() => {
+    if (isEdit) return
+    const sub = subcategories.find(s => s.id === subcategoryId)
+    if (sub?.name.toLowerCase() === 'withdraw') {
+        const cashWallet = wallets.find(w => w.type === 'Cash' || w.shortName.toLowerCase() === 'cash')
+        if (cashWallet) setDstId(cashWallet.shortName)
+    }
+  }, [subcategoryId, subcategories, wallets, isEdit])
 
   const handleSubmit = () => {
     const payload: Partial<Transaction> = {
@@ -215,117 +303,79 @@ function TxnDialog({ txn, wallets, contacts, categories, subcategories, onClose 
   }
 
   return (
-    <Overlay onClose={onClose}>
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-bold text-gray-900">{isEdit ? 'Edit' : 'Add'} Transaction</h2>
-        <span className={`px-2 py-1 rounded-lg text-[10px] font-bold uppercase ${
-            type === 'Income' ? 'bg-green-100 text-green-700' : 
-            type === 'Transfer' ? 'bg-blue-100 text-blue-700' : 
-            'bg-red-100 text-red-700'
-        }`}>{type}</span>
-      </div>
-      <div className="space-y-4">
-        <div className="grid grid-cols-2 gap-4">
-            <Select label="Type" value={type} onChange={v => setType(v as TxnType)} options={typeOptions.map(t => ({ value: t, label: t }))} />
-            <Input label="Amount" type="number" value={amount} onChange={setAmount} />
+    <Modal title={isEdit ? 'Edit Transaction' : 'Add Transaction'} onClose={onClose}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+          <Select label="Type" value={type} onChange={e => setType(e.target.value as TxnType)} options={typeOptions.map(t => ({ value: t, label: t }))} />
+          <Input label="Amount" type="number" value={amount} onChange={e => setAmount(e.target.value)} placeholder="0.00" />
         </div>
-        <div className="grid grid-cols-2 gap-4">
-            <Select label="Category" value={catId} onChange={v => { setCatId(v); setSubcategoryId(''); }} options={categories.map(c => ({ value: c.id, label: c.name }))} />
-            <Select label="Sub Category" value={subcategoryId} onChange={setSubcategoryId} options={filteredSubs.map(s => ({ value: s.id, label: s.name }))} />
+        
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+          <Select label="Category" value={catId} onChange={e => { setCatId(e.target.value); setSubcategoryId(''); }} options={categories.map(c => ({ value: c.id, label: c.name }))} />
+          <Select label="Sub Category" value={subcategoryId} onChange={e => setSubcategoryId(e.target.value)} options={filteredSubs.map(s => ({ value: s.id, label: s.name }))} />
         </div>
-        <div className="grid grid-cols-2 gap-4">
-            <Select label="From (Wallet)" value={srcId} onChange={setSrcId} options={wallets.map(w => ({ value: w.shortName, label: w.name }))} />
-            <Select
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+          <Select label="From (Wallet)" value={srcId} onChange={e => setSrcId(e.target.value)} options={wallets.map(w => ({ value: w.shortName, label: w.name }))} />
+          <Select
             label={type === 'Transfer' ? 'To (Wallet)' : 'To'}
             value={dstId}
-            onChange={setDstId}
+            onChange={e => setDstId(e.target.value)}
             options={
                 type === 'Transfer'
                 ? wallets.map(w => ({ value: w.shortName, label: w.name }))
-                : contacts.map(c => ({ value: c.nickName, label: c.fullName || c.nickName }))
+                : [
+                    { value: '', label: 'Select Contact' },
+                    ...contacts.map(c => ({ value: c.nickName, label: c.fullName || c.nickName }))
+                  ]
             }
-            />
+          />
         </div>
+
         {type !== 'Transfer' && (
-          <Input label="Contact (Optional)" value={contactName} onChange={setContactName} />
+          <Input label="Contact (Optional)" value={contactName} onChange={e => setContactName(e.target.value)} placeholder="Who is this with?" />
         )}
-        <Input label="Remarks" value={remarks} onChange={setRemarks} />
         
-        <div className="flex gap-3 justify-end pt-4">
-          <button className="px-6 py-3 rounded-2xl text-sm font-bold text-gray-400 hover:text-gray-600 hover:bg-gray-50 transition-colors cursor-pointer" onClick={onClose}>Cancel</button>
-          <button 
-            className="px-8 py-3 rounded-2xl text-sm font-bold bg-blue-600 text-white hover:bg-blue-700 transition-all shadow-lg shadow-blue-100 cursor-pointer" 
-            onClick={handleSubmit}
+        <Input label="Remarks" value={remarks} onChange={e => setRemarks(e.target.value)} placeholder="Any notes..." />
+        
+        <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', marginTop: 12 }}>
+          <Button variant="secondary" onClick={onClose} style={{ padding: '12px 24px' }}>Cancel</Button>
+          <Button 
+            onClick={handleSubmit} 
             disabled={!amount || !subcategoryId}
+            style={{ padding: '12px 32px' }}
           >
             {isEdit ? 'Update Changes' : 'Create Transaction'}
-          </button>
+          </Button>
         </div>
       </div>
-    </Overlay>
+    </Modal>
   )
 }
 
 function DeleteDialog({ txn, onClose }: { txn: Transaction; onClose: () => void }) {
   const del = useDeleteTransaction()
   return (
-    <Overlay onClose={onClose}>
-      <div className="text-center">
-        <div className="w-16 h-16 bg-red-50 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">🗑️</div>
-        <h2 className="text-xl font-bold text-gray-900 mb-2">Delete Transaction?</h2>
-        <p className="text-sm text-gray-500 mb-8 leading-relaxed">
-            Are you sure you want to delete this <span className="font-bold">{txn.type}</span> of <span className="font-bold text-gray-900 whitespace-nowrap">{fmt(txn.amount)}</span>? This action cannot be undone.
+    <Modal onClose={onClose} width={400}>
+      <div style={{ textAlign: 'center' }}>
+        <div style={{ width: 64, height: 64, background: 'var(--color-danger-subtle)', color: 'var(--color-danger)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
+          {ICONS.trash(32)}
+        </div>
+        <h2 style={{ fontSize: 20, fontWeight: 700, color: 'var(--color-text-primary)', margin: '0 0 10px' }}>Delete Transaction?</h2>
+        <p style={{ fontSize: 14, color: 'var(--color-text-tertiary)', lineHeight: 1.6, margin: '0 0 32px' }}>
+          Are you sure you want to delete this <span style={{ fontWeight: 700, color: 'var(--color-text-secondary)' }}>{txn.type}</span> for <span style={{ fontWeight: 700, color: 'var(--color-text-primary)' }}>{fmt(txn.amount)}</span>? This cannot be undone.
         </p>
-        <div className="flex gap-3 justify-center">
-            <button className="px-6 py-3 rounded-2xl text-sm font-bold text-gray-400 hover:text-gray-600 hover:bg-gray-50 transition-colors cursor-pointer" onClick={onClose}>Cancel</button>
-            <button
-            className="px-8 py-3 rounded-2xl text-sm font-bold bg-red-600 text-white hover:bg-red-700 transition-all shadow-lg shadow-red-100"
+        <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
+          <Button variant="secondary" onClick={onClose} style={{ padding: '12px 24px' }}>Cancel</Button>
+          <Button 
+            variant="danger" 
             onClick={() => del.mutate(txn.id, { onSuccess: onClose })}
-            >
+            style={{ padding: '12px 24px' }}
+          >
             Confirm Delete
-            </button>
+          </Button>
         </div>
       </div>
-    </Overlay>
-  )
-}
-
-function Overlay({ children, onClose }: { children: React.ReactNode; onClose: () => void }) {
-  return (
-    <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={onClose}>
-      <div className="bg-white rounded-[2rem] shadow-2xl p-8 w-full max-w-xl animate-in fade-in zoom-in duration-200" onClick={e => e.stopPropagation()}>
-        {children}
-      </div>
-    </div>
-  )
-}
-
-function Input({ label, value, onChange, type }: { label: string; value: string; onChange: (v: string) => void; type?: string }) {
-  return (
-    <label className="block space-y-1.5">
-      <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 ml-1">{label}</span>
-      <input 
-        className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-4 py-3 text-sm focus:ring-2 focus:ring-blue-100 focus:border-blue-400 transition-all outline-none font-medium" 
-        type={type} 
-        value={value} 
-        onChange={e => onChange(e.target.value)} 
-      />
-    </label>
-  )
-}
-
-function Select({ label, value, onChange, options }: { label: string; value: string; onChange: (v: string) => void; options: { value: string; label: string }[] }) {
-  return (
-    <label className="block space-y-1.5">
-      <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 ml-1">{label}</span>
-      <select 
-        className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-4 py-3 text-sm focus:ring-2 focus:ring-blue-100 focus:border-blue-400 transition-all outline-none font-medium appearance-none cursor-pointer" 
-        value={value} 
-        onChange={e => onChange(e.target.value)}
-      >
-        <option value="">Select...</option>
-        {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-      </select>
-    </label>
+    </Modal>
   )
 }

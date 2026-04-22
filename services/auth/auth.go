@@ -87,7 +87,7 @@ func (s *authService) VerifyOTP(identifier, code string) (*authmod.TokenPair, er
 
 	raw, ok := cache.GetCache(otpKey(user.ID))
 	if !ok {
-		return nil, models.StatusError{Status: 400, Message: "otp expired or not requested"}
+		return nil, models.StatusError{Status: 400, Message: "Verification code has expired or was not requested."}
 	}
 
 	var session otpSession
@@ -96,7 +96,7 @@ func (s *authService) VerifyOTP(identifier, code string) (*authmod.TokenPair, er
 	}
 
 	if session.OTP != code {
-		return nil, models.StatusError{Status: 400, Message: "invalid otp code"}
+		return nil, models.StatusError{Status: 400, Message: "The verification code you entered is incorrect."}
 	}
 
 	return s.issueTokenPair(user)

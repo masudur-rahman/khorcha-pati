@@ -1,9 +1,17 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { getProfile, updateProfile } from '../api/endpoints'
-import { User, Smartphone, Globe, Save, X, Edit3, Shield } from 'lucide-react'
+import { useSearch } from '../context/SearchContext'
+
+import TopBar from '../components/layout/TopBar'
+import Card from '../components/ui/Card'
+import Button from '../components/ui/Button'
+import Input from '../components/ui/Input'
+import Select from '../components/ui/Select'
+import { ICONS } from '../components/ui/Icons'
 
 export default function Settings() {
+  const { searchTerm } = useSearch()
   const qc = useQueryClient()
   const { data: profile, isLoading } = useQuery({ queryKey: ['profile'], queryFn: getProfile })
   const update = useMutation({
@@ -25,6 +33,22 @@ export default function Settings() {
     }
   }, [profile])
 
+  const filteredItems = useMemo(() => {
+    if (!profile) return []
+    const items = [
+        { label: 'Telegram User', value: `@${profile.username}` },
+        { label: 'Full Name', value: `${profile.firstName} ${profile.lastName || ''}` },
+        { label: 'Telegram ID', value: profile.telegramId.toString() },
+        { label: 'Mobile Number', value: profile.mobileNumber || 'Not provided' },
+        { label: 'Timezone', value: timezone || 'UTC' },
+    ]
+    return items.filter(i => 
+        !searchTerm || 
+        i.label.toLowerCase().includes(searchTerm.toLowerCase()) || 
+        i.value.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+  }, [profile, searchTerm, timezone])
+
   if (isLoading) return <p className="text-gray-500">Loading...</p>
   if (!profile) return <p className="text-gray-400">Could not load profile</p>
 
@@ -32,156 +56,148 @@ export default function Settings() {
     update.mutate({ mobileNumber, timezone })
   }
 
+  const matchesSearch = (text: string) => !searchTerm || text.toLowerCase().includes(searchTerm.toLowerCase())
+
   return (
-    <div className="space-y-8 pb-8">
-      <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Settings</h1>
-          <p className="text-gray-500 text-sm mt-1">Manage your account and preferences</p>
-        </div>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+      <TopBar title="Settings" subtitle="Manage your account and preferences" />
+
+      <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <h2 style={{ fontSize: 16, fontWeight: 700, color: 'var(--color-text-primary)' }}>Profile Details</h2>
         {!isEditing ? (
-          <button
-            onClick={() => setIsEditing(true)}
-            className="flex items-center justify-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-2xl text-sm font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-100 group cursor-pointer"
-          >
-            <Edit3 size={18} />
-            Edit Profile
-          </button>
+          <Button onClick={() => setIsEditing(true)} icon={ICONS.edit(18)}>Edit Profile</Button>
         ) : (
-          <div className="flex gap-3">
-            <button
-              onClick={() => setIsEditing(false)}
-              className="flex items-center justify-center gap-2 bg-white text-gray-500 px-6 py-3 rounded-2xl text-sm font-bold border border-gray-100 hover:bg-gray-50 transition-all shadow-sm"
+          <div style={{ display: 'flex', gap: 12 }}>
+            <Button variant="secondary" onClick={() => setIsEditing(false)}>Cancel</Button>
+            <Button 
+                onClick={handleSave} 
+                disabled={update.isPending}
             >
-              <X size={18} />
-              Cancel
-            </button>
-            <button
-              onClick={handleSave}
-              className="flex items-center justify-center gap-2 bg-emerald-600 text-white px-6 py-3 rounded-2xl text-sm font-bold hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-100"
-              disabled={update.isPending}
-            >
-              <Save size={18} />
-              {update.isPending ? 'Saving...' : 'Save Changes'}
-            </button>
+                {update.isPending ? 'Saving...' : 'Save Changes'}
+            </Button>
           </div>
         )}
       </header>
 
-      <div className="grid lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 space-y-8">
-            <section className="bg-white rounded-[2rem] shadow-sm border border-gray-100 overflow-hidden">
-                <div className="p-8 border-b border-gray-50 bg-gray-50/30">
-                    <h2 className="text-xs font-bold text-gray-400 uppercase tracking-[0.2em]">Personal Information</h2>
-                </div>
-                <div className="p-8 space-y-6">
-                    <div className="grid sm:grid-cols-2 gap-8">
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 24, alignItems: 'start' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+            {matchesSearch('personal information') && (
+                <Card padding={0} style={{ overflow: 'hidden' }}>
+                    <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--color-border)', background: 'var(--color-bg)' }}>
+                        <h3 style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Personal Information</h3>
+                    </div>
+                    <div style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 20 }}>
                         <InfoItem 
-                            label="Telegram Username" 
+                            label="Telegram User" 
                             value={`@${profile.username}`} 
-                            icon={<User size={18} className="text-blue-500" />} 
+                            icon={ICONS.user(18)} 
+                            visible={matchesSearch('Telegram User') || matchesSearch(`@${profile.username}`)}
                         />
                         <InfoItem 
                             label="Full Name" 
                             value={`${profile.firstName} ${profile.lastName || ''}`} 
-                            icon={<Shield size={18} className="text-emerald-500" />} 
+                            icon={ICONS.shield(18)} 
+                            visible={matchesSearch('Full Name') || matchesSearch(`${profile.firstName} ${profile.lastName || ''}`)}
                         />
                         <InfoItem 
                             label="Telegram ID" 
                             value={profile.telegramId.toString()} 
                             isCode 
+                            visible={matchesSearch('Telegram ID') || matchesSearch(profile.telegramId.toString())}
                         />
                     </div>
-                </div>
-            </section>
+                </Card>
+            )}
 
-            <section className={`bg-white rounded-[2rem] shadow-sm border transition-all duration-200 ${isEditing ? 'border-blue-300 ring-2 ring-blue-50' : 'border-gray-100'} overflow-hidden`}>
-                <div className={`p-8 border-b transition-colors ${isEditing ? 'border-blue-100 bg-blue-50/30' : 'border-gray-50 bg-gray-50/30'}`}>
-                    <h2 className="text-xs font-bold text-gray-400 uppercase tracking-[0.2em]">Contact & Preferences {isEditing && <span className="text-blue-500 normal-case tracking-normal ml-2">— editing</span>}</h2>
-                </div>
-                <div className="p-8 space-y-8">
-                    <div className="space-y-2">
-                        <label className="text-[10px] font-bold uppercase tracking-widest text-gray-400 ml-1">Mobile Number</label>
-                        <div className="relative group cursor-pointer">
-                            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-blue-500 transition-colors">
-                                <Smartphone size={18} />
-                            </div>
-                            {isEditing ? (
-                                <input
-                                    type="text"
-                                    className="w-full bg-white border border-blue-200 rounded-2xl pl-12 pr-4 py-4 text-sm focus:ring-2 focus:ring-blue-100 focus:border-blue-400 transition-all outline-none font-bold"
-                                    value={mobileNumber}
-                                    onChange={e => setMobileNumber(e.target.value)}
-                                    placeholder="e.g. +88017..."
+            {matchesSearch('Contact & Preferences') && (
+                <Card padding={0} style={{ overflow: 'hidden', border: isEditing ? '1px solid var(--color-primary)' : undefined }}>
+                    <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--color-border)', background: isEditing ? 'var(--color-primary-subtle)' : 'var(--color-bg)' }}>
+                        <h3 style={{ fontSize: 11, fontWeight: 700, color: isEditing ? 'var(--color-primary)' : 'var(--color-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+                            Contact & Preferences {isEditing && '— EDITING'}
+                        </h3>
+                    </div>
+                    <div style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 24 }}>
+                        {isEditing ? (
+                            <>
+                                <Input 
+                                    label="Mobile Number" 
+                                    value={mobileNumber} 
+                                    onChange={e => setMobileNumber(e.target.value)} 
+                                    placeholder="+88017..." 
                                 />
-                            ) : (
-                                <div className="w-full bg-gray-50 border border-transparent rounded-2xl pl-12 pr-4 py-4 text-sm font-bold text-gray-900">
-                                    {profile.mobileNumber || 'Not provided'}
-                                </div>
-                            )}
-                        </div>
+                                <Select 
+                                    label="Timezone" 
+                                    value={timezone} 
+                                    onChange={e => setTimezone(e.target.value)} 
+                                    options={[
+                                        { value: 'UTC', label: 'Universal Time (UTC)' },
+                                        { value: 'Asia/Dhaka', label: 'Asia/Dhaka (GMT+6)' },
+                                        { value: 'America/New_York', label: 'New York (EST)' },
+                                        { value: 'Europe/London', label: 'London (GMT)' },
+                                    ]} 
+                                />
+                            </>
+                        ) : (
+                            <>
+                                <InfoItem 
+                                    label="Mobile Number" 
+                                    value={profile.mobileNumber || 'Not provided'} 
+                                    icon={ICONS.creditCard(18)} 
+                                    visible={matchesSearch('Mobile Number') || matchesSearch(profile.mobileNumber || 'Not provided')}
+                                />
+                                <InfoItem 
+                                    label="Timezone" 
+                                    value={timezone || 'UTC'} 
+                                    icon={ICONS.budget(18)} 
+                                    visible={matchesSearch('Timezone') || matchesSearch(timezone || 'UTC')}
+                                />
+                            </>
+                        )}
                     </div>
-
-                    <div className="space-y-2">
-                        <label className="text-[10px] font-bold uppercase tracking-widest text-gray-400 ml-1">Timezone</label>
-                        <div className="relative group cursor-pointer">
-                            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-blue-500 transition-colors">
-                                <Globe size={18} />
-                            </div>
-                            {isEditing ? (
-                                <select
-                                    className="w-full bg-white border border-blue-200 rounded-2xl pl-12 pr-4 py-4 text-sm focus:ring-2 focus:ring-blue-100 focus:border-blue-400 transition-all outline-none font-bold appearance-none cursor-pointer"
-                                    value={timezone}
-                                    onChange={e => setTimezone(e.target.value)}
-                                >
-                                    <option value="UTC">Universal Time (UTC)</option>
-                                    <option value="Asia/Dhaka">Asia/Dhaka (GMT+6)</option>
-                                    <option value="America/New_York">New York (EST)</option>
-                                    <option value="Europe/London">London (GMT)</option>
-                                </select>
-                            ) : (
-                                <div className="w-full bg-gray-50 border border-transparent rounded-2xl pl-12 pr-4 py-4 text-sm font-bold text-gray-900">
-                                    {timezone || 'UTC'}
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                </div>
-            </section>
+                </Card>
+            )}
         </div>
 
-        <div className="space-y-6">
-            <div className="bg-blue-600 rounded-[2rem] p-8 text-white shadow-xl shadow-blue-100 relative overflow-hidden">
-                <div className="absolute top-0 right-0 -translate-y-1/4 translate-x-1/4 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
-                <h3 className="text-xl font-bold mb-2">Pro Tip</h3>
-                <p className="text-blue-100 text-sm leading-relaxed font-medium">
-                    You can also update your timezone directly via Telegram by sending your location to the bot.
-                </p>
-            </div>
-            
-            <div className="bg-slate-900 rounded-[2rem] p-8 text-white">
-                <h3 className="text-lg font-bold mb-4">Account Security</h3>
-                <p className="text-slate-400 text-xs leading-relaxed mb-6 font-medium">
-                    Your account is linked to your Telegram profile. For maximum security, enable Two-Step Verification in your Telegram settings.
-                </p>
-                <div className="p-4 bg-white/5 rounded-2xl border border-white/10 flex items-center gap-3">
-                    <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-slate-300">Telegram Secured</span>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+            {matchesSearch('Pro Tip') && (
+                <div style={{
+                    background: `linear-gradient(135deg, var(--color-primary) 0%, oklch(0.55 0.14 165) 100%)`,
+                    borderRadius: 24, padding: 32, color: 'white', position: 'relative', overflow: 'hidden',
+                }}>
+                    <div style={{ position: 'absolute', top: -20, right: -20, width: 120, height: 120, borderRadius: '50%', background: 'rgba(255,255,255,0.1)' }} />
+                    <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 8 }}>Pro Tip</h3>
+                    <p style={{ fontSize: 14, opacity: 0.9, lineHeight: 1.6 }}>
+                        You can also update your timezone directly via Telegram by sending your location to the bot.
+                    </p>
                 </div>
-            </div>
+            )}
+            
+            {matchesSearch('Account Security') && (
+                <div style={{ background: 'var(--color-text-primary)', borderRadius: 24, padding: 32, color: 'white' }}>
+                    <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 12 }}>Account Security</h3>
+                    <p style={{ fontSize: 13, opacity: 0.7, lineHeight: 1.6, marginBottom: 24 }}>
+                        Your account is linked to your Telegram profile. For maximum security, enable Two-Step Verification in your Telegram settings.
+                    </p>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'rgba(255,255,255,0.05)', padding: '12px 16px', borderRadius: 12, border: '1px solid rgba(255,255,255,0.1)' }}>
+                        <div style={{ width: 8, height: 8, background: 'var(--color-success)', borderRadius: '50%' }} />
+                        <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Telegram Secured</span>
+                    </div>
+                </div>
+            )}
         </div>
       </div>
     </div>
   )
 }
 
-function InfoItem({ label, value, icon, isCode }: { label: string; value: string; icon?: React.ReactNode; isCode?: boolean }) {
+function InfoItem({ label, value, icon, isCode, visible = true }: { label: string; value: string; icon?: React.ReactNode; isCode?: boolean, visible?: boolean }) {
+    if (!visible) return null
     return (
-        <div className="space-y-1.5">
-            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">{label}</p>
-            <div className="flex items-center gap-3 bg-gray-50 px-4 py-3 rounded-2xl border border-transparent">
-                {icon}
-                <span className={`text-sm font-bold text-gray-900 ${isCode ? 'font-mono text-xs' : ''}`}>{value}</span>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <p style={{ fontSize: 10, fontWeight: 700, color: 'var(--color-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.08em', marginLeft: 4 }}>{label}</p>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, background: 'var(--color-bg)', padding: '12px 16px', borderRadius: 12, border: '1px solid var(--color-border)' }}>
+                {icon && <span style={{ color: 'var(--color-primary)', display: 'flex' }}>{icon}</span>}
+                <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--color-text-primary)', fontFamily: isCode ? 'monospace' : 'inherit' }}>{value}</span>
             </div>
         </div>
     )

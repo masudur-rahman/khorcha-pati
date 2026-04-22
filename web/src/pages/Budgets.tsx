@@ -1,64 +1,75 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useBudgets, useBudgetAlerts, useSetBudget, useDeleteBudget } from '../hooks/useBudgets'
 import { useQuery } from '@tanstack/react-query'
 import { listCategories } from '../api/endpoints'
-import BudgetGauge from '../components/charts/BudgetGauge'
-import { Plus, Trash2, AlertCircle } from 'lucide-react'
+import { useSearch } from '../context/SearchContext'
 import { fmt } from '../lib/formatter'
 
+import TopBar from '../components/layout/TopBar'
+import Card from '../components/ui/Card'
+import Button from '../components/ui/Button'
+import Modal from '../components/ui/Modal'
+import Input from '../components/ui/Input'
+import Select from '../components/ui/Select'
+import BudgetGauge from '../components/charts/BudgetGauge'
+import { ICONS } from '../components/ui/Icons'
+
 export default function Budgets() {
+  const { searchTerm } = useSearch()
   const { data: budgets, isLoading } = useBudgets()
   const { data: alerts } = useBudgetAlerts()
   const { data: categories } = useQuery({ queryKey: ['categories'], queryFn: listCategories })
   const [showAdd, setShowAdd] = useState(false)
 
+  const filteredBudgets = useMemo(() => {
+    return (budgets ?? []).filter(b => 
+        !searchTerm || 
+        b.categoryName.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+  }, [budgets, searchTerm])
+
   if (isLoading) return <p className="text-gray-500">Loading...</p>
 
   return (
-    <div className="space-y-8 pb-8">
-      <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Budgets</h1>
-          <p className="text-gray-500 text-sm mt-1">Plan your monthly spending limits</p>
-        </div>
-        <button
-          className="flex items-center justify-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-2xl text-sm font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-100 group cursor-pointer"
-          onClick={() => setShowAdd(true)}
-        >
-          <Plus size={18} className="group-hover:rotate-90 transition-transform" />
-          Set Budget
-        </button>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+      <TopBar title="Budgets" subtitle="Plan your monthly spending limits" />
+
+      <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <h2 style={{ fontSize: 16, fontWeight: 700, color: 'var(--color-text-primary)' }}>Active Budgets</h2>
+        <Button onClick={() => setShowAdd(true)} icon={ICONS.plus(18)}>Set Budget</Button>
       </header>
 
-      {alerts && alerts.length > 0 && (
-        <div className="bg-red-50 border border-red-100 rounded-3xl p-6 flex items-start gap-4">
-          <div className="p-2 bg-red-100 text-red-600 rounded-xl">
-            <AlertCircle size={24} />
+      {alerts && alerts.length > 0 && !searchTerm && (
+        <div style={{ background: 'var(--color-danger-subtle)', borderRadius: 20, padding: 24, border: '1px solid var(--color-danger)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+            <span style={{ color: 'var(--color-danger)' }}>{ICONS.alert(20)}</span>
+            <h3 style={{ fontSize: 13, fontWeight: 700, color: 'var(--color-danger)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Spending Alerts</h3>
           </div>
-          <div className="flex-1">
-            <h2 className="text-sm font-bold text-red-900 uppercase tracking-widest mb-2">Spending Alerts</h2>
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {alerts.map(a => (
-                <div key={a.categoryId} className="bg-white/50 p-3 rounded-xl border border-red-200/50">
-                  <p className="text-xs font-bold text-red-800">{a.categoryName}</p>
-                  <p className="text-[10px] text-red-600 font-bold uppercase tracking-tighter mt-0.5">
-                    {a.percent.toFixed(0)}% used • {(a.budgetAmount - a.spent) < 0 ? <span>Over by <span className="whitespace-nowrap">{fmt(Math.abs(a.budgetAmount - a.spent), 0)}</span></span> : <span><span className="whitespace-nowrap">{fmt(a.budgetAmount - a.spent, 0)}</span> left</span>}
-                  </p>
-                </div>
-              ))}
-            </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 12 }}>
+            {alerts.map(a => (
+              <div key={a.categoryId} style={{ background: 'var(--color-surface)', padding: 16, borderRadius: 16, border: '1px solid var(--color-danger-subtle)' }}>
+                <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--color-text-primary)' }}>{a.categoryName}</p>
+                <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--color-danger)', textTransform: 'uppercase', marginTop: 4 }}>
+                  {a.percent.toFixed(0)}% used • {(a.budgetAmount - a.spent) < 0 
+                    ? `Over by ${fmt(Math.abs(a.budgetAmount - a.spent))}` 
+                    : `${fmt(a.budgetAmount - a.spent)} left`}
+                </p>
+              </div>
+            ))}
           </div>
         </div>
       )}
 
-      {(!budgets || budgets.length === 0) ? (
-        <div className="bg-white rounded-3xl p-12 text-center border border-dashed border-gray-200">
-          <div className="text-4xl mb-4">🎯</div>
-          <p className="text-gray-400 font-medium">No budgets set. Create one to start tracking your goals.</p>
-        </div>
+      {(!filteredBudgets || filteredBudgets.length === 0) ? (
+        <Card style={{ padding: 60, textAlign: 'center', borderStyle: 'dashed' }}>
+          <div style={{ fontSize: 40, marginBottom: 16 }}>🎯</div>
+          <p style={{ color: 'var(--color-text-tertiary)', fontWeight: 600 }}>
+              {searchTerm ? 'No budgets match your search' : 'No budgets set. Create one to start tracking your goals.'}
+          </p>
+        </Card>
       ) : (
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {budgets.map(b => (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 20 }}>
+          {filteredBudgets.map(b => (
             <BudgetCard key={b.categoryId} budget={b} />
           ))}
         </div>
@@ -76,130 +87,114 @@ export default function Budgets() {
 
 function BudgetCard({ budget }: { budget: import('../types').BudgetStatus }) {
   const del = useDeleteBudget()
+  const accentColor = budget.percent > 100 ? 'oklch(0.6 0.18 25)' : budget.percent > 80 ? 'oklch(0.7 0.15 75)' : 'oklch(0.55 0.15 155)'
+
   return (
-    <div className="bg-white rounded-[2rem] shadow-sm p-8 border border-gray-100 hover:border-blue-100 transition-all group cursor-pointer">
-      <div className="flex items-center justify-between mb-8">
-        <h3 className="font-bold text-gray-900 tracking-tight">{budget.categoryName}</h3>
-        <button
-          className="p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
-          onClick={() => del.mutate(budget.categoryId)}
-          title="Remove Budget"
-        >
-          <Trash2 size={16} />
-        </button>
-      </div>
-      
-      <div className="mb-8">
-        <BudgetGauge percent={budget.percent} />
-      </div>
-
-      <div className="space-y-4">
-        <div className="flex justify-between items-end">
-            <div>
-                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Spent</p>
-                <p className="text-lg font-bold text-gray-900 whitespace-nowrap">{fmt(budget.spent, 0)}</p>
+    <Card padding={0} style={{ 
+        display: 'flex', flexDirection: 'column', 
+        overflow: 'hidden',
+        background: `linear-gradient(145deg, var(--color-surface) 0%, var(--color-bg) 100%)`
+    }}>
+      <div style={{ padding: 24, flex: 1, display: 'flex', flexDirection: 'column', gap: 20 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <div style={{ 
+                    width: 40, height: 40, borderRadius: 12, 
+                    background: accentColor + '15', color: accentColor,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    boxShadow: `0 4px 10px ${accentColor}20`
+                }}>
+                    {ICONS.budget(20)}
+                </div>
+                <h3 style={{ fontSize: 17, fontWeight: 700, color: 'var(--color-text-primary)' }}>{budget.categoryName}</h3>
             </div>
-            <div className="text-right">
-                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Limit</p>
-                <p className="text-lg font-bold text-gray-400 whitespace-nowrap">{fmt(budget.amount, 0)}</p>
+            <button
+                onClick={() => del.mutate(budget.categoryId)}
+                style={{ width: 32, height: 32, borderRadius: 8, background: 'var(--color-surface)', cursor: 'pointer', color: 'var(--color-text-tertiary)', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.15s', border: '1px solid var(--color-border)' }}
+                onMouseEnter={e => e.currentTarget.style.background = 'var(--color-danger-subtle)'}
+                onMouseLeave={e => e.currentTarget.style.background = 'var(--color-surface)'}
+            >
+                {ICONS.trash(16)}
+            </button>
+        </div>
+        
+        <div style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
+            <BudgetGauge percent={budget.percent} size={100} />
+            <div style={{ flex: 1 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Usage</span>
+                    <span style={{ fontSize: 13, fontWeight: 800, color: accentColor }}>{budget.percent.toFixed(0)}%</span>
+                </div>
+                <div style={{ height: 8, background: 'var(--color-bg)', borderRadius: 4, overflow: 'hidden', border: '1px solid var(--color-border)' }}>
+                    <div style={{ height: '100%', width: `${Math.min(budget.percent, 100)}%`, background: accentColor, borderRadius: 4 }} />
+                </div>
             </div>
         </div>
 
-        <div className={`p-4 rounded-2xl flex items-center justify-between ${budget.remaining >= 0 ? 'bg-emerald-50' : 'bg-red-50'}`}>
-            <span className={`text-xs font-bold ${budget.remaining >= 0 ? 'text-emerald-700' : 'text-red-700'}`}>
-                {budget.remaining >= 0 ? 'Remaining' : 'Over Budget'}
-            </span>
-            <span className={`text-sm font-bold whitespace-nowrap ${budget.remaining >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
-                {fmt(Math.abs(budget.remaining))}
-            </span>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <div style={{ background: 'var(--color-surface)', padding: '12px 16px', borderRadius: 12, border: '1px solid var(--color-border)' }}>
+                <p style={{ fontSize: 10, fontWeight: 700, color: 'var(--color-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 2 }}>Spent</p>
+                <p style={{ fontSize: 16, fontWeight: 800, color: 'var(--color-text-primary)' }}>{fmt(budget.spent)}</p>
+            </div>
+            <div style={{ background: 'var(--color-surface)', padding: '12px 16px', borderRadius: 12, border: '1px solid var(--color-border)' }}>
+                <p style={{ fontSize: 10, fontWeight: 700, color: 'var(--color-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 2 }}>Limit</p>
+                <p style={{ fontSize: 16, fontWeight: 800, color: 'var(--color-text-primary)' }}>{fmt(budget.amount)}</p>
+            </div>
         </div>
       </div>
 
-      {budget.alertAt > 0 && (
-        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-6 text-center">
-            Alert configured at {budget.alertAt}%
-        </p>
-      )}
-    </div>
+      <div style={{ 
+          padding: '12px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          background: budget.remaining >= 0 ? 'var(--color-success-subtle)' : 'var(--color-danger-subtle)',
+          borderTop: '1px solid var(--color-border)'
+      }}>
+          <span style={{ fontSize: 10, fontWeight: 800, textTransform: 'uppercase', color: budget.remaining >= 0 ? 'var(--color-success)' : 'var(--color-danger)', letterSpacing: '0.05em' }}>
+              {budget.remaining >= 0 ? 'Available Balance' : 'Budget Exceeded'}
+          </span>
+          <span style={{ fontSize: 15, fontWeight: 800, color: budget.remaining >= 0 ? 'var(--color-success)' : 'var(--color-danger)' }}>
+              {fmt(Math.abs(budget.remaining))}
+          </span>
+      </div>
+    </Card>
   )
 }
 
-interface SetBudgetDialogProps {
-  categories: import('../types').TxnCategory[]
-  onClose: () => void
-}
-
-function SetBudgetDialog({ categories, onClose }: SetBudgetDialogProps) {
+function SetBudgetDialog({ categories, onClose }: { categories: import('../types').TxnCategory[], onClose: () => void }) {
   const setBudget = useSetBudget()
   const [categoryId, setCategoryId] = useState('')
   const [amount, setAmount] = useState('')
   const [alertAt, setAlertAt] = useState('80')
 
-  const available = categories
-
   const handleSubmit = () => {
     if (!amount) return
     setBudget.mutate(
-      { categoryId: categoryId, amount: parseFloat(amount), alertAt: parseInt(alertAt) },
+      { categoryId, amount: parseFloat(amount), alertAt: parseInt(alertAt) },
       { onSuccess: onClose },
     )
   }
 
   return (
-    <Overlay onClose={onClose}>
-      <h2 className="text-xl font-bold text-gray-900 mb-6">Set New Budget</h2>
-      <div className="space-y-4">
-        <label className="block space-y-1.5">
-          <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 ml-1">Category</span>
-          <select
-            className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-4 py-3 text-sm focus:ring-2 focus:ring-blue-100 focus:border-blue-400 transition-all outline-none font-medium appearance-none cursor-pointer"
-            value={categoryId}
-            onChange={e => setCategoryId(e.target.value)}
-          >
-            <option value="">Overall Budget</option>
-            {available.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-          </select>
-        </label>
+    <Modal title="Set Budget" onClose={onClose} width={460}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+        <Select 
+            label="Category" 
+            value={categoryId} 
+            onChange={e => setCategoryId(e.target.value)} 
+            options={[
+                { value: '', label: 'Overall Budget' },
+                ...categories.map(c => ({ value: c.id, label: c.name }))
+            ]} 
+        />
         
-        <Input label="Monthly Budget Amount" type="number" value={amount} onChange={setAmount} />
+        <Input label="Monthly Limit" type="number" placeholder="0.00" value={amount} onChange={e => setAmount(e.target.value)} />
         
-        <Input label="Alert Threshold (%)" type="number" value={alertAt} onChange={setAlertAt} />
+        <Input label="Alert Threshold (%)" type="number" placeholder="80" value={alertAt} onChange={e => setAlertAt(e.target.value)} />
 
-        <div className="flex gap-3 justify-end pt-4">
-          <button className="px-6 py-3 rounded-2xl text-sm font-bold text-gray-400 hover:text-gray-600 hover:bg-gray-50 transition-colors cursor-pointer" onClick={onClose}>Cancel</button>
-          <button 
-            className="px-8 py-3 rounded-2xl text-sm font-bold bg-blue-600 text-white hover:bg-blue-700 transition-all shadow-lg shadow-blue-100 cursor-pointer" 
-            onClick={handleSubmit}
-            disabled={!amount}
-          >
-            Save Budget
-          </button>
+        <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', marginTop: 12 }}>
+          <Button variant="secondary" onClick={onClose}>Cancel</Button>
+          <Button onClick={handleSubmit} disabled={!amount} style={{ padding: '12px 32px' }}>Save Budget</Button>
         </div>
       </div>
-    </Overlay>
-  )
-}
-
-function Overlay({ children, onClose }: { children: React.ReactNode; onClose: () => void }) {
-  return (
-    <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={onClose}>
-      <div className="bg-white rounded-[2rem] shadow-2xl p-8 w-full max-w-md animate-in fade-in zoom-in duration-200" onClick={e => e.stopPropagation()}>
-        {children}
-      </div>
-    </div>
-  )
-}
-
-function Input({ label, value, onChange, type }: { label: string; value: string; onChange: (v: string) => void; type?: string }) {
-  return (
-    <label className="block space-y-1.5">
-      <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 ml-1">{label}</span>
-      <input 
-        className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-4 py-3 text-sm focus:ring-2 focus:ring-blue-100 focus:border-blue-400 transition-all outline-none font-medium" 
-        type={type} 
-        value={value} 
-        onChange={e => onChange(e.target.value)} 
-      />
-    </label>
+    </Modal>
   )
 }

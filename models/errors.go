@@ -48,7 +48,7 @@ type ErrUserNotFound struct {
 func (err ErrUserNotFound) Error() string {
 	return StatusError{
 		Status:  http.StatusNotFound,
-		Message: fmt.Sprintf("user [id: %v, username: %v, email: %v] doesn't exist", err.ID, err.Username, err.Email),
+		Message: "User account not found. Please check your identity and try again.",
 	}.Error()
 }
 

@@ -79,7 +79,19 @@ export async function apiFetch<T>(path: string, options: RequestInit = {}): Prom
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({ message: res.statusText }))
-    throw new Error(err.message || res.statusText)
+    let msg = err.message || res.statusText
+    
+    // Some backend errors return a JSON string in the message field
+    try {
+      const parsed = JSON.parse(msg)
+      if (parsed.message) {
+        msg = parsed.message
+      }
+    } catch {
+      // Not a JSON string, keep original message
+    }
+    
+    throw new Error(msg)
   }
 
   const contentType = res.headers.get('Content-Type')
