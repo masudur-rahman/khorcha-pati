@@ -18,8 +18,8 @@ services:
       dockerfile: Dockerfile
     ports:
       - "3000:80"
-    depends_on:
-      - backend
+    volumes:
+      - ./web/config.json:/app/config.json:ro
     restart: unless-stopped
 
 volumes:

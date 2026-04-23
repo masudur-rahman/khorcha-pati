@@ -117,8 +117,14 @@ docker-run: # @HELP run container built from latest changes
 	  $(DOCKER_IMAGE):$(VERSION)$(DOCKER_TAG_SUFFIX)
 
 .PHONY: docker-build-web
-docker-build-web: # @HELP builds the web frontend Docker image
+docker-build-web: # @HELP builds web frontend Docker image for current platform
 	docker build -t $(DOCKER_IMAGE)-web:$(VERSION) web/
+
+.PHONY: docker-push-web
+docker-push-web: # @HELP pushes web frontend Docker image to registry
+	docker buildx build --platform linux/amd64,linux/arm64 \
+	  --output "type=image,push=true" \
+	  --tag $(DOCKER_IMAGE)-web:$(VERSION) web/
 
 .PHONY: docker-compose-up
 docker-compose-up: # @HELP runs backend + frontend via Docker Compose
@@ -132,7 +138,7 @@ docker-build-push: # @HELP builds and pushes multi-arch image (PDF_GENERATOR=wkh
 	  --tag $(DOCKER_IMAGE):$(VERSION)$(DOCKER_TAG_SUFFIX) .
 
 .PHONY: release
-release: # @HELP builds and pushes both wkhtmltopdf and chromedp images
+release: # @HELP builds and pushes both wkhtmltopdf and chromedp backend images
 	@$(MAKE) docker-build-push PDF_GENERATOR=wkhtmltopdf --no-print-directory
 	@$(MAKE) docker-build-push PDF_GENERATOR=chromedp --no-print-directory
 
