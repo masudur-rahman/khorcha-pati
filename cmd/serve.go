@@ -66,7 +66,7 @@ to quickly create a Cobra application.`,
 		ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 		defer stop()
 
-		cfg := configs.TrackerConfig.WebDashboard
+		cfg := configs.TrackerConfig.Server
 		messenger := api.NewBotMessenger(bot)
 		uow := configs.GetUnitOfWork()
 		botUsername := cfg.BotUsername
@@ -75,7 +75,7 @@ to quickly create a Cobra application.`,
 		}
 		all.InitiateWebServices(messenger, cfg.JWTSecret, cfg.RefreshSecret, botUsername, cfg.BaseURL, uow, logr.DefaultLogger)
 
-		addr := fmt.Sprintf("%s:%s", cfg.Host, cfg.Port)
+		addr := fmt.Sprintf("%s:%d", cfg.Host, cfg.Port)
 		router := web.NewRouter(cfg.JWTSecret, cfg.CORSOrigin)
 		webSrv := &http.Server{Addr: addr, Handler: router, ReadHeaderTimeout: 10 * time.Second}
 

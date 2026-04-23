@@ -22,7 +22,7 @@ func Dashboard(ctx telebot.Context) error {
 		return ctx.Send("Set a Telegram username or share your phone number first so the dashboard can identify you.")
 	}
 
-	cfg := configs.TrackerConfig.WebDashboard
+	cfg := configs.TrackerConfig.Server
 	if !cfg.Enabled {
 		return ctx.Send("Web dashboard is not enabled.")
 	}

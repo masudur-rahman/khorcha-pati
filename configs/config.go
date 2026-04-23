@@ -3,6 +3,7 @@ package configs
 import (
 	"fmt"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/masudur-rahman/expense-tracker-bot/modules/cache"
@@ -13,22 +14,22 @@ import (
 var TrackerConfig ExpenseConfiguration
 
 type ExpenseConfiguration struct {
-	Telegram     Telegram           `json:"telegram" yaml:"telegram"`
-	Database     DatabaseConfig     `json:"database" yaml:"database"`
-	Cache        cache.Config       `json:"cache" yaml:"cache"`
-	System       SystemConfig       `json:"system" yaml:"system"`
-	WebDashboard WebDashboardConfig `json:"webDashboard" yaml:"webDashboard"`
+	Telegram Telegram       `json:"telegram" yaml:"telegram"`
+	Database DatabaseConfig `json:"database" yaml:"database"`
+	Cache    cache.Config   `json:"cache" yaml:"cache"`
+	System   SystemConfig   `json:"system" yaml:"system"`
+	Server   ServerConfig   `json:"server" yaml:"server"`
 }
 
-// WebDashboardConfig holds settings for the optional web dashboard.
-type WebDashboardConfig struct {
+// ServerConfig holds settings for the optional REST API server.
+type ServerConfig struct {
 	Enabled       bool   `json:"enabled" yaml:"enabled"`
 	JWTSecret     string `json:"jwtSecret" yaml:"jwtSecret"`
 	RefreshSecret string `json:"refreshSecret" yaml:"refreshSecret"`
 	BotUsername   string `json:"botUsername" yaml:"botUsername"`
 	CORSOrigin    string `json:"corsOrigin" yaml:"corsOrigin"`
 	Host          string `json:"host" yaml:"host"`
-	Port          string `json:"port" yaml:"port"`
+	Port          int    `json:"port" yaml:"port"`
 	BaseURL       string `json:"baseURL" yaml:"baseURL"`
 	DashboardURL  string `json:"dashboardURL" yaml:"dashboardURL"`
 }
@@ -138,38 +139,40 @@ func (c *ExpenseConfiguration) OverrideWithEnv() {
 		c.System.AIGenerator = ""
 	}
 
-	// Web Dashboard Overrides
-	if os.Getenv("WEB_ENABLED") == "true" {
-		c.WebDashboard.Enabled = true
+	// Server Overrides
+	if os.Getenv("SERVER_ENABLED") == "true" {
+		c.Server.Enabled = true
 	}
-	if secret := os.Getenv("WEB_JWT_SECRET"); secret != "" {
-		c.WebDashboard.JWTSecret = secret
+	if secret := os.Getenv("SERVER_JWT_SECRET"); secret != "" {
+		c.Server.JWTSecret = secret
 	}
-	if secret := os.Getenv("WEB_REFRESH_SECRET"); secret != "" {
-		c.WebDashboard.RefreshSecret = secret
+	if secret := os.Getenv("SERVER_REFRESH_SECRET"); secret != "" {
+		c.Server.RefreshSecret = secret
 	}
-	if origin := os.Getenv("WEB_CORS_ORIGIN"); origin != "" {
-		c.WebDashboard.CORSOrigin = origin
+	if origin := os.Getenv("SERVER_CORS_ORIGIN"); origin != "" {
+		c.Server.CORSOrigin = origin
 	}
-	if username := os.Getenv("WEB_BOT_USERNAME"); username != "" {
-		c.WebDashboard.BotUsername = username
+	if username := os.Getenv("SERVER_BOT_USERNAME"); username != "" {
+		c.Server.BotUsername = username
 	}
-	if host := os.Getenv("WEB_HOST"); host != "" {
-		c.WebDashboard.Host = host
+	if host := os.Getenv("SERVER_HOST"); host != "" {
+		c.Server.Host = host
 	}
-	if c.WebDashboard.Host == "" {
-		c.WebDashboard.Host = "0.0.0.0"
+	if c.Server.Host == "" {
+		c.Server.Host = "0.0.0.0"
 	}
-	if port := os.Getenv("WEB_PORT"); port != "" {
-		c.WebDashboard.Port = port
+	if port := os.Getenv("SERVER_PORT"); port != "" {
+		if p, err := strconv.Atoi(port); err == nil {
+			c.Server.Port = p
+		}
 	}
-	if c.WebDashboard.Port == "" {
-		c.WebDashboard.Port = "6336"
+	if c.Server.Port == 0 {
+		c.Server.Port = 6336
 	}
-	if baseURL := os.Getenv("WEB_BASE_URL"); baseURL != "" {
-		c.WebDashboard.BaseURL = baseURL
+	if baseURL := os.Getenv("SERVER_BASE_URL"); baseURL != "" {
+		c.Server.BaseURL = baseURL
 	}
-	if dashboardURL := os.Getenv("WEB_DASHBOARD_URL"); dashboardURL != "" {
-		c.WebDashboard.DashboardURL = dashboardURL
+	if dashboardURL := os.Getenv("SERVER_DASHBOARD_URL"); dashboardURL != "" {
+		c.Server.DashboardURL = dashboardURL
 	}
 }

@@ -13,10 +13,10 @@ var requiredEnvVars = []string{
 	"TELEGRAM_BOT_TOKEN",
 }
 
-// webRequiredEnvVars are required only when WEB_ENABLED=true.
-var webRequiredEnvVars = []string{
-	"WEB_JWT_SECRET",
-	"WEB_REFRESH_SECRET",
+// serverRequiredEnvVars are required only when SERVER_ENABLED=true.
+var serverRequiredEnvVars = []string{
+	"SERVER_JWT_SECRET",
+	"SERVER_REFRESH_SECRET",
 }
 
 // Validate checks that all required environment variables are present and
@@ -33,8 +33,8 @@ func Validate() error {
 			missing = append(missing, key)
 		}
 	}
-	if os.Getenv("WEB_ENABLED") == "true" {
-		for _, key := range webRequiredEnvVars {
+	if os.Getenv("SERVER_ENABLED") == "true" {
+		for _, key := range serverRequiredEnvVars {
 			if strings.TrimSpace(os.Getenv(key)) == "" {
 				missing = append(missing, key)
 			}

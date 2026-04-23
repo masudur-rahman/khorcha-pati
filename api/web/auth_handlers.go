@@ -109,7 +109,7 @@ func HandleQRRedirect(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	botUsername := strings.TrimSpace(strings.TrimPrefix(configs.TrackerConfig.WebDashboard.BotUsername, "@"))
+	botUsername := strings.TrimSpace(strings.TrimPrefix(configs.TrackerConfig.Server.BotUsername, "@"))
 	param := "login_" + sessionID
 	tgLink := fmt.Sprintf("tg://resolve?domain=%s&start=%s", botUsername, param)
 	httpLink := fmt.Sprintf("https://t.me/%s?start=%s", botUsername, param)
