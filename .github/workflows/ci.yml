@@ -101,4 +101,5 @@ jobs:
         run: make verify
 
       - name: Build container
-        run: make docker-build
+        run: |
+          make docker-build DOCKER_CACHE_ARGS="--cache-from=type=gha --cache-to=type=gha,mode=max"

@@ -1,24 +1,34 @@
 package dberr
 
-import "github.com/masudur-rahman/styx/sql/postgres/lib"
+import "reflect"
 
 func CheckEntityNameNonEmpty(entity string) error {
 	if entity == "" {
-		return NewRequirementMissing("entity name must be set")
+		return ErrInvalidEntityName
 	}
 	return nil
 }
 
 func CheckIDNonEmpty(id any) error {
-	if lib.IsZeroValue(id) {
-		return NewRequirementMissing("must provide document id")
+	if IsZeroValue(id) {
+		return ErrInvalidID
 	}
 	return nil
 }
 
 func CheckIdOrFilterNonEmpty(id any, filter interface{}) error {
-	if lib.IsZeroValue(id) && filter == nil {
-		return NewRequirementMissing("must provide id and/or filter")
+	if IsZeroValue(id) && filter == nil {
+		return ErrInvalidID
 	}
 	return nil
+}
+
+// IsZeroValue checks if a value is its type's zero value.
+func IsZeroValue(value any) bool {
+	if value == nil {
+		return true
+	}
+	typ := reflect.TypeOf(value)
+	zero := reflect.Zero(typ).Interface()
+	return reflect.DeepEqual(value, zero)
 }

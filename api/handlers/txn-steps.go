@@ -104,13 +104,13 @@ func sendTransactionRemarksQuery(ctx telebot.Context, callbackOpts CallbackOptio
 	return nil
 }
 
-func processTransaction(ctx telebot.Context, txn TransactionCallbackOptions) error {
+func processTransaction(ctx telebot.Context, txn TransactionCallbackOptions) (models.Transaction, error) {
 	user, err := all.GetServices().User.GetUserByTelegramID(ctx.Sender().ID)
 	if err != nil {
-		return ctx.Send(models.ErrCommonResponse(err))
+		return models.Transaction{}, err
 	}
 
-	return all.GetServices().Txn.AddTransaction(models.Transaction{
+	params := models.Transaction{
 		UserID:        user.ID,
 		Amount:        txn.Amount,
 		SubcategoryID: txn.SubcategoryID,
@@ -119,5 +119,7 @@ func processTransaction(ctx telebot.Context, txn TransactionCallbackOptions) err
 		DstID:         txn.DstID,
 		ContactName:   txn.ContactName,
 		Remarks:       txn.Remarks,
-	})
+	}
+	err = all.GetServices().Txn.AddTransaction(params)
+	return params, err
 }

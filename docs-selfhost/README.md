@@ -1,6 +1,6 @@
 # Expense Tracker Bot — Self-Hosting Guide
 
-A Telegram Bot to track your expenses. This guide covers everything you need to self-host the bot.
+A Telegram Bot to track your expenses. This guide covers everything you need to self-host the bot using Docker or native Go.
 
 ## Requirements
 
@@ -78,44 +78,44 @@ If you want to back up your SQLite database to Google Drive regularly, follow th
 
 ## Environment Variables
 
+The application supports environment variable overrides for all sensitive configuration.
+
 ### Required
 
 | Variable | Description |
 |---|---|
 | `TELEGRAM_BOT_TOKEN` | Bot token from @BotFather |
+| `EXPENSE_BOT_TOKEN` | (Alternative) Overrides the Telegram secret in YAML |
 
 ### AI Classification (Optional)
 
-Set one or both to enable AI-powered subcategory classification for natural language transactions.
+Set these to enable AI-powered natural language processing. The bot will automatically prefer Gemini if its key is provided.
 
 | Variable | Description |
 |---|---|
 | `GEMINI_API_KEY` | Google Gemini API key |
-| `OPENROUTER_API_KEY` | OpenRouter API key (fallback if Gemini is not set) |
+| `OPENROUTER_API_KEY` | OpenRouter API key |
 
-### PostgreSQL Overrides (Optional)
+### Database Overrides (Optional)
 
-These override the corresponding values in the YAML config file.
+These override the corresponding values in the YAML config file for production/Docker environments.
 
 | Variable | Description |
 |---|---|
-| `POSTGRES_USER` | PostgreSQL username |
-| `POSTGRES_PASSWORD` | PostgreSQL password |
-| `POSTGRES_DB` | Database name |
-| `POSTGRES_HOST` | Database host |
-| `POSTGRES_PORT` | Database port |
-| `POSTGRES_SSL_MODE` | SSL mode (`disable`, `require`, etc.) |
+| `EXPENSE_DB_PASS` | Database password (Postgres) |
+| `EXPENSE_REDIS_PASS` | Redis password |
 
 ### Other (Optional)
 
 | Variable | Description |
 |---|---|
+| `ENV` | Set to `production` for JSON-structured logging and production Zap profile |
 | `BASE_URL` | If set, the bot pings `{BASE_URL}/healthz` every 20 minutes to keep itself alive |
 | `GOOGLE_APPLICATION_CREDENTIALS` | Path to Google service account JSON for Drive backup |
 
 ## Configuration File
 
-The bot reads its configuration from `configs/.expense-tracker.yaml`. Full structure:
+The bot reads its configuration from `.configs/.expense-tracker.yaml` (relative to the project root).
 
 ```yaml
 telegram:
@@ -130,18 +130,18 @@ database:
         host: localhost
         port: 5432
         user: postgres
-        password: postgres
+        password: "" # Use EXPENSE_DB_PASS env var to override
         sslmode: disable
 cache:
     type: map  # or redis
     redis:
         host: localhost
         port: "6379"
-        password: ""
+        password: "" # Use EXPENSE_REDIS_PASS env var to override
+system:
+    pdfGenerator: wkhtmltopdf # or chromedp
+    aiGenerator: gemini # or open-router
 ```
-
-- **database.type**: `sqlite` (default) or `postgres`
-- **cache.type**: `map` (in-memory, default) or `redis`
 
 ## Installation and Running
 
@@ -150,28 +150,16 @@ cache:
 1. Clone the repository:
 
    ```bash
-   mkdir -p $GOPATH/src/github.com/masudur-rahman
-   cd $GOPATH/src/github.com/masudur-rahman
    git clone git@github.com:masudur-rahman/expense-tracker-bot.git
+   cd expense-tracker-bot
    ```
 
-2. Update the configuration file (`configs/.expense-tracker.yaml`) as needed. You can modify the Telegram user and specify the database type.
+2. Update the configuration file `.configs/.expense-tracker.yaml`.
 
 3. Export required environment variables:
 
    ```bash
    export TELEGRAM_BOT_TOKEN=<TELEGRAM_BOT_TOKEN>
-   ```
-
-   If backing up to Google Drive:
-
-   ```bash
-   export GOOGLE_APPLICATION_CREDENTIALS=$HOME/Downloads/service-account-key.json
-   ```
-
-   If using AI classification:
-
-   ```bash
    export GEMINI_API_KEY=<YOUR_GEMINI_API_KEY>
    ```
 
@@ -182,6 +170,8 @@ cache:
    ```
 
 ### Docker Setup
+
+The Docker image supports both `wkhtmltopdf` and `chromedp` engines and is built for both AMD64 and ARM64 (Apple Silicon).
 
 - Write configuration file
     ```shell
@@ -199,9 +189,13 @@ cache:
 
 - Run Expense Tracker Bot
     ```shell
-    docker run -v $HOME/.expense-tracker/configs:/configs \
+    docker run -d \
+      --name expense-tracker \
+      -v $HOME/.expense-tracker/configs:/app/.configs \
       -v $HOME/.expense-tracker:/.expense-tracker \
       -e TELEGRAM_BOT_TOKEN=<TELEGRAM_BOT_TOKEN> \
+      -e GEMINI_API_KEY=<GEMINI_API_KEY> \
+      -e ENV=production \
       ghcr.io/masudur-rahman/expense-tracker-bot:latest serve
     ```
 

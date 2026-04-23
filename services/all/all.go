@@ -1,13 +1,22 @@
 package all
 
 import (
+	"strings"
+	"sync"
+
 	"github.com/masudur-rahman/expense-tracker-bot/infra/logr"
+	authmod "github.com/masudur-rahman/expense-tracker-bot/modules/auth"
+	authrepo "github.com/masudur-rahman/expense-tracker-bot/repos/auth"
+	"github.com/masudur-rahman/expense-tracker-bot/repos/budgets"
 	"github.com/masudur-rahman/expense-tracker-bot/repos/event"
 	"github.com/masudur-rahman/expense-tracker-bot/repos/transaction"
 	"github.com/masudur-rahman/expense-tracker-bot/repos/user"
 	"github.com/masudur-rahman/expense-tracker-bot/repos/wallets"
 	"github.com/masudur-rahman/expense-tracker-bot/services"
+	authsvc "github.com/masudur-rahman/expense-tracker-bot/services/auth"
+	budgetsvc "github.com/masudur-rahman/expense-tracker-bot/services/budgets"
 	eventsvc "github.com/masudur-rahman/expense-tracker-bot/services/event"
+	summarysvc "github.com/masudur-rahman/expense-tracker-bot/services/summary"
 	txnsvc "github.com/masudur-rahman/expense-tracker-bot/services/transaction"
 	usersvc "github.com/masudur-rahman/expense-tracker-bot/services/user"
 	walletsvc "github.com/masudur-rahman/expense-tracker-bot/services/wallets"
@@ -21,11 +30,30 @@ type Services struct {
 	Contact services.ContactService
 	Txn     services.TransactionService
 	Event   services.EventService
+	Budget  services.BudgetService
+	Summary services.SummaryService
+	Auth    services.AuthService
 }
 
-var svc *Services
+var (
+	svc   *Services
+	svcMu sync.RWMutex
+)
+
+// webConfig stores web service init params for re-initialization on DB reconnect.
+type webConfig struct {
+	messenger     authmod.Messenger
+	jwtSecret     string
+	refreshSecret string
+	botUsername   string
+	baseURL       string
+}
+
+var webCfg *webConfig
 
 func GetServices() *Services {
+	svcMu.RLock()
+	defer svcMu.RUnlock()
 	return svc
 }
 
@@ -35,18 +63,74 @@ func InitiateSQLServices(uow styx.UnitOfWork, logger logr.Logger) {
 	contactRepo := user.NewSQLContactRepository(uow.SQL, logger)
 	txnRepo := transaction.NewSQLTransactionRepository(uow.SQL, logger)
 	eventRepo := event.NewSQLEventRepository(uow.SQL, logger)
+	budgetRepo := budgets.NewSQLBudgetRepository(uow.SQL, logger)
 
 	userSvc := usersvc.NewProfileService(userRepo)
 	walletSvc := walletsvc.NewWalletService(walletRepo)
 	contactSvc := usersvc.NewContactService(contactRepo)
 	txnSvc := txnsvc.NewTxnService(uow, walletRepo, contactRepo, txnRepo, eventRepo)
 	eventSvc := eventsvc.NewEventService(eventRepo)
+	budgetSvc := budgetsvc.NewBudgetService(budgetRepo, txnRepo)
+	summarySvc := summarysvc.NewSummaryService(txnRepo, walletRepo, budgetRepo)
 
-	svc = &Services{
+	// Preserve Auth service across DB reconnects
+	var existingAuth services.AuthService
+	svcMu.RLock()
+	if svc != nil {
+		existingAuth = svc.Auth
+	}
+	svcMu.RUnlock()
+
+	newSvc := &Services{
 		User:    userSvc,
 		Wallet:  walletSvc,
 		Contact: contactSvc,
 		Txn:     txnSvc,
 		Event:   eventSvc,
+		Budget:  budgetSvc,
+		Summary: summarySvc,
+		Auth:    existingAuth,
 	}
+
+	// Re-initialize auth with new repos if web services were configured
+	if webCfg != nil {
+		ar := authrepo.NewSQLAuthRepository(uow.SQL, logger)
+		newSvc.Auth = authsvc.NewAuthService(
+			userRepo, ar, webCfg.messenger,
+			webCfg.jwtSecret, webCfg.refreshSecret, webCfg.botUsername, webCfg.baseURL,
+			logger,
+		)
+	}
+
+	svcMu.Lock()
+	svc = newSvc
+	svcMu.Unlock()
+}
+
+// InitiateWebServices wires the auth service when the web dashboard is enabled.
+func InitiateWebServices(
+	messenger authmod.Messenger,
+	jwtSecret, refreshSecret, botUsername, baseURL string,
+	uow styx.UnitOfWork,
+	logger logr.Logger,
+) {
+	botUsername = strings.TrimSpace(strings.TrimPrefix(botUsername, "@"))
+	webCfg = &webConfig{
+		messenger:     messenger,
+		jwtSecret:     jwtSecret,
+		refreshSecret: refreshSecret,
+		botUsername:   botUsername,
+		baseURL:       baseURL,
+	}
+
+	userRepo := user.NewSQLUserRepository(uow.SQL, logger)
+	ar := authrepo.NewSQLAuthRepository(uow.SQL, logger)
+
+	svcMu.Lock()
+	svc.Auth = authsvc.NewAuthService(
+		userRepo, ar, messenger,
+		jwtSecret, refreshSecret, botUsername, baseURL,
+		logger,
+	)
+	svcMu.Unlock()
 }

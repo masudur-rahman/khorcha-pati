@@ -1,0 +1,6 @@
+{
+  "listenHost": "0.0.0.0",
+  "listenPort": 80,
+  "serverName": "xpense.mrahman.xyz",
+  "apiBase": "https://xpense-api.mrahman.xyz"
+}

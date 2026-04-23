@@ -29,18 +29,13 @@ func setupTxnRepo(t *testing.T) testEnv {
 	require.NoError(t, err)
 	t.Cleanup(func() { _ = conn.Close() })
 
-	db := sqlite.NewSQLite(context.Background(), conn)
+	db := sqlite.NewSQLite(conn)
 	require.NoError(t, db.Sync(
+		context.Background(),
 		models.Transaction{},
 		models.TxnCategory{},
 		models.TxnSubcategory{},
 	))
-
-	// Set DEFAULT 0 for deleted_at — styx CREATE TABLE omits defaults,
-	// and InsertOne skips zero-value fields, leaving deleted_at NULL.
-	// The repo queries filter `WHERE deleted_at = 0` which won't match NULL.
-	_, err = db.Exec(`UPDATE "transaction" SET deleted_at = 0 WHERE deleted_at IS NULL`)
-	require.NoError(t, err)
 
 	logger := zap.NewNop().Sugar()
 	return testEnv{
@@ -49,13 +44,10 @@ func setupTxnRepo(t *testing.T) testEnv {
 	}
 }
 
-// seedTransaction inserts a txn and fixes the NULL deleted_at column.
+// seedTransaction inserts a txn into the test DB.
 func seedTransaction(t *testing.T, env testEnv, txn models.Transaction) {
 	t.Helper()
 	require.NoError(t, env.repo.AddTransaction(txn))
-	// Fix NULL deleted_at left by styx's zero-value skip
-	_, err := env.db.Exec(`UPDATE "transaction" SET deleted_at = 0 WHERE deleted_at IS NULL`)
-	require.NoError(t, err)
 }
 
 func TestAddTransaction_success(t *testing.T) {

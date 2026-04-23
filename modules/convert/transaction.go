@@ -75,3 +75,24 @@ func ToTransactionAPIFormat(txn models.Transaction) gqtypes.Transaction {
 		Remarks:     txn.Remarks,
 	}
 }
+
+func ToWalletAPIFormat(w models.Wallet) gqtypes.Wallet {
+	return gqtypes.Wallet{
+		ID:        w.ID,
+		Type:      string(w.Type),
+		ShortName: w.ShortName,
+		Name:      w.Name,
+		Balance:   w.Balance,
+	}
+}
+
+func ToContactAPIFormat(c models.Contacts) gqtypes.Contact {
+	return gqtypes.Contact{
+		ID:               c.ID,
+		NickName:         c.NickName,
+		FullName:         c.FullName,
+		Email:            c.Email,
+		NetBalance:       c.NetBalance,
+		LastTxnTimestamp: c.LastTxnTimestamp,
+	}
+}

@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"fmt"
-	"log"
 
 	"github.com/masudur-rahman/expense-tracker-bot/models"
 	"github.com/masudur-rahman/expense-tracker-bot/services/all"
@@ -36,7 +35,7 @@ func handleAccountCallback(ctx telebot.Context, callbackOptions CallbackOptions)
 	case StepAccountInfo:
 		return sendAccountInfoQuery(ctx, callbackOptions)
 	default:
-		return ctx.Send("Invalid Step")
+		return ctx.Send("⚠️ Invalid step.")
 	}
 }
 
@@ -54,12 +53,19 @@ func sendAccountTypeQuery(ctx telebot.Context, callbackOpts CallbackOptions) err
 }
 
 func sendAccountInfoQuery(ctx telebot.Context, callbackOpts CallbackOptions) error {
-	msg, err := ctx.Bot().Reply(ctx.Message(), fmt.Sprintf(`Reply to this Message with the following data
+	prompt := fmt.Sprintf(`Reply to this Message with the following data
 
 <short name> <wallet name>
 i.e.: %v
-`, accountExample(callbackOpts.Wallet.Type)), &telebot.SendOptions{
-		ReplyTo: ctx.Message(),
+`, accountExample(callbackOpts.Wallet.Type))
+
+	msg, err := ctx.Bot().Reply(ctx.Message(), prompt, &telebot.SendOptions{
+		ReplyTo:   ctx.Message(),
+		ParseMode: telebot.ModeMarkdown,
+		ReplyMarkup: &telebot.ReplyMarkup{
+			ForceReply:  true,
+			Placeholder: accountExample(callbackOpts.Wallet.Type),
+		},
 	})
 	if err != nil {
 		return err
@@ -89,8 +95,7 @@ func processAccountCreation(ctx telebot.Context, aop AccountCallbackOptions) err
 		Name:      aop.Name,
 	}
 	if err := all.GetServices().Wallet.CreateWallet(acc); err != nil {
-		log.Println(err)
-		return ctx.Send(err.Error())
+		return ctx.Send(models.ErrCommonResponse(err))
 	}
 
 	return ctx.Send(fmt.Sprintf("✅ Wallet *%v* added!", acc.Name), telebot.ModeMarkdown)

@@ -16,6 +16,7 @@ import (
 type Cache interface {
 	Set(key string, value string, expiration time.Duration) error
 	Get(key string) (string, bool)
+	Delete(key string) error
 }
 
 // instance holds the active cache implementation
@@ -77,6 +78,14 @@ func GetCache(key string) (string, bool) {
 	return instance.Get(key)
 }
 
+// DeleteCache removes a value using the initialized cache implementation.
+func DeleteCache(key string) error {
+	if instance == nil {
+		return nil
+	}
+	return instance.Delete(key)
+}
+
 // ---------------------------------------------------------------------
 
 type memoryCache struct {
@@ -100,6 +109,11 @@ func (m *memoryCache) Get(key string) (string, bool) {
 		return "", false
 	}
 	return val.(string), true
+}
+
+func (m *memoryCache) Delete(key string) error {
+	m.client.Delete(key)
+	return nil
 }
 
 // ---------------------------------------------------------------------
@@ -139,4 +153,8 @@ func (r *redisCache) Get(key string) (string, bool) {
 		return "", false
 	}
 	return val, true
+}
+
+func (r *redisCache) Delete(key string) error {
+	return r.client.Del(context.Background(), key).Err()
 }

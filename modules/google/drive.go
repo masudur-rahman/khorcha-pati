@@ -19,7 +19,7 @@ import (
 
 const (
 	dbFileName   = "expense-tracker.db"
-	dbFolderName = ".expense-tracker"
+	dbFolderName = ".sqlite"
 )
 
 func DatabasePath() string {

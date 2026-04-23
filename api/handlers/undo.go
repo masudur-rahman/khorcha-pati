@@ -15,7 +15,7 @@ func HandleUndo(c telebot.Context) error {
 	}
 	txn, err := all.GetServices().Txn.Undo(user.ID)
 	if err != nil {
-		return c.Send("⚠️ " + err.Error())
+		return c.Send("⚠️ " + models.ErrCommonResponse(err))
 	}
 	return c.Send("✅ *Transaction Undone*\n\n"+txn.Summary(), telebot.ModeMarkdown)
 }

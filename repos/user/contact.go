@@ -1,6 +1,7 @@
 package user
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -33,8 +34,9 @@ func (u *SQLContactRepository) WithUnitOfWork(uow styx.UnitOfWork) repos.Contact
 
 func (u *SQLContactRepository) GetContactByID(id int64) (*models.Contacts, error) {
 	u.logger.Infow("get contact by id", "id", id)
+	ctx := context.Background()
 	var c models.Contacts
-	found, err := u.db.ID(id).FindOne(&c)
+	found, err := u.db.ID(id).FindOne(ctx, &c)
 	if err != nil {
 		return nil, err
 	}
@@ -46,9 +48,10 @@ func (u *SQLContactRepository) GetContactByID(id int64) (*models.Contacts, error
 
 func (u *SQLContactRepository) GetContactByName(userID int64, name string) (*models.Contacts, error) {
 	u.logger.Infow("get contact by name", "userID", userID, "name", name)
+	ctx := context.Background()
 	filter := models.Contacts{UserID: userID, NickName: name}
 	var c models.Contacts
-	found, err := u.db.FindOne(&c, filter)
+	found, err := u.db.FindOne(ctx, &c, filter)
 	if err != nil {
 		return nil, err
 	}
@@ -60,31 +63,41 @@ func (u *SQLContactRepository) GetContactByName(userID int64, name string) (*mod
 
 func (u *SQLContactRepository) UpdateContactBalance(id int64, txnAmount float64) error {
 	u.logger.Infow("updating contact balance", "id", id)
+	ctx := context.Background()
 	c, err := u.GetContactByID(id)
 	if err != nil {
 		return err
 	}
 	c.NetBalance += txnAmount
 	c.LastTxnTimestamp = time.Now().Unix()
-	return u.db.ID(c.ID).MustCols("net_balance").UpdateOne(c)
+	return u.db.ID(c.ID).MustCols("net_balance", "last_txn_timestamp").UpdateOne(ctx, c)
 }
 
 func (u *SQLContactRepository) AddNewContact(contact *models.Contacts) error {
 	if contact.UserID == 0 {
 		return fmt.Errorf("user-id can't be empty")
 	}
-	_, err := u.db.MustCols("net_balance", "last_txn_timestamp").InsertOne(contact)
+	ctx := context.Background()
+	_, err := u.GetContactByName(contact.UserID, contact.NickName)
+	if err == nil {
+		return models.ErrContactAlreadyExist{UserID: contact.UserID, NickName: contact.NickName}
+	} else if !models.IsErrNotFound(err) {
+		return err
+	}
+	_, err = u.db.MustCols("net_balance", "last_txn_timestamp").InsertOne(ctx, contact)
 	return err
 }
 
 func (u *SQLContactRepository) ListContacts(userID int64) ([]models.Contacts, error) {
 	u.logger.Infow("list contacts", "userID", userID)
+	ctx := context.Background()
 	contacts := make([]models.Contacts, 0)
-	err := u.db.FindMany(&contacts, models.Contacts{UserID: userID})
+	err := u.db.FindMany(ctx, &contacts, models.Contacts{UserID: userID})
 	return contacts, err
 }
 
 func (u *SQLContactRepository) DeleteContact(id int64) error {
 	u.logger.Infow("deleting contact", "id", id)
-	return u.db.DeleteOne(models.Contacts{ID: id})
+	ctx := context.Background()
+	return u.db.DeleteOne(ctx, models.Contacts{ID: id})
 }

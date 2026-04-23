@@ -53,10 +53,29 @@ type SummaryGroups struct {
 	Subcategory map[string]FieldCost `json:"subcategory"`
 }
 
+type Wallet struct {
+	ID        int64   `json:"id"`
+	Type      string  `json:"type"`
+	ShortName string  `json:"shortName"`
+	Name      string  `json:"name"`
+	Balance   float64 `json:"balance"`
+}
+
+type Contact struct {
+	ID               int64   `json:"id"`
+	NickName         string  `json:"nickName"`
+	FullName         string  `json:"fullName"`
+	Email            string  `json:"email"`
+	NetBalance       float64 `json:"netBalance"`
+	LastTxnTimestamp int64   `json:"lastTxnTimestamp"`
+}
+
 type Report struct {
 	Name         string        `json:"name"`
 	Transactions []Transaction `json:"transactions"`
 	Summary      SummaryGroups `json:"summary"`
+	Wallets      []Wallet      `json:"wallets,omitempty"`
+	Contacts     []Contact     `json:"contacts,omitempty"`
 	StartDate    time.Time     `json:"startDate"`
 	EndDate      time.Time     `json:"endDate"`
 

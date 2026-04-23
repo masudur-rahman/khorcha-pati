@@ -2,6 +2,7 @@ package configs
 
 import (
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/masudur-rahman/expense-tracker-bot/modules/cache"
@@ -12,10 +13,24 @@ import (
 var TrackerConfig ExpenseConfiguration
 
 type ExpenseConfiguration struct {
-	Telegram Telegram       `json:"telegram" yaml:"telegram"`
-	Database DatabaseConfig `json:"database" yaml:"database"`
-	Cache    cache.Config   `json:"cache" yaml:"cache"`
-	System   SystemConfig   `json:"system" yaml:"system"`
+	Telegram     Telegram           `json:"telegram" yaml:"telegram"`
+	Database     DatabaseConfig     `json:"database" yaml:"database"`
+	Cache        cache.Config       `json:"cache" yaml:"cache"`
+	System       SystemConfig       `json:"system" yaml:"system"`
+	WebDashboard WebDashboardConfig `json:"webDashboard" yaml:"webDashboard"`
+}
+
+// WebDashboardConfig holds settings for the optional web dashboard.
+type WebDashboardConfig struct {
+	Enabled       bool   `json:"enabled" yaml:"enabled"`
+	JWTSecret     string `json:"jwtSecret" yaml:"jwtSecret"`
+	RefreshSecret string `json:"refreshSecret" yaml:"refreshSecret"`
+	BotUsername   string `json:"botUsername" yaml:"botUsername"`
+	CORSOrigin    string `json:"corsOrigin" yaml:"corsOrigin"`
+	Host          string `json:"host" yaml:"host"`
+	Port          string `json:"port" yaml:"port"`
+	BaseURL       string `json:"baseURL" yaml:"baseURL"`
+	DashboardURL  string `json:"dashboardURL" yaml:"dashboardURL"`
 }
 
 type Telegram struct {
@@ -39,7 +54,10 @@ const (
 )
 
 type SystemConfig struct {
-	PDFGenerator PDFGenerator `json:"pdfGenerator" yaml:"pdfGenerator"`
+	PDFGenerator  PDFGenerator `json:"pdfGenerator" yaml:"pdfGenerator"`
+	AIGenerator   string       `json:"aiGenerator" yaml:"aiGenerator"`
+	GeminiKey     string       `json:"geminiKey" yaml:"geminiKey"`
+	OpenRouterKey string       `json:"openRouterKey" yaml:"openRouterKey"`
 }
 
 type DatabaseType string
@@ -76,4 +94,82 @@ type DBConfigSQLite struct {
 
 func (cp DBConfigPostgres) String() string {
 	return fmt.Sprintf("user=%v password=%v dbname=%v host=%v port=%v sslmode=%v", cp.User, cp.Password, cp.Name, cp.Host, cp.Port, cp.SSLMode)
+}
+
+func (c *ExpenseConfiguration) OverrideWithEnv() {
+	if token := os.Getenv("EXPENSE_BOT_TOKEN"); token != "" {
+		c.Telegram.Secret = token
+	}
+	if user := os.Getenv("EXPENSE_BOT_USER"); user != "" {
+		c.Telegram.User = user
+	}
+
+	if dbPass := os.Getenv("EXPENSE_DB_PASS"); dbPass != "" {
+		if c.Database.Type == DatabasePostgres {
+			c.Database.Postgres.Password = dbPass
+		}
+	}
+
+	if redisPass := os.Getenv("EXPENSE_REDIS_PASS"); redisPass != "" {
+		c.Cache.Redis.Password = redisPass
+	}
+
+	// AI Configuration Overrides
+	geminiKey, hasGemini := os.LookupEnv("GEMINI_API_KEY")
+	orKey, hasOpenRouter := os.LookupEnv("OPENROUTER_API_KEY")
+
+	if hasGemini {
+		c.System.GeminiKey = geminiKey
+	}
+	if hasOpenRouter {
+		c.System.OpenRouterKey = orKey
+	}
+
+	switch {
+	case hasGemini && hasOpenRouter:
+		if c.System.AIGenerator == "" {
+			c.System.AIGenerator = "gemini"
+		}
+	case hasGemini:
+		c.System.AIGenerator = "gemini"
+	case hasOpenRouter:
+		c.System.AIGenerator = "open-router"
+	default:
+		c.System.AIGenerator = ""
+	}
+
+	// Web Dashboard Overrides
+	if os.Getenv("WEB_ENABLED") == "true" {
+		c.WebDashboard.Enabled = true
+	}
+	if secret := os.Getenv("WEB_JWT_SECRET"); secret != "" {
+		c.WebDashboard.JWTSecret = secret
+	}
+	if secret := os.Getenv("WEB_REFRESH_SECRET"); secret != "" {
+		c.WebDashboard.RefreshSecret = secret
+	}
+	if origin := os.Getenv("WEB_CORS_ORIGIN"); origin != "" {
+		c.WebDashboard.CORSOrigin = origin
+	}
+	if username := os.Getenv("WEB_BOT_USERNAME"); username != "" {
+		c.WebDashboard.BotUsername = username
+	}
+	if host := os.Getenv("WEB_HOST"); host != "" {
+		c.WebDashboard.Host = host
+	}
+	if c.WebDashboard.Host == "" {
+		c.WebDashboard.Host = "0.0.0.0"
+	}
+	if port := os.Getenv("WEB_PORT"); port != "" {
+		c.WebDashboard.Port = port
+	}
+	if c.WebDashboard.Port == "" {
+		c.WebDashboard.Port = "6336"
+	}
+	if baseURL := os.Getenv("WEB_BASE_URL"); baseURL != "" {
+		c.WebDashboard.BaseURL = baseURL
+	}
+	if dashboardURL := os.Getenv("WEB_DASHBOARD_URL"); dashboardURL != "" {
+		c.WebDashboard.DashboardURL = dashboardURL
+	}
 }

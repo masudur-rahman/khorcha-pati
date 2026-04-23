@@ -8,6 +8,8 @@ import (
 	"strings"
 	"time"
 
+	isql "github.com/masudur-rahman/styx/sql"
+
 	"github.com/iancoleman/strcase"
 )
 
@@ -18,24 +20,7 @@ type fieldInfo struct {
 }
 
 func GenerateTableName(table interface{}) string {
-	tableType := reflect.TypeOf(table)
-	tableValue := reflect.ValueOf(table)
-	if tableType.Kind() == reflect.Ptr {
-		tableType = tableType.Elem()
-		tableValue = reflect.New(tableType)
-	}
-	if tableType.Kind() == reflect.Slice {
-		tableType = tableType.Elem()
-		tableValue = reflect.New(tableType)
-	}
-	tableName := tableType.Name()
-	tableName = strcase.ToSnake(tableName)
-	if method := tableValue.MethodByName("TableName"); method.IsValid() {
-		rs := method.Call([]reflect.Value{})
-		tableName = rs[0].String()
-	}
-
-	return tableName
+	return isql.GetTableName(table)
 }
 
 func getTableInfo(table interface{}) ([]fieldInfo, error) {
@@ -68,13 +53,13 @@ func getTableInfo(table interface{}) ([]fieldInfo, error) {
 	return fields, nil
 }
 
-func createTable(ctx context.Context, conn *sql.Conn, tableName string, fields []fieldInfo) error {
+func createTable(ctx context.Context, conn *sql.DB, tableName string, fields []fieldInfo) error {
 	query := createTableQuery(tableName, fields)
 	_, err := ExecuteWriteQuery(ctx, query, conn)
 	return err
 }
 
-func addMissingColumns(ctx context.Context, conn *sql.Conn, tableName string, fields []fieldInfo) error {
+func addMissingColumns(ctx context.Context, conn *sql.DB, tableName string, fields []fieldInfo) error {
 	columns, err := getExistingColumns(ctx, conn, tableName)
 	if err != nil {
 		return err
@@ -106,15 +91,7 @@ func getFieldInfo(fieldType reflect.StructField, fieldValue reflect.Value) field
 }
 
 func getFieldName(fieldType reflect.StructField) string {
-	fieldName := fieldType.Name
-	if dbTag := fieldType.Tag.Get("db"); dbTag != "" {
-		colName := strings.Split(dbTag, ",")[0]
-		if colName != "" {
-			fieldName = colName
-		}
-	}
-
-	return strcase.ToSnake(fieldName)
+	return isql.GetFieldName(fieldType)
 }
 
 func getFieldConstraint(fieldType reflect.StructField) (fc string, autoincr bool, isComposite bool) {
@@ -133,12 +110,92 @@ func getFieldConstraint(fieldType reflect.StructField) (fc string, autoincr bool
 					isComposite = true
 				case "AUTOINCR":
 					autoincr = true
+				case "REQ":
+					// handled at query generation time, no DDL effect
 				}
 			}
 		}
 	}
 
 	return strings.Join(constraints, " "), autoincr, isComposite
+}
+
+func hasReqTag(field reflect.StructField) bool {
+	return isql.HasReqTag(field)
+}
+
+// ExtractPKColumn returns the primary key column name from a struct's pk tag.
+// Returns "id" as default if no pk tag is found.
+func ExtractPKColumn(table any) string {
+	tableType := reflect.TypeOf(table)
+	if tableType.Kind() == reflect.Ptr {
+		tableType = tableType.Elem()
+	}
+	if tableType.Kind() == reflect.Slice {
+		tableType = tableType.Elem()
+	}
+	if tableType.Kind() != reflect.Struct {
+		return "id"
+	}
+
+	for i := 0; i < tableType.NumField(); i++ {
+		field := tableType.Field(i)
+		dbTag := field.Tag.Get("db")
+		if dbTag == "" {
+			continue
+		}
+		parts := strings.SplitN(dbTag, ",", 2)
+		if len(parts) >= 2 {
+			for _, part := range strings.Fields(parts[1]) {
+				if strings.ToUpper(part) == "PK" {
+					colName := parts[0]
+					if colName == "" {
+						colName = strcase.ToSnake(field.Name)
+					}
+					return colName
+				}
+			}
+		}
+	}
+
+	return "id"
+}
+
+// ExtractSoftDeleteColumn returns the column name tagged with soft_delete.
+// Returns empty string if no soft delete tag is found.
+func ExtractSoftDeleteColumn(table any) string {
+	tableType := reflect.TypeOf(table)
+	if tableType.Kind() == reflect.Ptr {
+		tableType = tableType.Elem()
+	}
+	if tableType.Kind() == reflect.Slice {
+		tableType = tableType.Elem()
+	}
+	if tableType.Kind() != reflect.Struct {
+		return ""
+	}
+
+	for i := 0; i < tableType.NumField(); i++ {
+		field := tableType.Field(i)
+		dbTag := field.Tag.Get("db")
+		if dbTag == "" {
+			continue
+		}
+		parts := strings.SplitN(dbTag, ",", 2)
+		if len(parts) < 2 {
+			continue
+		}
+		for _, part := range strings.Fields(parts[1]) {
+			if strings.ToLower(part) == "soft_delete" {
+				colName := parts[0]
+				if colName == "" {
+					colName = strcase.ToSnake(field.Name)
+				}
+				return colName
+			}
+		}
+	}
+	return ""
 }
 
 func getUniqueColumnGroups(t reflect.Type) [][]string {
@@ -166,6 +223,9 @@ func getUniqueColumnGroups(t reflect.Type) [][]string {
 }
 
 func getSQLType(fieldType reflect.Type, autoincr bool) string {
+	for fieldType.Kind() == reflect.Ptr {
+		fieldType = fieldType.Elem()
+	}
 	if autoincr {
 		switch fieldType.Kind() {
 		case reflect.Int, reflect.Int32:
@@ -195,7 +255,7 @@ func getSQLType(fieldType reflect.Type, autoincr bool) string {
 	return ""
 }
 
-func tableExists(ctx context.Context, conn *sql.Conn, tableName string) (bool, error) {
+func tableExists(ctx context.Context, conn *sql.DB, tableName string) (bool, error) {
 	tableQuery := "" +
 		"SELECT EXISTS (" +
 		"    SELECT FROM " +
@@ -244,7 +304,7 @@ func generateAddColumnQuery(tableName string, missingColumns []string) string {
 	return alterQuery
 }
 
-func getExistingColumns(ctx context.Context, conn *sql.Conn, tableName string) ([]string, error) {
+func getExistingColumns(ctx context.Context, conn *sql.DB, tableName string) ([]string, error) {
 	var columns []string
 
 	rows, err := conn.QueryContext(ctx, fmt.Sprintf("SELECT column_name FROM information_schema.columns WHERE table_name='%s'", tableName))
@@ -281,7 +341,7 @@ func getMissingColumns(fields []fieldInfo, columns []string) []string {
 	return missingColumns
 }
 
-func getUniqueConstraints(ctx context.Context, conn *sql.Conn, tableName string) ([][]string, error) {
+func getUniqueConstraints(ctx context.Context, conn *sql.DB, tableName string) ([][]string, error) {
 	query := `
 	SELECT kcu.column_name
 	FROM information_schema.table_constraints tc
@@ -363,7 +423,99 @@ func contains(slice []string, val string) bool {
 	return false
 }
 
-func SyncTable(ctx context.Context, conn *sql.Conn, table any) error {
+// indexInfo holds parsed index metadata from struct tags.
+type indexInfo struct {
+	Name   string
+	Cols   []string
+	Unique bool
+}
+
+// extractIndexes parses idx and unique_idx tags from a struct type.
+func extractIndexes(table any) []indexInfo {
+	tableType := reflect.TypeOf(table)
+	if tableType.Kind() == reflect.Ptr {
+		tableType = tableType.Elem()
+	}
+	if tableType.Kind() != reflect.Struct {
+		return nil
+	}
+
+	named := map[string]*indexInfo{}
+	var unnamed []indexInfo
+
+	for i := 0; i < tableType.NumField(); i++ {
+		field := tableType.Field(i)
+		dbTag := field.Tag.Get("db")
+		if dbTag == "" {
+			continue
+		}
+		parts := strings.SplitN(dbTag, ",", 2)
+		if len(parts) < 2 {
+			continue
+		}
+		colName := parts[0]
+		if colName == "" {
+			colName = strcase.ToSnake(field.Name)
+		}
+
+		for _, part := range strings.Fields(parts[1]) {
+			lp := strings.ToLower(part)
+			if lp == "idx" {
+				unnamed = append(unnamed, indexInfo{Cols: []string{colName}})
+			} else if lp == "unique_idx" {
+				unnamed = append(unnamed, indexInfo{Cols: []string{colName}, Unique: true})
+			} else if strings.HasPrefix(lp, "idx:") {
+				idxName := strings.TrimPrefix(lp, "idx:")
+				if existing, ok := named[idxName]; ok {
+					existing.Cols = append(existing.Cols, colName)
+				} else {
+					named[idxName] = &indexInfo{Name: idxName, Cols: []string{colName}}
+				}
+			} else if strings.HasPrefix(lp, "unique_idx:") {
+				idxName := strings.TrimPrefix(lp, "unique_idx:")
+				if existing, ok := named[idxName]; ok {
+					existing.Cols = append(existing.Cols, colName)
+				} else {
+					named[idxName] = &indexInfo{Name: idxName, Cols: []string{colName}, Unique: true}
+				}
+			}
+		}
+	}
+
+	var result []indexInfo
+	for _, idx := range named {
+		result = append(result, *idx)
+	}
+	return append(result, unnamed...)
+}
+
+func createIndexes(ctx context.Context, conn *sql.DB, tableName string, indexes []indexInfo) error {
+	for i, idx := range indexes {
+		unique := ""
+		if idx.Unique {
+			unique = "UNIQUE "
+		}
+		name := idx.Name
+		if name == "" {
+			name = fmt.Sprintf("idx_%s_%d", tableName, i)
+		}
+		query := fmt.Sprintf("CREATE %sINDEX IF NOT EXISTS \"%s\" ON \"%s\" (%s)",
+			unique, name, tableName, strings.Join(idx.Cols, ", "))
+		if _, err := ExecuteWriteQuery(ctx, query, conn); err != nil {
+			return fmt.Errorf("error creating index %s: %w", name, err)
+		}
+	}
+	return nil
+}
+
+// DropTable drops a table by name.
+func DropTable(ctx context.Context, conn *sql.DB, tableName string) error {
+	query := fmt.Sprintf("DROP TABLE IF EXISTS \"%s\"", tableName)
+	_, err := ExecuteWriteQuery(ctx, query, conn)
+	return err
+}
+
+func SyncTable(ctx context.Context, conn *sql.DB, table any) error {
 	tableName := GenerateTableName(table)
 	fields, err := getTableInfo(table)
 	if err != nil {
@@ -380,9 +532,14 @@ func SyncTable(ctx context.Context, conn *sql.Conn, table any) error {
 		if err = addMissingColumns(ctx, conn, tableName, fields); err != nil {
 			return err
 		}
-		//if err = updateUniqueCompositeConstraints(ctx, p.conn, tableName); err != nil {
-		//	return err
-		//}
 	}
+
+	indexes := extractIndexes(table)
+	if len(indexes) > 0 {
+		if err = createIndexes(ctx, conn, tableName, indexes); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }

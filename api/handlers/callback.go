@@ -4,10 +4,13 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/masudur-rahman/expense-tracker-bot/models"
 	"github.com/masudur-rahman/expense-tracker-bot/modules/cache"
 	"github.com/masudur-rahman/expense-tracker-bot/modules/transaction"
+	"github.com/masudur-rahman/expense-tracker-bot/pkg"
+	pkgtg "github.com/masudur-rahman/expense-tracker-bot/pkg/telegram"
 	"github.com/masudur-rahman/expense-tracker-bot/services/all"
 
 	"github.com/masudur-rahman/go-oneliners"
@@ -29,6 +32,8 @@ const (
 	ReportTypeCallback          CallbackType = "Report"
 	AccountTypeCallback         CallbackType = "💳 Wallet"
 	UserTypeCallback            CallbackType = "👤 Contact"
+	BudgetTypeCallback          CallbackType = "Budget"
+	ListPaginationTypeCallback  CallbackType = "list-pagination"
 
 	StepTxnType     NextStep = "txn-type"
 	StepAmount      NextStep = "txn-amount"
@@ -49,7 +54,15 @@ type CallbackOptions struct {
 	Wallet            AccountCallbackOptions     `json:"wallet,omitempty"`
 	User              UserCallbackOptions        `json:"user,omitempty"`
 	Category          TxnCategoryCallbackOptions `json:"category,omitempty"`
+	Budget            BudgetCallbackOptions      `json:"budget,omitempty"`
+	Pagination        PaginationCallbackOptions  `json:"pagination,omitempty"`
 	LastSelectedValue string
+}
+
+type PaginationCallbackOptions struct {
+	Page   int                    `json:"page"`
+	Type   models.TransactionType `json:"type,omitempty"`
+	IsExps bool                   `json:"isExps,omitempty"`
 }
 
 type TransactionCallbackOptions struct {
@@ -93,9 +106,14 @@ func NewTransaction(ctx telebot.Context) error {
 }
 
 func Callback(ctx telebot.Context) error {
+	data := ctx.Callback().Data
+	if strings.HasPrefix(data, qrApprovePrefix) || strings.HasPrefix(data, qrDenyPrefix) {
+		return HandleQRCallback(ctx)
+	}
+
 	callbackOpts, err := parseCallbackOptions(ctx)
 	if err != nil {
-		return ctx.Send("Invalid data or data expired!")
+		return ctx.Send("⚠️ Invalid data or data expired.")
 	}
 
 	oneliners.PrettyJson(callbackOpts, "Callback Options")
@@ -115,8 +133,12 @@ func Callback(ctx telebot.Context) error {
 		return handleAccountCallback(ctx, callbackOpts)
 	case UserTypeCallback:
 		return handleUserCallback(ctx, callbackOpts)
+	case BudgetTypeCallback:
+		return handleBudgetCallback(ctx, callbackOpts)
+	case ListPaginationTypeCallback:
+		return HandleListPagination(ctx, callbackOpts)
 	default:
-		return ctx.Send("Invalid Callback type")
+		return ctx.Send("⚠️ Unknown action.")
 	}
 }
 
@@ -158,13 +180,20 @@ func handleTransactionCallback(ctx telebot.Context, callbackOpts CallbackOptions
 		callbackOpts.LastSelectedValue = fmt.Sprintf("Selected Contact: *%v*\n\n", callbackOpts.Transaction.ContactName)
 		return sendTransactionRemarksQuery(ctx, callbackOpts)
 	case StepRemarks:
-		err := processTransaction(ctx, callbackOpts.Transaction)
+		txnParams, err := processTransaction(ctx, callbackOpts.Transaction)
 		if err != nil {
-			return ctx.Send(err.Error())
+			return ctx.Send(models.ErrCommonResponse(err))
 		}
-		return ctx.Send("Transaction added successfully!")
+
+		user, err := all.GetServices().User.GetUserByTelegramID(ctx.Sender().ID)
+		if err != nil {
+			return ctx.Send("✅ Transaction added!")
+		}
+		msg := txnParams.Summary()
+		msg += FormatBudgetAlerts(user.ID, txnParams.Type, txnParams.SubcategoryID)
+		return ctx.Send(msg, telebot.ModeMarkdown)
 	default:
-		return ctx.Send("Invalid Step")
+		return ctx.Send("⚠️ Invalid step.")
 	}
 }
 
@@ -178,7 +207,7 @@ func TransactionTextCallback(ctx telebot.Context) error {
 	if ctx.Update().Message.ReplyTo == nil {
 		txnSummary, err := handleTransactionFromRegularText(ctx)
 		if err != nil {
-			return ctx.Send(err.Error())
+			return ctx.Send(models.ErrCommonResponse(err))
 		}
 		return ctx.Send(txnSummary, telebot.ModeMarkdown)
 	}
@@ -195,8 +224,10 @@ func TransactionTextCallback(ctx telebot.Context) error {
 		return handleAccountTypeTextCallback(ctx, callbackOpts)
 	case UserTypeCallback:
 		return handleUserTypeTextCallback(ctx, callbackOpts)
+	case BudgetTypeCallback:
+		return handleBudgetTypeTextCallback(ctx, callbackOpts)
 	default:
-		return ctx.Reply("invalid callback type")
+		return ctx.Reply("⚠️ Unknown action.")
 	}
 }
 
@@ -206,7 +237,7 @@ func handleTransactionTypeTextCallback(ctx telebot.Context, callbackOpts Callbac
 	case StepAmount:
 		callbackOpts.Transaction.Amount, err = strconv.ParseFloat(ctx.Text(), 64)
 		if err != nil {
-			return ctx.Reply("Amount parse error")
+			return ctx.Reply("⚠️ Please enter a valid number.")
 		}
 
 		return handleTransactionCallback(ctx, callbackOpts)
@@ -214,7 +245,7 @@ func handleTransactionTypeTextCallback(ctx telebot.Context, callbackOpts Callbac
 		callbackOpts.Transaction.Remarks = ctx.Text()
 		return handleTransactionCallback(ctx, callbackOpts)
 	default:
-		return ctx.Reply("yet to be implemented")
+		return ctx.Reply("⚠️ This feature is not available yet.")
 	}
 }
 
@@ -223,7 +254,7 @@ func handleTransactionWithFlagTypeTextCallback(ctx telebot.Context, callbackOpts
 	callbackOpts.Type = TransactionTypeCallback
 	callbackOpts.Transaction, err = parseTransactionFlags(ctx.Text())
 	if err != nil {
-		return ctx.Reply("Data parse error")
+		return ctx.Reply("⚠️ Could not parse transaction data.")
 	}
 	return handleTransactionCallback(ctx, callbackOpts)
 }
@@ -233,20 +264,20 @@ func handleAccountTypeTextCallback(ctx telebot.Context, callbackOpts CallbackOpt
 	case StepAccountInfo:
 		fields := strings.Fields(ctx.Text())
 		if len(fields) < 2 {
-			return ctx.Reply("must contain <id> <wallet name>")
+			return ctx.Reply("⚠️ Please enter: <short-name> <wallet name>")
 		}
 		callbackOpts.Wallet.ShortName = fields[0]
 		callbackOpts.Wallet.Name = strings.Join(fields[1:], " ")
 		return processAccountCreation(ctx, callbackOpts.Wallet)
 	default:
-		return ctx.Reply("yet to be implemented")
+		return ctx.Reply("⚠️ This feature is not available yet.")
 	}
 }
 
 func handleUserTypeTextCallback(ctx telebot.Context, callbackOpts CallbackOptions) error {
 	fields := strings.Fields(ctx.Text())
 	if len(fields) < 2 {
-		return ctx.Reply("must contain <id> <name> <email(optional)>")
+		return ctx.Reply("⚠️ Please enter: <nickname> <full name> [email]")
 	}
 	callbackOpts.User = UserCallbackOptions{NickName: fields[0]}
 	if len(fields) >= 3 && strings.Contains(fields[len(fields)-1], "@") {
@@ -279,5 +310,78 @@ func handleTransactionFromRegularText(ctx telebot.Context) (string, error) {
 		return "", err
 	}
 	txn.UserID = user.ID
-	return txn.Summary(), all.GetServices().Txn.AddTransaction(txn)
+	if err = all.GetServices().Txn.AddTransaction(txn); err != nil {
+		return "", err
+	}
+	summary := txn.Summary() + FormatBudgetAlerts(user.ID, txn.Type, txn.SubcategoryID)
+	return summary, nil
+}
+
+func HandleListPagination(ctx telebot.Context, callbackOpts CallbackOptions) error {
+	pag := callbackOpts.Pagination
+	if pag.Page < 1 {
+		pag.Page = 1
+	}
+	pageSize := 10
+
+	user, err := all.GetServices().User.GetUserByTelegramID(ctx.Sender().ID)
+	if err != nil {
+		return ctx.Edit(models.ErrCommonResponse(err))
+	}
+
+	var txns []models.Transaction
+	txnSvc := all.GetServices().Txn
+	if pag.IsExps {
+		txns, err = txnSvc.ListTransactionsByTime(user.ID, models.ExpenseTransaction, pkg.StartOfMonth().Unix(), time.Now().Unix())
+	} else if pag.Type != "" {
+		txns, err = txnSvc.ListTransactionsByType(user.ID, pag.Type)
+	} else {
+		// Fetch transactions from the last 30 days only
+		startTime := time.Now().AddDate(0, 0, -30).Unix()
+		txns, err = txnSvc.ListTransactionsByTime(user.ID, "", startTime, time.Now().Unix())
+	}
+
+	if err != nil {
+		return ctx.Edit(models.ErrCommonResponse(err))
+	}
+
+	// FormatTransactionList will sort them descending
+	start := (pag.Page - 1) * pageSize
+	if start >= len(txns) {
+		return ctx.Respond(&telebot.CallbackResponse{Text: "No more items."})
+	}
+
+	formatted := pkgtg.FormatTransactionList(txns, pag.Page, pageSize)
+
+	// Recalculate end index for navigation logic
+	end := start + pageSize
+	if end > len(txns) {
+		end = len(txns)
+	}
+
+	return ctx.Edit(formatted, &telebot.SendOptions{
+		ParseMode: telebot.ModeMarkdown,
+		ReplyMarkup: &telebot.ReplyMarkup{
+			InlineKeyboard: generatePaginationKeyboard(callbackOpts, pag.Page, len(txns) > end),
+		},
+	})
+}
+
+func generatePaginationKeyboard(opts CallbackOptions, page int, hasNext bool) [][]telebot.InlineButton {
+	var row []telebot.InlineButton
+	if page > 1 {
+		prevOpts := opts
+		prevOpts.Pagination.Page = page - 1
+		row = append(row, generateInlineButton(prevOpts, "⬅️ Previous"))
+	}
+	if hasNext {
+		nextOpts := opts
+		nextOpts.Pagination.Page = page + 1
+		row = append(row, generateInlineButton(nextOpts, "Next ➡️"))
+	}
+
+	if len(row) == 0 {
+		return nil
+	}
+	return [][]telebot.InlineButton{row}
 }

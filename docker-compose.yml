@@ -1,0 +1,26 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+      - "8081:8081"
+    env_file: .env
+    volumes:
+      - ./.configs/.expense-tracker-docker.yaml:/app/.configs/.expense-tracker.yaml
+      - sqlite-data:/app/.sqlite
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: web/
+      dockerfile: Dockerfile
+    ports:
+      - "3000:80"
+    volumes:
+      - ./web/config.json:/app/config.json:ro
+    restart: unless-stopped
+
+volumes:
+  sqlite-data:

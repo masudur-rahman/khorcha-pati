@@ -23,3 +23,7 @@ go.work
 
 sql/sqlite/test.db
 .go
+.claude/settings.local.json
+.claude/plan.md
+# Added by code-review-graph
+.code-review-graph/

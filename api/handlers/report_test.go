@@ -21,7 +21,7 @@ func TestGenerateTransactionInvoice_Wkhtmltopdf(t *testing.T) {
 	report, err := generateSampleReport()
 	assert.NoError(t, err)
 	configs.TrackerConfig.System.PDFGenerator = configs.PDFGeneratorWkhtmltopdf
-	pdfPath, err := generateTransactionReportFromTemplate(report)
+	pdfPath, err := GenerateTransactionStatementFromTemplate(report, "")
 	assert.NoError(t, err)
 	//defer os.Remove(pdfPath)
 	fmt.Println(pdfPath)
@@ -32,7 +32,7 @@ func TestGenerateTransactionInvoice_ChromeDP(t *testing.T) {
 	report, err := generateSampleReport()
 	assert.NoError(t, err)
 	configs.TrackerConfig.System.PDFGenerator = configs.PDFGeneratorChromeDP
-	pdfPath, err := generateTransactionReportFromTemplate(report)
+	pdfPath, err := GenerateTransactionStatementFromTemplate(report, "")
 	assert.NoError(t, err)
 	//defer os.Remove(pdfPath)
 	fmt.Println(pdfPath)

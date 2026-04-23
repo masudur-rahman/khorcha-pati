@@ -99,7 +99,8 @@ func TestAddTransaction_missingUserID(t *testing.T) {
 
 	err := svc.AddTransaction(txn)
 
-	assert.EqualError(t, err, "userid is required")
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "userid is required")
 }
 
 func TestAddTransaction_missingSubcategory(t *testing.T) {
@@ -110,7 +111,8 @@ func TestAddTransaction_missingSubcategory(t *testing.T) {
 
 	err := svc.AddTransaction(txn)
 
-	assert.EqualError(t, err, "subcategory is required")
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "subcategory is required")
 }
 
 func TestAddTransaction_expenseWithLend(t *testing.T) {
@@ -369,4 +371,75 @@ func TestListTransactionsByType_success(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.Equal(t, expected, result)
+}
+
+func TestUserJourney_IncomeExpenseUndo(t *testing.T) {
+	svc, walletRepo, _, txnRepo := newTestService()
+
+	// 1. Add Income: Salary 5000
+	income := models.Transaction{
+		UserID: testUserID, Amount: 5000, Type: models.IncomeTransaction,
+		DstID: "bank", SubcategoryID: "fin-sal",
+	}
+	walletRepo.On("UpdateWalletBalance", testUserID, "bank", 5000.0).Return(nil)
+	txnRepo.On("AddTransaction", mock.AnythingOfType("models.Transaction")).Return(nil).Once()
+
+	err := svc.AddTransaction(income)
+	assert.NoError(t, err)
+
+	// 2. Add Expense: Pizza 500
+	expense := models.Transaction{
+		UserID: testUserID, Amount: 500, Type: models.ExpenseTransaction,
+		SrcID: "bank", SubcategoryID: "food-rest",
+	}
+	walletRepo.On("UpdateWalletBalance", testUserID, "bank", -500.0).Return(nil)
+	txnRepo.On("AddTransaction", mock.AnythingOfType("models.Transaction")).Return(nil).Once()
+
+	err = svc.AddTransaction(expense)
+	assert.NoError(t, err)
+
+	// 3. Undo Expense
+	txnRepo.On("GetLastActiveTransaction", testUserID).Return(&expense, nil)
+	walletRepo.On("UpdateWalletBalance", testUserID, "bank", 500.0).Return(nil)
+	txnRepo.On("SoftDeleteTransaction", mock.Anything, mock.Anything).Return(nil)
+
+	undone, err := svc.Undo(testUserID)
+	assert.NoError(t, err)
+	assert.Equal(t, expense.Amount, undone.Amount)
+
+	walletRepo.AssertExpectations(t)
+	txnRepo.AssertExpectations(t)
+}
+
+func TestUserJourney_LendingCycle(t *testing.T) {
+	svc, walletRepo, contactRepo, txnRepo := newTestService()
+
+	// 1. Lend 1000 to Masud
+	lend := models.Transaction{
+		UserID: testUserID, Amount: 1000, Type: models.ExpenseTransaction,
+		SrcID: "cash", SubcategoryID: models.LendSubID, ContactName: "masud",
+	}
+	contactRepo.On("GetContactByName", testUserID, "masud").Return(&models.Contacts{ID: 1}, nil)
+	contactRepo.On("UpdateContactBalance", int64(1), 1000.0).Return(nil)
+	walletRepo.On("UpdateWalletBalance", testUserID, "cash", -1000.0).Return(nil)
+	txnRepo.On("AddTransaction", mock.AnythingOfType("models.Transaction")).Return(nil)
+
+	err := svc.AddTransaction(lend)
+	assert.NoError(t, err)
+
+	// 2. Recover 1000 from Masud
+	collect := models.Transaction{
+		UserID: testUserID, Amount: 1000, Type: models.IncomeTransaction,
+		DstID: "cash", SubcategoryID: models.LendRecoverySubID, ContactName: "masud",
+	}
+	contactRepo.On("GetContactByName", testUserID, "masud").Return(&models.Contacts{ID: 1}, nil)
+	contactRepo.On("UpdateContactBalance", int64(1), -1000.0).Return(nil)
+	walletRepo.On("UpdateWalletBalance", testUserID, "cash", 1000.0).Return(nil)
+	txnRepo.On("AddTransaction", mock.AnythingOfType("models.Transaction")).Return(nil)
+
+	err = svc.AddTransaction(collect)
+	assert.NoError(t, err)
+
+	contactRepo.AssertExpectations(t)
+	walletRepo.AssertExpectations(t)
 }

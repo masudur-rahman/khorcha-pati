@@ -98,8 +98,37 @@ docker-build: # @HELP builds a single-arch Docker image (PDF_GENERATOR=wkhtmltop
 	  --build-arg VERSION=$(VERSION) \
 	  --build-arg BUILD_DATE=$(commit_timestamp) \
 	  --build-arg GIT_COMMIT=$(commit_hash) \
+	  $(DOCKER_CACHE_ARGS) \
 	  -t $(DOCKER_IMAGE):$(VERSION)$(DOCKER_TAG_SUFFIX) \
 	  -f Dockerfile .
+
+.PHONY: docker-run
+docker-run: # @HELP run container built from latest changes
+	@if [ -z "$$(docker images -q $(DOCKER_IMAGE):$(VERSION)$(DOCKER_TAG_SUFFIX))" ]; then \
+		echo "Image not found. Building..."; \
+		$(MAKE) docker-build; \
+	else \
+		echo "Image $(DOCKER_IMAGE):$(VERSION)$(DOCKER_TAG_SUFFIX) already exists. Skipping build."; \
+	fi
+	docker run \
+	  --rm \
+	  --env-file .env \
+	  --volume $(CURDIR)/.configs/.expense-tracker-docker.yaml:/app/.configs/.expense-tracker.yaml \
+	  $(DOCKER_IMAGE):$(VERSION)$(DOCKER_TAG_SUFFIX)
+
+.PHONY: docker-build-web
+docker-build-web: # @HELP builds web frontend Docker image for current platform
+	docker build -t $(DOCKER_IMAGE)-web:$(VERSION) web/
+
+.PHONY: docker-push-web
+docker-push-web: # @HELP pushes web frontend Docker image to registry
+	docker buildx build --platform linux/amd64,linux/arm64 \
+	  --output "type=image,push=true" \
+	  --tag $(DOCKER_IMAGE)-web:$(VERSION) web/
+
+.PHONY: docker-compose-up
+docker-compose-up: # @HELP runs backend + frontend via Docker Compose
+	docker compose up --build
 
 .PHONY: docker-build-push
 docker-build-push: # @HELP builds and pushes multi-arch image (PDF_GENERATOR=wkhtmltopdf|chromedp)
@@ -109,7 +138,7 @@ docker-build-push: # @HELP builds and pushes multi-arch image (PDF_GENERATOR=wkh
 	  --tag $(DOCKER_IMAGE):$(VERSION)$(DOCKER_TAG_SUFFIX) .
 
 .PHONY: release
-release: # @HELP builds and pushes both wkhtmltopdf and chromedp images
+release: # @HELP builds and pushes both wkhtmltopdf and chromedp backend images
 	@$(MAKE) docker-build-push PDF_GENERATOR=wkhtmltopdf --no-print-directory
 	@$(MAKE) docker-build-push PDF_GENERATOR=chromedp --no-print-directory
 

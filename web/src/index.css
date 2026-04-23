@@ -1,0 +1,42 @@
+@import "tailwindcss";
+
+:root {
+  --color-primary: oklch(0.50 0.20 260);
+  --color-primary-subtle: oklch(0.94 0.04 260);
+  --color-primary-shadow: rgba(88, 101, 242, 0.2);
+  
+  --color-success: oklch(0.55 0.18 155);
+  --color-success-subtle: oklch(0.92 0.06 155);
+  
+  --color-danger: oklch(0.55 0.18 25);
+  --color-danger-subtle: oklch(0.92 0.06 25);
+  
+  --color-surface: #ffffff;
+  --color-bg: oklch(0.985 0.005 80);
+  --color-sidebar-bg: #ffffff;
+  --color-border: oklch(0.92 0.005 80);
+  --color-hover: oklch(0.96 0.005 80);
+  
+  --color-text-primary: oklch(0.18 0.01 260);
+  --color-text-secondary: oklch(0.45 0.01 260);
+  --color-text-tertiary: oklch(0.65 0.01 260);
+}
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background-color: var(--color-bg);
+  color: var(--color-text-primary);
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Space Grotesk', sans-serif;
+}
+
+.hover-row {
+  cursor: pointer;
+}
+
+.hover-row:hover {
+  background-color: var(--color-hover);
+}
+

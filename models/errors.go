@@ -48,7 +48,7 @@ type ErrUserNotFound struct {
 func (err ErrUserNotFound) Error() string {
 	return StatusError{
 		Status:  http.StatusNotFound,
-		Message: fmt.Sprintf("user [id: %v, username: %v, email: %v] doesn't exist", err.ID, err.Username, err.Email),
+		Message: "User account not found. Please check your identity and try again.",
 	}.Error()
 }
 
@@ -155,6 +155,29 @@ func (err ErrAccountNotFound) Error() string {
 	}.Error()
 }
 
+type ErrBudgetNotFound struct {
+	UserID     int64
+	CategoryID string
+}
+
+func (err ErrBudgetNotFound) Error() string {
+	return StatusError{
+		Status:  http.StatusNotFound,
+		Message: fmt.Sprintf("budget not found for user: %v, category: %v", err.UserID, err.CategoryID),
+	}.Error()
+}
+
+type ErrRefreshTokenNotFound struct {
+	UUID string
+}
+
+func (err ErrRefreshTokenNotFound) Error() string {
+	return StatusError{
+		Status:  http.StatusNotFound,
+		Message: fmt.Sprintf("refresh token not found: %v", err.UUID),
+	}.Error()
+}
+
 type ErrAccountAlreadyExist struct {
 	ShortName string
 }
@@ -163,6 +186,17 @@ func (err ErrAccountAlreadyExist) Error() string {
 	return StatusError{
 		Status:  http.StatusConflict,
 		Message: fmt.Sprintf("wallet already exist with short-name: %v", err.ShortName),
+	}.Error()
+}
+
+type ErrInvalidTransaction struct {
+	Reason string
+}
+
+func (err ErrInvalidTransaction) Error() string {
+	return StatusError{
+		Status:  http.StatusBadRequest,
+		Message: fmt.Sprintf("invalid transaction: %v", err.Reason),
 	}.Error()
 }
 
@@ -180,6 +214,10 @@ func IsErrNotFound(err error) bool {
 		return true
 	case ErrContactNotFound:
 		return true
+	case ErrBudgetNotFound:
+		return true
+	case ErrRefreshTokenNotFound:
+		return true
 
 	default:
 		return false
@@ -192,6 +230,10 @@ func IsErrConflict(err error) bool {
 		return true
 	case ErrShelterAlreadyExist:
 		return true
+	case ErrContactAlreadyExist:
+		return true
+	case ErrAccountAlreadyExist:
+		return true
 	default:
 		return false
 	}
@@ -201,6 +243,11 @@ func IsErrBadRequest(err error) bool {
 	switch err.(type) {
 	case ErrUserPasswordMismatch:
 		return true
+	case ErrInvalidTransaction:
+		return true
+	case StatusError:
+		serr, _ := ParseStatusError(err)
+		return serr >= 400 && serr < 500
 	default:
 		return false
 	}
@@ -208,8 +255,9 @@ func IsErrBadRequest(err error) bool {
 
 func ErrCommonResponse(err error) string {
 	logr.DefaultLogger.Errorw("CommonResponse error", "error", err.Error())
-	if IsErrNotFound(err) || IsErrConflict(err) {
-		return err.Error()
+	if IsErrNotFound(err) || IsErrConflict(err) || IsErrBadRequest(err) {
+		_, msg := ParseStatusError(err)
+		return msg
 	}
 	return "Unexpected server error occurred!"
 }

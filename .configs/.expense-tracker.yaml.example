@@ -1,7 +1,7 @@
 telegram:
     user: masudur_rahman
 database:
-    type: postgres
+    type: postgres # options: (sqlite, postgres, arangodb, supabase)
 #    sqlite:
 #        syncToDrive: true
 #        disableSyncFromDrive: true

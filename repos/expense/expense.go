@@ -1,6 +1,8 @@
 package expense
 
 import (
+	"context"
+
 	"github.com/masudur-rahman/expense-tracker-bot/infra/logr"
 	"github.com/masudur-rahman/expense-tracker-bot/models"
 
@@ -27,9 +29,9 @@ func (e *SQLExpenseRepository) GetLastExpense() (*models.Expense, error) {
 
 func (e *SQLExpenseRepository) ListAllExpenses() ([]*models.Expense, error) {
 	e.logger.Infow("listing all expenses")
-	filter := models.Expense{}
+	ctx := context.Background()
 	expenses := make([]*models.Expense, 0)
-	err := e.db.FindMany(&expenses, filter)
+	err := e.db.FindMany(ctx, &expenses, models.Expense{})
 	return expenses, err
 }
 
@@ -38,8 +40,8 @@ func (e *SQLExpenseRepository) AddNewExpense(expense *models.Expense) error {
 	if expense.ID == "" {
 		expense.ID = xid.New().String()
 	}
-
-	id, err := e.db.InsertOne(expense)
+	ctx := context.Background()
+	id, err := e.db.MustCols("amount").InsertOne(ctx, expense)
 	if err != nil {
 		return err
 	}

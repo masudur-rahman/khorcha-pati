@@ -13,15 +13,15 @@ const (
 )
 
 type Wallet struct {
-	ID               int64 `db:"id,pk autoincr"`
-	UserID           int64 `db:",uqs"`
-	Type             WalletType
-	ShortName        string `db:",uqs"`
-	Name             string
-	Balance          float64
-	LastTxnAmount    float64
-	LastTxnTimestamp int64
-	Version          int64 `db:"version"`
+	ID               int64      `db:"id,pk autoincr" json:"id"`
+	UserID           int64      `db:",uqs" json:"userId"`
+	Type             WalletType `json:"type"`
+	ShortName        string     `db:",uqs" json:"shortName"`
+	Name             string     `json:"name"`
+	Balance          float64    `db:"balance" json:"balance"`
+	LastTxnAmount    float64    `db:"last_txn_amount" json:"lastTxnAmount"`
+	LastTxnTimestamp int64      `db:"last_txn_timestamp" json:"lastTxnTimestamp"`
+	Version          int64      `db:"version" json:"version"`
 }
 
 func (Wallet) TableName() string {
@@ -29,10 +29,10 @@ func (Wallet) TableName() string {
 }
 
 type Event struct {
-	ID        int64 `db:"id,pk autoincr"`
-	UserID    int64
-	Message   string
-	Timestamp int64
+	ID        int64  `db:"id,pk autoincr" json:"id"`
+	UserID    int64  `json:"userId"`
+	Message   string `json:"message"`
+	Timestamp int64  `json:"timestamp"`
 }
 
 func (Event) TableName() string {

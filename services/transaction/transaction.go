@@ -1,6 +1,7 @@
 package transaction
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -28,18 +29,21 @@ func NewTxnService(uow styx.UnitOfWork, walletRepo repos.WalletRepository, conta
 	}
 }
 
-func (ts *txnService) AddTransaction(txn models.Transaction) error {
+func (ts *txnService) AddTransaction(txn models.Transaction) (err error) {
 	if txn.UserID == 0 {
-		return fmt.Errorf("userid is required")
+		return models.ErrInvalidTransaction{Reason: "userid is required"}
 	}
 	if txn.SubcategoryID == "" {
-		return fmt.Errorf("subcategory is required")
+		return models.ErrInvalidTransaction{Reason: "subcategory is required"}
+	}
+	if txn.Amount <= 0 {
+		return models.ErrInvalidTransaction{Reason: "amount must be greater than zero"}
 	}
 	if txn.CreatedAt == 0 {
 		txn.CreatedAt = time.Now().Unix()
 	}
 
-	uow, err := ts.uow.Begin()
+	uow, err := ts.uow.Begin(context.Background())
 	if err != nil {
 		return err
 	}
@@ -59,7 +63,7 @@ func (ts *txnService) AddTransaction(txn models.Transaction) error {
 				return err
 			}
 		case models.BorrowSubID, models.LendRecoverySubID, models.LoanReceivedSubID:
-			return fmt.Errorf("borrow, lend recovery or loan received type transaction should be under Income type")
+			return models.ErrInvalidTransaction{Reason: "borrow, lend recovery or loan received type transaction should be under Income type"}
 		}
 		if err = ts.walletRepo.WithUnitOfWork(uow).UpdateWalletBalance(txn.UserID, txn.SrcID, -txn.Amount); err != nil {
 			return err
@@ -71,7 +75,7 @@ func (ts *txnService) AddTransaction(txn models.Transaction) error {
 				return err
 			}
 		case models.LoanRepaymentSubID, models.BorrowReturnSubID, models.LendSubID:
-			return fmt.Errorf("loan, borrow return or lend type transaction should be under Expense type")
+			return models.ErrInvalidTransaction{Reason: "loan, borrow return or lend type transaction should be under Expense type"}
 		}
 		if err = ts.walletRepo.WithUnitOfWork(uow).UpdateWalletBalance(txn.UserID, txn.DstID, txn.Amount); err != nil {
 			return err
@@ -84,17 +88,94 @@ func (ts *txnService) AddTransaction(txn models.Transaction) error {
 			return err
 		}
 	}
-	return ts.txnRepo.WithUnitOfWork(uow).AddTransaction(txn)
+	err = ts.txnRepo.WithUnitOfWork(uow).AddTransaction(txn)
+	return err
+}
+
+// GetTransactionByID fetches a transaction and verifies ownership.
+func (ts *txnService) GetTransactionByID(userID, txnID int64) (*models.Transaction, error) {
+	txn, err := ts.txnRepo.GetTransactionByID(txnID)
+	if err != nil {
+		return nil, err
+	}
+	if txn.UserID != userID {
+		return nil, models.ErrInvalidTransaction{Reason: "transaction does not belong to user"}
+	}
+	if txn.DeletedAt != 0 {
+		return nil, models.ErrInvalidTransaction{Reason: "transaction has been deleted"}
+	}
+	return txn, nil
+}
+
+// UpdateTransaction reverses the old transaction's balance impact and applies the new one.
+func (ts *txnService) UpdateTransaction(userID, txnID int64, updated models.Transaction) (err error) {
+	old, err := ts.GetTransactionByID(userID, txnID)
+	if err != nil {
+		return err
+	}
+
+	uow, err := ts.uow.Begin(context.Background())
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err != nil {
+			_ = uow.Rollback()
+			return
+		}
+		err = uow.Commit()
+	}()
+
+	if err = ts.reverseBalances(uow, *old); err != nil {
+		return err
+	}
+
+	updated.ID = txnID
+	updated.UserID = userID
+	updated.CreatedAt = old.CreatedAt
+	if err = ts.applyBalances(uow, updated); err != nil {
+		return err
+	}
+
+	err = ts.txnRepo.WithUnitOfWork(uow).UpdateTransaction(txnID, &updated)
+	return err
+}
+
+// DeleteTransaction soft-deletes a transaction and reverses its balance impact.
+func (ts *txnService) DeleteTransaction(userID, txnID int64) (err error) {
+	txn, err := ts.GetTransactionByID(userID, txnID)
+	if err != nil {
+		return err
+	}
+
+	uow, err := ts.uow.Begin(context.Background())
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err != nil {
+			_ = uow.Rollback()
+			return
+		}
+		err = uow.Commit()
+	}()
+
+	if err = ts.reverseBalances(uow, *txn); err != nil {
+		return err
+	}
+
+	err = ts.txnRepo.WithUnitOfWork(uow).SoftDeleteTransaction(txnID, time.Now().Unix())
+	return err
 }
 
 // Undo soft-deletes the last active transaction and reverses wallet/contact balances.
-func (ts *txnService) Undo(userID int64) (*models.Transaction, error) {
-	txn, err := ts.txnRepo.GetLastActiveTransaction(userID)
+func (ts *txnService) Undo(userID int64) (txn *models.Transaction, err error) {
+	txn, err = ts.txnRepo.GetLastActiveTransaction(userID)
 	if err != nil {
 		return nil, fmt.Errorf("nothing to undo: %w", err)
 	}
 
-	uow, err := ts.uow.Begin()
+	uow, err := ts.uow.Begin(context.Background())
 	if err != nil {
 		return nil, err
 	}
@@ -110,11 +191,8 @@ func (ts *txnService) Undo(userID int64) (*models.Transaction, error) {
 		return nil, err
 	}
 
-	if err = ts.txnRepo.WithUnitOfWork(uow).SoftDeleteTransaction(txn.ID, time.Now().Unix()); err != nil {
-		return nil, err
-	}
-
-	return txn, nil
+	err = ts.txnRepo.WithUnitOfWork(uow).SoftDeleteTransaction(txn.ID, time.Now().Unix())
+	return txn, err
 }
 
 func (ts *txnService) reverseBalances(uow styx.UnitOfWork, txn models.Transaction) error {
@@ -142,6 +220,36 @@ func (ts *txnService) reverseBalances(uow styx.UnitOfWork, txn models.Transactio
 			return err
 		}
 		return walletRepo.UpdateWalletBalance(txn.UserID, txn.DstID, -txn.Amount)
+	}
+	return nil
+}
+
+// applyBalances applies the wallet/contact balance changes for a transaction.
+func (ts *txnService) applyBalances(uow styx.UnitOfWork, txn models.Transaction) error {
+	walletRepo := ts.walletRepo.WithUnitOfWork(uow)
+
+	switch txn.Type {
+	case models.ExpenseTransaction:
+		switch txn.SubcategoryID {
+		case models.LoanRepaymentSubID, models.BorrowReturnSubID, models.LendSubID:
+			if err := ts.updateContactBalance(uow, txn, txn.Amount); err != nil {
+				return err
+			}
+		}
+		return walletRepo.UpdateWalletBalance(txn.UserID, txn.SrcID, -txn.Amount)
+	case models.IncomeTransaction:
+		switch txn.SubcategoryID {
+		case models.BorrowSubID, models.LendRecoverySubID, models.LoanReceivedSubID:
+			if err := ts.updateContactBalance(uow, txn, -txn.Amount); err != nil {
+				return err
+			}
+		}
+		return walletRepo.UpdateWalletBalance(txn.UserID, txn.DstID, txn.Amount)
+	case models.TransferTransaction:
+		if err := walletRepo.UpdateWalletBalance(txn.UserID, txn.SrcID, -txn.Amount); err != nil {
+			return err
+		}
+		return walletRepo.UpdateWalletBalance(txn.UserID, txn.DstID, txn.Amount)
 	}
 	return nil
 }

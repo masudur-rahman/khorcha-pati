@@ -18,7 +18,7 @@ package cmd
 
 import (
 	"context"
-	"encoding/json"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -30,8 +30,10 @@ import (
 	"time"
 
 	"github.com/masudur-rahman/expense-tracker-bot/api"
+	"github.com/masudur-rahman/expense-tracker-bot/api/web"
 	"github.com/masudur-rahman/expense-tracker-bot/configs"
 	"github.com/masudur-rahman/expense-tracker-bot/infra/logr"
+	"github.com/masudur-rahman/expense-tracker-bot/services/all"
 
 	"github.com/spf13/cobra"
 )
@@ -64,8 +66,27 @@ to quickly create a Cobra application.`,
 		ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 		defer stop()
 
-		healthSrv := startHealthz()
-		go pingHealthzAPIPeriodically()
+		cfg := configs.TrackerConfig.WebDashboard
+		messenger := api.NewBotMessenger(bot)
+		uow := configs.GetUnitOfWork()
+		botUsername := cfg.BotUsername
+		if botUsername == "" && bot.Me != nil {
+			botUsername = bot.Me.Username
+		}
+		all.InitiateWebServices(messenger, cfg.JWTSecret, cfg.RefreshSecret, botUsername, cfg.BaseURL, uow, logr.DefaultLogger)
+
+		addr := fmt.Sprintf("%s:%s", cfg.Host, cfg.Port)
+		router := web.NewRouter(cfg.JWTSecret, cfg.CORSOrigin)
+		webSrv := &http.Server{Addr: addr, Handler: router, ReadHeaderTimeout: 10 * time.Second}
+
+		go func() {
+			log.Printf("Backend server started at %s", addr)
+			if err := webSrv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+				log.Printf("Backend server error: %v", err)
+			}
+		}()
+
+		go pingHealthzAPIPeriodically(addr)
 		log.Println("Expense Tracker Bot started")
 
 		go bot.Start()
@@ -76,8 +97,8 @@ to quickly create a Cobra application.`,
 
 		shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
-		if err := healthSrv.Shutdown(shutdownCtx); err != nil {
-			log.Printf("Health server shutdown error: %v", err)
+		if err := webSrv.Shutdown(shutdownCtx); err != nil {
+			log.Printf("Web server shutdown error: %v", err)
 		}
 	},
 }
@@ -86,16 +107,18 @@ func init() {
 	rootCmd.AddCommand(serveCmd)
 }
 
-func pingHealthzAPIPeriodically() {
+func pingHealthzAPIPeriodically(addr string) {
 	logger := logr.DefaultLogger
-	baseURL, ok := os.LookupEnv("BASE_URL")
-	if !ok {
-		return
+	baseURL := os.Getenv("BASE_URL")
+	if baseURL == "" {
+		// Fallback to local address if BASE_URL is not set
+		baseURL = "http://" + addr
 	}
 
 	u, err := url.Parse(baseURL)
 	if err != nil {
-		log.Fatalln(err)
+		logger.Errorw("failed to parse base url for health check", "error", err.Error())
+		return
 	}
 	u.Path = path.Join(u.Path, "healthz")
 	healthPath := u.String()
@@ -115,33 +138,4 @@ func pingHealthzAPIPeriodically() {
 			logger.Infow("healthz api", "status", resp.StatusCode, "msg", string(data), "error", errMsg)
 		}
 	}
-}
-
-func startHealthz() *http.Server {
-	mux := http.NewServeMux()
-	mux.HandleFunc("/healthz", handleHealthz)
-
-	srv := &http.Server{Addr: ":8080", Handler: mux, ReadHeaderTimeout: 10 * time.Second}
-	logr.DefaultLogger.Infow("Health checker started at :8080/healthz")
-	go func() {
-		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Printf("Health server error: %v", err)
-		}
-	}()
-	return srv
-}
-
-func handleHealthz(w http.ResponseWriter, _ *http.Request) {
-	resp := map[string]string{"status": "ok", "db": "ok"}
-
-	if err := configs.PingDatabase(); err != nil {
-		resp["status"] = "degraded"
-		resp["db"] = err.Error()
-		w.WriteHeader(http.StatusServiceUnavailable)
-	} else {
-		w.WriteHeader(http.StatusOK)
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	_ = json.NewEncoder(w).Encode(resp) //nolint:errchkjson
 }

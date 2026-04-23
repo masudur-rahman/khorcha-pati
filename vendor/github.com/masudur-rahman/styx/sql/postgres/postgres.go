@@ -3,7 +3,6 @@ package postgres
 import (
 	"context"
 	"database/sql"
-	"errors"
 	"fmt"
 	"reflect"
 	"strings"
@@ -11,26 +10,26 @@ import (
 	"github.com/masudur-rahman/styx/dberr"
 	isql "github.com/masudur-rahman/styx/sql"
 	"github.com/masudur-rahman/styx/sql/postgres/lib"
+	"github.com/masudur-rahman/styx/validation"
 )
 
 type Postgres struct {
-	ctx       context.Context
-	conn      *sql.Conn
+	conn      *sql.DB
 	tx        *sql.Tx
 	statement lib.Statement
 }
 
-func NewPostgres(ctx context.Context, conn *sql.Conn) Postgres {
-	return Postgres{ctx: ctx, conn: conn}
+func NewPostgres(conn *sql.DB) Postgres {
+	return Postgres{conn: conn}
 }
 
 var _ isql.Engine = Postgres{}
 
-func (pg Postgres) BeginTx() (isql.Engine, error) {
+func (pg Postgres) BeginTx(ctx context.Context) (isql.Engine, error) {
 	if pg.tx != nil {
-		return nil, errors.New("session already in progress")
+		return nil, dberr.ErrTransactionAlreadyStarted
 	}
-	tx, err := pg.conn.BeginTx(pg.ctx, nil)
+	tx, err := pg.conn.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -40,7 +39,7 @@ func (pg Postgres) BeginTx() (isql.Engine, error) {
 
 func (pg Postgres) Commit() error {
 	if pg.tx == nil {
-		return errors.New("no transaction in progress")
+		return dberr.ErrTransactionNotStarted
 	}
 	err := pg.tx.Commit()
 	pg.tx = nil
@@ -49,7 +48,7 @@ func (pg Postgres) Commit() error {
 
 func (pg Postgres) Rollback() error {
 	if pg.tx == nil {
-		return errors.New("no transaction in progress")
+		return dberr.ErrTransactionNotStarted
 	}
 	err := pg.tx.Rollback()
 	pg.tx = nil
@@ -57,54 +56,209 @@ func (pg Postgres) Rollback() error {
 }
 
 func (pg Postgres) Table(name string) isql.Engine {
-	pg.statement = pg.statement.Table(name)
+	pg.statement.Table(name)
 	return pg
 }
 
 func (pg Postgres) ID(id any) isql.Engine {
-	pg.statement = pg.statement.ID(id)
+	pg.statement.ID(id)
 	return pg
 }
 
 func (pg Postgres) In(col string, values ...any) isql.Engine {
-	pg.statement = pg.statement.In(col, values...)
+	pg.statement.In(col, values...)
 	return pg
 }
 
 func (pg Postgres) Where(cond string, args ...any) isql.Engine {
-	pg.statement = pg.statement.Where(cond, args...)
+	pg.statement.Where(cond, args...)
 	return pg
 }
 
 func (pg Postgres) Columns(cols ...string) isql.Engine {
-	pg.statement = pg.statement.Columns(cols...)
+	pg.statement.Columns(cols...)
 	return pg
 }
 
 func (pg Postgres) AllCols() isql.Engine {
-	pg.statement = pg.statement.AllCols()
+	pg.statement.AllCols()
 	return pg
 }
 
 func (pg Postgres) MustCols(cols ...string) isql.Engine {
-	pg.statement = pg.statement.MustCols(cols...)
+	pg.statement.MustCols(cols...)
+	return pg
+}
+
+func (pg Postgres) MustFilterCols(cols ...string) isql.Engine {
+	pg.statement.MustFilterCols(cols...)
 	return pg
 }
 
 func (pg Postgres) ShowSQL(showSQL bool) isql.Engine {
-	pg.statement = pg.statement.ShowSQL(showSQL)
+	pg.statement.ShowSQL(showSQL)
 	return pg
 }
 
-func (pg Postgres) FindOne(document any, filter ...any) (bool, error) {
-	pg.statement = pg.statement.GenerateWhereClause(filter...)
+func (pg Postgres) OrderBy(col string, direction ...string) isql.Engine {
+	pg.statement.OrderBy(col, direction...)
+	return pg
+}
+
+func (pg Postgres) Limit(n int64) isql.Engine {
+	pg.statement.Limit(n)
+	return pg
+}
+
+func (pg Postgres) Offset(n int64) isql.Engine {
+	pg.statement.Offset(n)
+	return pg
+}
+
+func (pg Postgres) Distinct() isql.Engine {
+	pg.statement.Distinct()
+	return pg
+}
+
+func (pg Postgres) GroupBy(cols ...string) isql.Engine {
+	pg.statement.GroupBy(cols...)
+	return pg
+}
+
+func (pg Postgres) Having(cond string, args ...any) isql.Engine {
+	pg.statement.Having(cond, args...)
+	return pg
+}
+
+func (pg Postgres) Or(cond string, args ...any) isql.Engine {
+	pg.statement.Or(cond, args...)
+	return pg
+}
+
+func (pg Postgres) Like(col string, pattern string) isql.Engine {
+	pg.statement.Like(col, pattern)
+	return pg
+}
+
+func (pg Postgres) NotLike(col string, pattern string) isql.Engine {
+	pg.statement.NotLike(col, pattern)
+	return pg
+}
+
+func (pg Postgres) Exists(subquery string, args ...any) isql.Engine {
+	pg.statement.Exists(subquery, args...)
+	return pg
+}
+
+func (pg Postgres) NotExists(subquery string, args ...any) isql.Engine {
+	pg.statement.NotExists(subquery, args...)
+	return pg
+}
+
+func (pg Postgres) Count(col string, alias ...string) isql.Engine {
+	pg.statement.Count(col, alias...)
+	return pg
+}
+
+func (pg Postgres) Sum(col string, alias ...string) isql.Engine {
+	pg.statement.Sum(col, alias...)
+	return pg
+}
+
+func (pg Postgres) Avg(col string, alias ...string) isql.Engine {
+	pg.statement.Avg(col, alias...)
+	return pg
+}
+
+func (pg Postgres) Min(col string, alias ...string) isql.Engine {
+	pg.statement.Min(col, alias...)
+	return pg
+}
+
+func (pg Postgres) Max(col string, alias ...string) isql.Engine {
+	pg.statement.Max(col, alias...)
+	return pg
+}
+
+func (pg Postgres) Paginate(page, perPage int64) isql.Engine {
+	pg.statement.Paginate(page, perPage)
+	return pg
+}
+
+func (pg Postgres) Join(table, condition string) isql.Engine {
+	pg.statement.Join(table, condition)
+	return pg
+}
+
+func (pg Postgres) LeftJoin(table, condition string) isql.Engine {
+	pg.statement.LeftJoin(table, condition)
+	return pg
+}
+
+func (pg Postgres) RightJoin(table, condition string) isql.Engine {
+	pg.statement.RightJoin(table, condition)
+	return pg
+}
+
+func (pg Postgres) InnerJoin(table, condition string) isql.Engine {
+	pg.statement.InnerJoin(table, condition)
+	return pg
+}
+
+func (pg Postgres) EnableValidation(enable bool) isql.Engine {
+	pg.statement.EnableValidation(enable)
+	return pg
+}
+
+func (pg Postgres) WithDeleted() isql.Engine {
+	pg.statement.WithDeleted()
+	return pg
+}
+
+// detectSoftDelete sets soft delete column from struct tags if present.
+func (pg Postgres) detectSoftDelete(doc any) Postgres {
+	if col := isql.ExtractSoftDeleteColumn(doc); col != "" {
+		pg.statement.SoftDeleteCol(col)
+	}
+	return pg
+}
+
+func (pg Postgres) ForceDelete(ctx context.Context, filter ...any) error {
+	pg.statement.SetForceDelete()
+	return pg.DeleteOne(ctx, filter...)
+}
+
+func (pg Postgres) Restore(ctx context.Context, filter ...any) error {
+	pg.statement.GenerateWhereClause(filter...)
+	if err := pg.statement.CheckWhereClauseNotEmpty(); err != nil {
+		return err
+	}
+
+	query := pg.statement.GenerateRestoreQuery()
+	result, err := pg.statement.ExecuteWriteQuery(ctx, pg.conn, pg.tx, query)
+	if err != nil {
+		return err
+	}
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rowsAffected == 0 {
+		return dberr.ErrNotFound
+	}
+	return nil
+}
+
+func (pg Postgres) FindOne(ctx context.Context, document any, filter ...any) (bool, error) {
+	pg = pg.detectSoftDelete(document)
+	pg.statement.GenerateWhereClause(filter...)
 
 	if err := pg.statement.CheckWhereClauseNotEmpty(); err != nil {
 		return false, err
 	}
 
 	query := pg.statement.GenerateReadQuery(document)
-	err := pg.statement.ExecuteReadQuery(pg.ctx, pg.conn, pg.tx, query, document)
+	err := pg.statement.ExecuteReadQuery(ctx, pg.conn, pg.tx, query, document)
 	if err == nil {
 		return true, nil
 	}
@@ -115,33 +269,42 @@ func (pg Postgres) FindOne(document any, filter ...any) (bool, error) {
 	return false, err
 }
 
-func (pg Postgres) FindMany(documents any, filter ...any) error {
-	pg.statement = pg.statement.GenerateWhereClause(filter...)
+func (pg Postgres) FindMany(ctx context.Context, documents any, filter ...any) error {
+	pg = pg.detectSoftDelete(documents)
+	pg.statement.GenerateWhereClause(filter...)
 
 	query := pg.statement.GenerateReadQuery(documents)
-	return pg.statement.ExecuteReadQuery(pg.ctx, pg.conn, pg.tx, query, documents)
+	return pg.statement.ExecuteReadQuery(ctx, pg.conn, pg.tx, query, documents)
 }
 
-func (pg Postgres) InsertOne(document any) (id any, err error) {
+func (pg Postgres) InsertOne(ctx context.Context, document any) (id any, err error) {
+	if pg.statement.ShouldValidate() {
+		if err := validation.Validate(document); err != nil {
+			return nil, err
+		}
+	}
+	pkCol := isql.GetPKColumn(document)
+	pg.statement.PKColumn(pkCol)
 	query := pg.statement.GenerateInsertQuery(document)
-	id, err = pg.statement.ExecuteInsertQuery(pg.ctx, pg.conn, pg.tx, query)
+	id, err = pg.statement.ExecuteInsertQuery(ctx, pg.conn, pg.tx, query)
 	if err != nil {
 		return nil, err
 	}
 	return assignID(document, id)
 }
 
-func (pg Postgres) InsertMany(documents []any) ([]any, error) {
+func (pg Postgres) InsertMany(ctx context.Context, documents []any) ([]any, error) {
 	var ids []any
 	for _, doc := range documents {
+		pkCol := isql.GetPKColumn(doc)
+		pg.statement.PKColumn(pkCol)
 		query := pg.statement.GenerateInsertQuery(doc)
-		id, err := pg.statement.ExecuteInsertQuery(pg.ctx, pg.conn, pg.tx, query)
+		id, err := pg.statement.ExecuteInsertQuery(ctx, pg.conn, pg.tx, query)
 		if err != nil {
 			return nil, err
 		}
 
-		// todo: test this
-		_, err = assignID(&doc, id)
+		_, err = assignID(doc, id)
 		if err != nil {
 			return nil, err
 		}
@@ -220,14 +383,19 @@ func fetchIDField(valElem reflect.Value) (idField reflect.Value) {
 	return
 }
 
-func (pg Postgres) UpdateOne(document any) error {
-	pg.statement = pg.statement.GenerateWhereClause()
+func (pg Postgres) UpdateOne(ctx context.Context, document any) error {
+	if pg.statement.ShouldValidate() {
+		if err := validation.Validate(document); err != nil {
+			return err
+		}
+	}
+	pg.statement.GenerateWhereClause()
 	if err := pg.statement.CheckWhereClauseNotEmpty(); err != nil {
 		return err
 	}
 
 	query := pg.statement.GenerateUpdateQuery(document)
-	result, err := pg.statement.ExecuteWriteQuery(pg.ctx, pg.conn, pg.tx, query)
+	result, err := pg.statement.ExecuteWriteQuery(ctx, pg.conn, pg.tx, query)
 	if err != nil {
 		return err
 	}
@@ -236,19 +404,27 @@ func (pg Postgres) UpdateOne(document any) error {
 		return err
 	}
 	if rowsAffected == 0 {
-		return dberr.DataNotFound
+		return dberr.ErrNotFound
 	}
 	return nil
 }
 
-func (pg Postgres) DeleteOne(filter ...any) error {
-	pg.statement = pg.statement.GenerateWhereClause(filter...)
+func (pg Postgres) DeleteOne(ctx context.Context, filter ...any) error {
+	if len(filter) > 0 {
+		pg = pg.detectSoftDelete(filter[0])
+	}
+	pg.statement.GenerateWhereClause(filter...)
 	if err := pg.statement.CheckWhereClauseNotEmpty(); err != nil {
 		return err
 	}
 
-	query := pg.statement.GenerateDeleteQuery()
-	result, err := pg.statement.ExecuteWriteQuery(pg.ctx, pg.conn, pg.tx, query)
+	var query string
+	if pg.statement.IsSoftDelete() {
+		query = pg.statement.GenerateSoftDeleteQuery()
+	} else {
+		query = pg.statement.GenerateDeleteQuery()
+	}
+	result, err := pg.statement.ExecuteWriteQuery(ctx, pg.conn, pg.tx, query)
 	if err != nil {
 		return err
 	}
@@ -257,21 +433,20 @@ func (pg Postgres) DeleteOne(filter ...any) error {
 		return err
 	}
 	if rowsAffected == 0 {
-		return dberr.DataNotFound
+		return dberr.ErrNotFound
 	}
 	return nil
 }
 
-func (pg Postgres) Query(query string, args ...any) (*sql.Rows, error) {
-	return pg.conn.QueryContext(pg.ctx, query, args...)
+func (pg Postgres) Query(ctx context.Context, query string, args ...any) (*sql.Rows, error) {
+	return pg.conn.QueryContext(ctx, query, args...)
 }
 
-func (pg Postgres) Exec(query string, args ...any) (sql.Result, error) {
-	return pg.conn.ExecContext(pg.ctx, query, args...)
+func (pg Postgres) Exec(ctx context.Context, query string, args ...any) (sql.Result, error) {
+	return pg.conn.ExecContext(ctx, query, args...)
 }
 
-func (pg Postgres) Sync(tables ...any) error {
-	ctx := context.Background()
+func (pg Postgres) Sync(ctx context.Context, tables ...any) error {
 	for _, table := range tables {
 		if err := lib.SyncTable(ctx, pg.conn, table); err != nil {
 			return err
@@ -279,6 +454,10 @@ func (pg Postgres) Sync(tables ...any) error {
 	}
 
 	return nil
+}
+
+func (pg Postgres) DropTable(ctx context.Context, name string) error {
+	return lib.DropTable(ctx, pg.conn, name)
 }
 
 func (pg Postgres) Close() error {

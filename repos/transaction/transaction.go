@@ -1,6 +1,7 @@
 package transaction
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"time"
@@ -37,16 +38,42 @@ func (t *SQLTransactionRepository) AddTransaction(txn models.Transaction) error 
 	if txn.Timestamp == 0 {
 		txn.Timestamp = time.Now().Unix()
 	}
-	_, err := t.db.MustCols("deleted_at").InsertOne(txn)
+	ctx := context.Background()
+	// req tag on deleted_at ensures the zero value is written, marking the transaction as active.
+	_, err := t.db.InsertOne(ctx, txn)
 	return err
+}
+
+// GetTransactionByID returns a transaction by its primary key.
+func (t *SQLTransactionRepository) GetTransactionByID(id int64) (*models.Transaction, error) {
+	t.logger.Infow("get transaction by ID", "id", id)
+	ctx := context.Background()
+	var txn models.Transaction
+	found, err := t.db.ID(id).FindOne(ctx, &txn)
+	if err != nil {
+		return nil, err
+	}
+	if !found {
+		return nil, fmt.Errorf("transaction %d not found", id)
+	}
+	return &txn, nil
+}
+
+// UpdateTransaction updates a transaction record by ID.
+func (t *SQLTransactionRepository) UpdateTransaction(id int64, txn *models.Transaction) error {
+	t.logger.Infow("updating transaction", "id", id)
+	ctx := context.Background()
+	// req tag on deleted_at ensures it is included in the update even when zero.
+	return t.db.ID(id).UpdateOne(ctx, txn)
 }
 
 // GetLastActiveTransaction returns the most recent non-deleted transaction for a user.
 func (t *SQLTransactionRepository) GetLastActiveTransaction(userID int64) (*models.Transaction, error) {
 	t.logger.Infow("get last active transaction", "userID", userID)
+	ctx := context.Background()
 	var txns []models.Transaction
-	if err := t.db.Where("deleted_at = 0").
-		FindMany(&txns, models.Transaction{UserID: userID}); err != nil {
+	// req tag on deleted_at auto-includes WHERE deleted_at=0 from the zero-value struct field.
+	if err := t.db.FindMany(ctx, &txns, models.Transaction{UserID: userID}); err != nil {
 		return nil, err
 	}
 	if len(txns) == 0 {
@@ -65,37 +92,45 @@ func (t *SQLTransactionRepository) GetLastActiveTransaction(userID int64) (*mode
 // SoftDeleteTransaction marks a transaction as deleted by setting DeletedAt.
 func (t *SQLTransactionRepository) SoftDeleteTransaction(txnID int64, deletedAt int64) error {
 	t.logger.Infow("soft-deleting transaction", "txnID", txnID)
-	return t.db.ID(txnID).MustCols("deleted_at").UpdateOne(&models.Transaction{DeletedAt: deletedAt})
+	ctx := context.Background()
+	// deletedAt is non-zero (unix timestamp), so it is included in the UPDATE naturally.
+	// req tag ensures deleted_at is always written in UpdateOne, even if it were zero.
+	return t.db.ID(txnID).UpdateOne(ctx, &models.Transaction{DeletedAt: deletedAt})
 }
 
 func (t *SQLTransactionRepository) ListTransactions(filter models.Transaction) ([]models.Transaction, error) {
 	t.logger.Infow("list transactions")
+	ctx := context.Background()
 	txns := make([]models.Transaction, 0)
-	err := t.db.Where("deleted_at = 0").FindMany(&txns, filter)
+	// req tag on deleted_at auto-includes WHERE deleted_at=0 from the filter's zero value.
+	err := t.db.FindMany(ctx, &txns, filter)
 	return txns, err
 }
 
 func (t *SQLTransactionRepository) ListTransactionsByCategory(userID int64, catID string) ([]models.Transaction, error) {
 	t.logger.Infow("list transactions by category")
+	ctx := context.Background()
 	txns := make([]models.Transaction, 0)
+	// req tag on deleted_at auto-includes WHERE deleted_at=0 from the filter's zero value.
 	err := t.db.Where(fmt.Sprintf("sub_category_id LIKE %s%%", catID)).
-		Where("deleted_at = 0").
-		FindMany(&txns, models.Transaction{UserID: userID})
+		FindMany(ctx, &txns, models.Transaction{UserID: userID})
 	return txns, err
 }
 
 func (t *SQLTransactionRepository) ListTransactionsByTime(userID int64, txnType models.TransactionType, startTime, endTime int64) ([]models.Transaction, error) {
 	t.logger.Infow("list transactions by time")
+	ctx := context.Background()
 	txns := make([]models.Transaction, 0)
+	// req tag on deleted_at auto-includes WHERE deleted_at=0 from the filter's zero value.
 	err := t.db.Where("timestamp >= ? AND timestamp <= ?", startTime, endTime).
-		Where("deleted_at = 0").
-		FindMany(&txns, models.Transaction{UserID: userID, Type: txnType})
+		FindMany(ctx, &txns, models.Transaction{UserID: userID, Type: txnType})
 	return txns, err
 }
 
 func (t *SQLTransactionRepository) GetTxnCategoryName(catID string) (string, error) {
+	ctx := context.Background()
 	cat := models.TxnCategory{}
-	has, err := t.db.Table(models.TxnCategory{}.TableName()).ID(catID).FindOne(&cat)
+	has, err := t.db.Table(models.TxnCategory{}.TableName()).ID(catID).FindOne(ctx, &cat)
 	if err != nil {
 		return "", err
 	} else if !has {
@@ -107,14 +142,16 @@ func (t *SQLTransactionRepository) GetTxnCategoryName(catID string) (string, err
 
 func (t *SQLTransactionRepository) ListTxnCategories() ([]models.TxnCategory, error) {
 	t.logger.Infow("list transaction category")
+	ctx := context.Background()
 	cats := make([]models.TxnCategory, 0)
-	err := t.db.Table(models.TxnCategory{}.TableName()).FindMany(&cats)
+	err := t.db.Table(models.TxnCategory{}.TableName()).FindMany(ctx, &cats)
 	return cats, err
 }
 
 func (t *SQLTransactionRepository) GetTxnSubcategoryName(subcatID string) (string, error) {
+	ctx := context.Background()
 	subcat := models.TxnSubcategory{}
-	has, err := t.db.Table(models.TxnSubcategory{}.TableName()).ID(subcatID).FindOne(&subcat)
+	has, err := t.db.Table(models.TxnSubcategory{}.TableName()).ID(subcatID).FindOne(ctx, &subcat)
 	if err != nil {
 		return "", err
 	} else if !has {
@@ -126,27 +163,29 @@ func (t *SQLTransactionRepository) GetTxnSubcategoryName(subcatID string) (strin
 
 func (t *SQLTransactionRepository) ListTxnSubcategories(catID string) ([]models.TxnSubcategory, error) {
 	t.logger.Infow("list transaction category")
+	ctx := context.Background()
 	subcats := make([]models.TxnSubcategory, 0)
-	err := t.db.Table(models.TxnSubcategory{}.TableName()).FindMany(&subcats, models.TxnSubcategory{CatID: catID})
+	err := t.db.Table(models.TxnSubcategory{}.TableName()).FindMany(ctx, &subcats, models.TxnSubcategory{CatID: catID})
 	return subcats, err
 }
 
 func (t *SQLTransactionRepository) UpdateTxnCategories() error {
+	ctx := context.Background()
 	db := t.db.Table(models.TxnCategory{}.TableName())
 	catt := models.TxnCategory{}
 	for _, cat := range models.TxnCategories {
-		if has, err := db.ID(cat.ID).FindOne(&catt); err != nil {
+		if has, err := db.ID(cat.ID).FindOne(ctx, &catt); err != nil {
 			return err
 		} else if has {
 			if catt.Name != cat.Name {
-				if err = db.ID(catt.ID).UpdateOne(cat); err != nil {
+				if err = db.ID(catt.ID).UpdateOne(ctx, cat); err != nil {
 					return err
 				}
 			}
 			continue
 		}
 
-		if _, err := db.InsertOne(cat); err != nil {
+		if _, err := db.InsertOne(ctx, cat); err != nil {
 			return err
 		}
 	}
@@ -154,17 +193,17 @@ func (t *SQLTransactionRepository) UpdateTxnCategories() error {
 	db = t.db.Table(models.TxnSubcategory{}.TableName())
 	subcatt := models.TxnSubcategory{}
 	for _, subcat := range models.TxnSubcategories {
-		if has, err := db.ID(subcat.ID).FindOne(&subcatt); err != nil {
+		if has, err := db.ID(subcat.ID).FindOne(ctx, &subcatt); err != nil {
 			return err
 		} else if has {
 			if subcatt.Name != subcat.Name || subcatt.CatID != subcat.CatID {
-				if err = db.ID(subcatt.ID).UpdateOne(subcat); err != nil {
+				if err = db.ID(subcatt.ID).UpdateOne(ctx, subcat); err != nil {
 					return err
 				}
 			}
 			continue
 		}
-		if _, err := db.InsertOne(subcat); err != nil {
+		if _, err := db.InsertOne(ctx, subcat); err != nil {
 			return err
 		}
 	}

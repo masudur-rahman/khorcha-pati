@@ -1,6 +1,8 @@
 package styx
 
 import (
+	"context"
+
 	"github.com/masudur-rahman/styx/nosql"
 	"github.com/masudur-rahman/styx/sql"
 )
@@ -12,13 +14,13 @@ type UnitOfWork struct {
 }
 
 // Begin starts a new transaction
-func (uow UnitOfWork) Begin() (UnitOfWork, error) {
+func (uow UnitOfWork) Begin(ctx context.Context) (UnitOfWork, error) {
 	cp := UnitOfWork{
 		SQL:   uow.SQL,
 		NoSQL: uow.NoSQL,
 	}
 	if uow.SQL != nil {
-		sqlTx, err := uow.SQL.BeginTx()
+		sqlTx, err := uow.SQL.BeginTx(ctx)
 		if err != nil {
 			return UnitOfWork{}, err
 		}

@@ -1,0 +1,381 @@
+import { useState, useMemo, useEffect } from 'react'
+import { useSearchParams } from 'react-router-dom'
+import { useTransactions, useCreateTransaction, useUpdateTransaction, useDeleteTransaction } from '../hooks/useTransactions'
+import { useSearch } from '../context/SearchContext'
+import { useWallets } from '../hooks/useWallets'
+import { useContacts } from '../hooks/useContacts'
+import { useQuery } from '@tanstack/react-query'
+import { listCategories, listSubcategories } from '../api/endpoints'
+import type { Transaction, Wallet, Contact, TxnCategory } from '../types'
+import { fmt } from '../lib/formatter'
+
+import TopBar from '../components/layout/TopBar'
+import Card from '../components/ui/Card'
+import Badge from '../components/ui/Badge'
+import Button from '../components/ui/Button'
+import Modal from '../components/ui/Modal'
+import Input from '../components/ui/Input'
+import Select from '../components/ui/Select'
+import { ICONS } from '../components/ui/Icons'
+
+type TxnType = 'Expense' | 'Income' | 'Transfer'
+const typeOptions: TxnType[] = ['Expense', 'Income', 'Transfer']
+
+export default function Transactions() {
+  const [searchParams, setSearchParams] = useSearchParams()
+  const { searchTerm } = useSearch()
+  const { data: resp, isLoading } = useTransactions()
+  const txns = resp?.data ?? []
+  const { data: wallets } = useWallets()
+  const { data: contacts } = useContacts()
+  const { data: categories } = useQuery({ queryKey: ['categories'], queryFn: listCategories })
+  const { data: subcategories } = useQuery({ queryKey: ['subcategories'], queryFn: () => listSubcategories() })
+
+  const [filterType, setFilterType] = useState<string>('')
+  const [showAdd, setShowAdd] = useState(false)
+  const [initialType, setInitialType] = useState<TxnType | undefined>()
+  const [editTxn, setEditTxn] = useState<Transaction | null>(null)
+  const [deleteTxn, setDeleteTxn] = useState<Transaction | null>(null)
+
+  useEffect(() => {
+    const addType = searchParams.get('add') as TxnType
+    if (addType && typeOptions.includes(addType)) {
+      setInitialType(addType)
+      setShowAdd(true)
+      // Clear the param after opening
+      searchParams.delete('add')
+      setSearchParams(searchParams, { replace: true })
+    }
+  }, [searchParams, setSearchParams])
+
+  const subcatMap = useMemo(() => {
+    const m = new Map<string, string>()
+    subcategories?.forEach(s => m.set(s.id, s.name))
+    return m
+  }, [subcategories])
+
+  if (isLoading) return <p className="text-gray-500">Loading...</p>
+
+  const filtered = txns
+    .filter(t => {
+      const matchesType = !filterType || t.type === filterType
+      const matchesSearch = !searchTerm || 
+        t.remarks?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        t.subcategoryId.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        subcatMap.get(t.subcategoryId)?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        t.amount.toString().includes(searchTerm) ||
+        t.contactName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        t.srcId?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        t.dstId?.toLowerCase().includes(searchTerm.toLowerCase())
+      
+      return matchesType && matchesSearch
+    })
+    .sort((a, b) => b.timestamp - a.timestamp)
+
+  const totals = {
+    income: txns.filter(t => t.type === 'Income').reduce((s, t) => s + t.amount, 0),
+    expense: txns.filter(t => t.type === 'Expense').reduce((s, t) => s + t.amount, 0),
+    transfers: txns.filter(t => t.type === 'Transfer').reduce((s, t) => s + t.amount, 0),
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+      <TopBar title="Transactions" subtitle="Detailed history of your financial movements" />
+
+      {/* Summary Cards */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 16 }}>
+        <Card style={{ borderLeft: '4px solid var(--color-success)' }}>
+          <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--color-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 8px' }}>Total Income</p>
+          <p style={{ fontSize: 24, fontWeight: 700, color: 'var(--color-success)', margin: 0 }}>+{fmt(totals.income)}</p>
+          <p style={{ fontSize: 11, color: 'var(--color-text-tertiary)', margin: '6px 0 0' }}>{txns.filter(t => t.type === 'Income').length} transactions</p>
+        </Card>
+        <Card style={{ borderLeft: '4px solid var(--color-danger)' }}>
+          <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--color-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 8px' }}>Total Expense</p>
+          <p style={{ fontSize: 24, fontWeight: 700, color: 'var(--color-danger)', margin: 0 }}>-{fmt(totals.expense)}</p>
+          <p style={{ fontSize: 11, color: 'var(--color-text-tertiary)', margin: '6px 0 0' }}>{txns.filter(t => t.type === 'Expense').length} transactions</p>
+        </Card>
+        <Card style={{ borderLeft: '4px solid var(--color-primary)' }}>
+          <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--color-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 8px' }}>Transfers</p>
+          <p style={{ fontSize: 24, fontWeight: 700, color: 'var(--color-primary)', margin: 0 }}>{fmt(totals.transfers)}</p>
+          <p style={{ fontSize: 11, color: 'var(--color-text-tertiary)', margin: '6px 0 0' }}>{txns.filter(t => t.type === 'Transfer').length} transactions</p>
+        </Card>
+      </div>
+
+      <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 32 }}>
+        <div>
+          <h2 style={{ fontSize: 18, fontWeight: 700, color: 'var(--color-text-primary)' }}>Transaction History</h2>
+          <p style={{ fontSize: 13, color: 'var(--color-text-tertiary)', marginTop: 2 }}>Detailed history of your financial movements</p>
+        </div>
+      </header>
+
+      {/* Filter Bar */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
+        <div style={{ display: 'flex', background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 12, padding: 4, gap: 2 }}>
+          {['', ...typeOptions].map(f => (
+            <button 
+              key={f || 'all'} 
+              onClick={() => setFilterType(f)}
+              style={{
+                padding: '8px 18px', borderRadius: 10, fontSize: 12, fontWeight: 600, border: 'none', cursor: 'pointer',
+                transition: 'all 0.15s',
+                background: filterType === f ? 'var(--color-primary)' : 'transparent',
+                color: filterType === f ? 'white' : 'var(--color-text-tertiary)',
+              }}>
+              {f || 'All'}
+            </button>
+          ))}
+        </div>
+        <Button onClick={() => setShowAdd(true)} icon={ICONS.plus(16)}>Add Transaction</Button>
+      </div>
+
+      {/* Table */}
+      <Card padding={0}>
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+            <thead>
+              <tr style={{ borderBottom: '1px solid var(--color-border)' }}>
+                {['Date', 'Type', 'Category', 'Amount', 'Wallets', 'Remarks', ''].map(h => (
+                  <th key={h || 'actions'} style={{ padding: '14px 24px', textAlign: h === 'Amount' ? 'right' : 'left', fontSize: 10, fontWeight: 700, color: 'var(--color-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map(t => (
+                <tr key={t.id} style={{ borderBottom: '1px solid var(--color-border)' }}
+                  className="hover-row transition-colors">
+                  <td style={{ padding: '14px 24px', color: 'var(--color-text-tertiary)', fontSize: 12, fontWeight: 600, whiteSpace: 'nowrap' }}>
+                    {new Date(t.timestamp * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                  </td>
+                  <td style={{ padding: '14px 24px' }}><Badge type={t.type as any} /></td>
+                  <td style={{ padding: '14px 24px', fontWeight: 600, color: 'var(--color-text-primary)' }}>
+                    {subcatMap.get(t.subcategoryId) || t.subcategoryId}
+                  </td>
+                  <td style={{
+                    padding: '14px 24px', textAlign: 'right', fontWeight: 700, fontSize: 14,
+                    color: t.type === 'Income' ? 'var(--color-success)' : t.type === 'Transfer' ? 'var(--color-primary)' : 'var(--color-danger)',
+                  }}>
+                    {t.type === 'Income' ? '+' : t.type === 'Transfer' ? '' : '-'}{fmt(t.amount)}
+                  </td>
+                  <td style={{ padding: '14px 24px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <span style={{ fontSize: 10, fontWeight: 700, background: 'var(--color-bg)', padding: '2px 8px', borderRadius: 5, color: 'var(--color-text-tertiary)' }}>{t.srcId || '—'}</span>
+                      <span style={{ color: 'var(--color-border)', fontSize: 10 }}>→</span>
+                      <span style={{ fontSize: 10, fontWeight: 700, background: 'var(--color-bg)', padding: '2px 8px', borderRadius: 5, color: 'var(--color-text-tertiary)' }}>{t.dstId || t.contactName || '—'}</span>
+                    </div>
+                  </td>
+                  <td style={{ padding: '14px 24px', color: 'var(--color-text-tertiary)', fontSize: 12, fontStyle: 'italic', maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {t.remarks || '—'}
+                  </td>
+                  <td style={{ padding: '14px 24px', textAlign: 'right' }}>
+                    <div style={{ display: 'flex', gap: 4, justifyContent: 'flex-end' }}>
+                      <button 
+                        onClick={() => setEditTxn(t)}
+                        style={{ width: 32, height: 32, borderRadius: 8, border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--color-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.15s' }}
+                        onMouseEnter={e => e.currentTarget.style.background = 'var(--color-primary-subtle)'}
+                        onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                      >
+                        {ICONS.edit(14)}
+                      </button>
+                      <button 
+                        onClick={() => setDeleteTxn(t)}
+                        style={{ width: 32, height: 32, borderRadius: 8, border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--color-danger)', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.15s' }}
+                        onMouseEnter={e => e.currentTarget.style.background = 'var(--color-danger-subtle)'}
+                        onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                      >
+                        {ICONS.trash(14)}
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+              {filtered.length === 0 && (
+                <tr><td colSpan={7} style={{ padding: '60px', textAlign: 'center', color: 'var(--color-text-tertiary)' }}>No transactions found</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </Card>
+
+      {(showAdd || editTxn) && (
+        <TxnDialog
+          txn={editTxn || undefined}
+          initialType={initialType}
+          wallets={wallets ?? []}
+          contacts={contacts ?? []}
+          categories={categories ?? []}
+          subcategories={subcategories ?? []}
+          onClose={() => { setShowAdd(false); setEditTxn(null); setInitialType(undefined); }}
+        />
+      )}
+      {deleteTxn && <DeleteDialog txn={deleteTxn} onClose={() => setDeleteTxn(null)} />}
+    </div>
+  )
+}
+
+interface TxnDialogProps {
+  txn?: Transaction
+  initialType?: TxnType
+  wallets: Wallet[]
+  contacts: Contact[]
+  categories: TxnCategory[]
+  subcategories: { id: string; name: string; catId: string }[]
+  onClose: () => void
+}
+
+function TxnDialog({ txn, initialType, wallets, contacts, categories, subcategories, onClose }: TxnDialogProps) {
+  const create = useCreateTransaction()
+  const update = useUpdateTransaction()
+  const isEdit = !!txn
+
+  const [type, setType] = useState<TxnType>(txn?.type as any ?? initialType ?? 'Expense')
+  const [amount, setAmount] = useState(txn?.amount?.toString() ?? '')
+  
+  const [catId, setCatId] = useState(() => {
+    if (txn?.subcategoryId) {
+      return subcategories.find(s => s.id === txn.subcategoryId)?.catId || ''
+    }
+    return ''
+  })
+  const [subcategoryId, setSubcategoryId] = useState(txn?.subcategoryId ?? '')
+  const [srcId, setSrcId] = useState(txn?.srcId ?? '')
+  const [dstId, setDstId] = useState(txn?.dstId ?? '')
+  const [contactName, setContactName] = useState(txn?.contactName ?? '')
+  const [remarks, setRemarks] = useState(txn?.remarks ?? '')
+
+  // Handle smart defaults when type changes
+  useEffect(() => {
+    if (isEdit) return
+
+    if (type === 'Transfer') {
+      const finCat = categories.find(c => c.name.toLowerCase() === 'financial')
+      if (finCat) {
+        setCatId(finCat.id)
+        const transSub = subcategories.find(s => s.catId === finCat.id && s.name.toLowerCase().includes('transfer'))
+        if (transSub) setSubcategoryId(transSub.id)
+      }
+    } else {
+        // Reset category if it was auto-set for transfer
+        const finCat = categories.find(c => c.name.toLowerCase() === 'financial')
+        if (catId === finCat?.id) {
+            setCatId('')
+            setSubcategoryId('')
+        }
+    }
+  }, [type, categories, subcategories, isEdit])
+
+  // Subcategory filter logic
+  const filteredSubs = useMemo(() => {
+    let subs = subcategories
+    if (catId) {
+      subs = subs.filter(s => s.catId === catId)
+    }
+    if (type === 'Transfer') {
+      subs = subs.filter(s => s.name.toLowerCase().includes('transfer') || s.name.toLowerCase().includes('withdraw') || s.name.toLowerCase().includes('deposit'))
+    }
+    return subs
+  }, [subcategories, catId, type])
+
+  // Handle withdraw to cash
+  useEffect(() => {
+    if (isEdit) return
+    const sub = subcategories.find(s => s.id === subcategoryId)
+    if (sub?.name.toLowerCase() === 'withdraw') {
+        const cashWallet = wallets.find(w => w.type === 'Cash' || w.shortName.toLowerCase() === 'cash')
+        if (cashWallet) setDstId(cashWallet.shortName)
+    }
+  }, [subcategoryId, subcategories, wallets, isEdit])
+
+  const handleSubmit = () => {
+    const payload: Partial<Transaction> = {
+      type,
+      amount: parseFloat(amount),
+      subcategoryId,
+      srcId,
+      dstId,
+      contactName,
+      remarks,
+    }
+    if (isEdit) {
+      update.mutate({ id: txn.id, ...payload }, { onSuccess: onClose })
+    } else {
+      create.mutate(payload, { onSuccess: onClose })
+    }
+  }
+
+  return (
+    <Modal title={isEdit ? 'Edit Transaction' : 'Add Transaction'} onClose={onClose}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+          <Select label="Type" value={type} onChange={e => setType(e.target.value as TxnType)} options={typeOptions.map(t => ({ value: t, label: t }))} />
+          <Input label="Amount" type="number" value={amount} onChange={e => setAmount(e.target.value)} placeholder="0.00" />
+        </div>
+        
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+          <Select label="Category" value={catId} onChange={e => { setCatId(e.target.value); setSubcategoryId(''); }} options={categories.map(c => ({ value: c.id, label: c.name }))} />
+          <Select label="Sub Category" value={subcategoryId} onChange={e => setSubcategoryId(e.target.value)} options={filteredSubs.map(s => ({ value: s.id, label: s.name }))} />
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+          <Select label="From (Wallet)" value={srcId} onChange={e => setSrcId(e.target.value)} options={wallets.map(w => ({ value: w.shortName, label: w.name }))} />
+          <Select
+            label={type === 'Transfer' ? 'To (Wallet)' : 'To'}
+            value={dstId}
+            onChange={e => setDstId(e.target.value)}
+            options={
+                type === 'Transfer'
+                ? wallets.map(w => ({ value: w.shortName, label: w.name }))
+                : [
+                    { value: '', label: 'Select Contact' },
+                    ...contacts.map(c => ({ value: c.nickName, label: c.fullName || c.nickName }))
+                  ]
+            }
+          />
+        </div>
+
+        {type !== 'Transfer' && (
+          <Input label="Contact (Optional)" value={contactName} onChange={e => setContactName(e.target.value)} placeholder="Who is this with?" />
+        )}
+        
+        <Input label="Remarks" value={remarks} onChange={e => setRemarks(e.target.value)} placeholder="Any notes..." />
+        
+        <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', marginTop: 12 }}>
+          <Button variant="secondary" onClick={onClose} style={{ padding: '12px 24px' }}>Cancel</Button>
+          <Button 
+            onClick={handleSubmit} 
+            disabled={!amount || !subcategoryId}
+            style={{ padding: '12px 32px' }}
+          >
+            {isEdit ? 'Update Changes' : 'Create Transaction'}
+          </Button>
+        </div>
+      </div>
+    </Modal>
+  )
+}
+
+function DeleteDialog({ txn, onClose }: { txn: Transaction; onClose: () => void }) {
+  const del = useDeleteTransaction()
+  return (
+    <Modal onClose={onClose} width={400}>
+      <div style={{ textAlign: 'center' }}>
+        <div style={{ width: 64, height: 64, background: 'var(--color-danger-subtle)', color: 'var(--color-danger)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
+          {ICONS.trash(32)}
+        </div>
+        <h2 style={{ fontSize: 20, fontWeight: 700, color: 'var(--color-text-primary)', margin: '0 0 10px' }}>Delete Transaction?</h2>
+        <p style={{ fontSize: 14, color: 'var(--color-text-tertiary)', lineHeight: 1.6, margin: '0 0 32px' }}>
+          Are you sure you want to delete this <span style={{ fontWeight: 700, color: 'var(--color-text-secondary)' }}>{txn.type}</span> for <span style={{ fontWeight: 700, color: 'var(--color-text-primary)' }}>{fmt(txn.amount)}</span>? This cannot be undone.
+        </p>
+        <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
+          <Button variant="secondary" onClick={onClose} style={{ padding: '12px 24px' }}>Cancel</Button>
+          <Button 
+            variant="danger" 
+            onClick={() => del.mutate(txn.id, { onSuccess: onClose })}
+            style={{ padding: '12px 24px' }}
+          >
+            Confirm Delete
+          </Button>
+        </div>
+      </div>
+    </Modal>
+  )
+}

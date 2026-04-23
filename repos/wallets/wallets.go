@@ -1,6 +1,7 @@
 package wallets
 
 import (
+	"context"
 	"errors"
 	"time"
 
@@ -34,8 +35,9 @@ func (a *SQLWalletRepository) WithUnitOfWork(uow styx.UnitOfWork) repos.WalletRe
 
 func (a *SQLWalletRepository) GetWalletByShortName(userID int64, shortName string) (*models.Wallet, error) {
 	a.logger.Infow("get wallet by short name", "shortName", shortName)
+	ctx := context.Background()
 	var w models.Wallet
-	found, err := a.db.FindOne(&w, models.Wallet{ShortName: shortName, UserID: userID})
+	found, err := a.db.FindOne(ctx, &w, models.Wallet{ShortName: shortName, UserID: userID})
 	if err != nil {
 		return nil, err
 	}
@@ -47,32 +49,36 @@ func (a *SQLWalletRepository) GetWalletByShortName(userID int64, shortName strin
 
 func (a *SQLWalletRepository) ListWallets(userID int64) ([]models.Wallet, error) {
 	a.logger.Infow("list wallets")
+	ctx := context.Background()
 	wallets := make([]models.Wallet, 0)
-	err := a.db.FindMany(&wallets, models.Wallet{UserID: userID})
+	err := a.db.FindMany(ctx, &wallets, models.Wallet{UserID: userID})
 	return wallets, err
 }
 
 func (a *SQLWalletRepository) ListWalletsByType(userID int64, typ models.WalletType) ([]models.Wallet, error) {
 	a.logger.Infow("list wallets by type", "type", typ)
+	ctx := context.Background()
 	wallets := make([]models.Wallet, 0)
-	err := a.db.FindMany(&wallets, models.Wallet{UserID: userID, Type: typ})
+	err := a.db.FindMany(ctx, &wallets, models.Wallet{UserID: userID, Type: typ})
 	return wallets, err
 }
 
 func (a *SQLWalletRepository) AddNewWallet(wallet *models.Wallet) error {
 	a.logger.Infow("add new wallet", "name", wallet.Name)
+	ctx := context.Background()
 	_, err := a.GetWalletByShortName(wallet.UserID, wallet.ShortName)
 	if err == nil {
 		return models.ErrAccountAlreadyExist{ShortName: wallet.ShortName}
 	} else if !models.IsErrNotFound(err) {
 		return err
 	}
-	_, err = a.db.MustCols("version").InsertOne(wallet)
+	_, err = a.db.MustCols("version", "balance", "last_txn_amount").InsertOne(ctx, wallet)
 	return err
 }
 
 func (a *SQLWalletRepository) UpdateWalletBalance(userID int64, shortName string, txnAmount float64) error {
 	a.logger.Infow("updating wallet balance", "wallet", shortName)
+	ctx := context.Background()
 	w, err := a.GetWalletByShortName(userID, shortName)
 	if err != nil {
 		return err
@@ -82,7 +88,7 @@ func (a *SQLWalletRepository) UpdateWalletBalance(userID int64, shortName string
 	w.LastTxnAmount = txnAmount
 	w.LastTxnTimestamp = time.Now().Unix()
 	w.Version = oldVersion + 1
-	err = a.db.ID(w.ID).Where("version = ?", oldVersion).UpdateOne(w)
+	err = a.db.ID(w.ID).Where("version = ?", oldVersion).MustCols("balance", "last_txn_amount", "version").UpdateOne(ctx, w)
 	if errors.Is(err, dberr.DataNotFound) {
 		return models.ErrOptimisticLock
 	}
@@ -91,5 +97,6 @@ func (a *SQLWalletRepository) UpdateWalletBalance(userID int64, shortName string
 
 func (a *SQLWalletRepository) DeleteWallet(userID int64, shortName string) error {
 	a.logger.Infow("deleting wallet", "wallet", shortName)
-	return a.db.DeleteOne(models.Wallet{ShortName: shortName, UserID: userID})
+	ctx := context.Background()
+	return a.db.DeleteOne(ctx, models.Wallet{ShortName: shortName, UserID: userID})
 }

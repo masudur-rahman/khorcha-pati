@@ -116,7 +116,7 @@
 </head>
 
 <body>
-    <h2>Transaction History</h2>
+    <h2>Transaction Details</h2>
     <table class="content-table transaction-history">
         <colgroup>
             <col class="col-date">
@@ -172,8 +172,7 @@
 
     <div class="summary-section">
         <div style="page-break-inside: avoid !important;">
-            <h2>Transaction Summary</h2>
-
+            <h2>Statement Summary</h2>
             <table class="content-table summary-table">
                 <colgroup>
                     <col style="width: 60%">
@@ -181,7 +180,7 @@
                 </colgroup>
                 <thead>
                 <tr>
-                    <th>Transaction Type</th>
+                    <th>Type</th>
                     <th style="text-align: right">Amount</th>
                 </tr>
                 </thead>
@@ -206,65 +205,123 @@
             </table>
         </div>
 
-        <table class="content-table summary-table">
-            <colgroup>
-                <col style="width: 40%">
-                <col style="width: 25%">
-                <col style="width: 35%">
-            </colgroup>
-            <thead>
-            <tr>
-                <th>Category</th>
-                <th>Type</th>
-                <th style="text-align: right">Amount</th>
-            </tr>
-            </thead>
-            <tbody>
-            {{ if .CategorySummary }}
-            {{ range .CategorySummary }}
-            <tr class="{{ .Type | toLower }}">
-                <td>{{ .Name }}</td>
-                <td>{{ .Type }}</td>
-                <td style="text-align: right" class="amount">৳{{ .Amount | formatBDT }}</td>
-            </tr>
-            {{ end }}
-            {{ else }}
-            <tr>
-                <td colspan="3" style="text-align: center; font-style: italic;">No data to display</td>
-            </tr>
-            {{ end }}
-            </tbody>
-        </table>
+        <div style="page-break-inside: avoid !important;">
+            <h2>Spending by Category</h2>
+            <table class="content-table summary-table">
+                <colgroup>
+                    <col style="width: 40%">
+                    <col style="width: 25%">
+                    <col style="width: 35%">
+                </colgroup>
+                <thead>
+                <tr>
+                    <th>Category</th>
+                    <th>Type</th>
+                    <th style="text-align: right">Amount</th>
+                </tr>
+                </thead>
+                <tbody>
+                {{ if .CategorySummary }}
+                {{ range .CategorySummary }}
+                <tr class="{{ .Type | toLower }}">
+                    <td>{{ .Name }}</td>
+                    <td>{{ .Type }}</td>
+                    <td style="text-align: right" class="amount">৳{{ .Amount | formatBDT }}</td>
+                </tr>
+                {{ end }}
+                {{ else }}
+                <tr>
+                    <td colspan="3" style="text-align: center; font-style: italic;">No data to display</td>
+                </tr>
+                {{ end }}
+                </tbody>
+            </table>
+        </div>
 
-        <table class="content-table summary-table">
-            <colgroup>
-                <col style="width: 40%">
-                <col style="width: 25%">
-                <col style="width: 35%">
-            </colgroup>
-            <thead>
-            <tr>
-                <th>Subcategory</th>
-                <th>Type</th>
-                <th style="text-align: right">Amount</th>
-            </tr>
-            </thead>
-            <tbody>
-            {{ if .SubcategorySummary }}
-            {{ range .SubcategorySummary }}
-            <tr class="{{ .Type | toLower }}">
-                <td>{{ .Name }}</td>
-                <td>{{ .Type }}</td>
-                <td style="text-align: right" class="amount">৳{{ .Amount | formatBDT }}</td>
-            </tr>
-            {{ end }}
-            {{ else }}
-            <tr>
-                <td colspan="3" style="text-align: center; font-style: italic;">No data to display</td>
-            </tr>
-            {{ end }}
-            </tbody>
-        </table>
+        <div style="page-break-inside: avoid !important;">
+            <h2>Spending by Subcategory</h2>
+            <table class="content-table summary-table">
+                <colgroup>
+                    <col style="width: 40%">
+                    <col style="width: 25%">
+                    <col style="width: 35%">
+                </colgroup>
+                <thead>
+                <tr>
+                    <th>Subcategory</th>
+                    <th>Type</th>
+                    <th style="text-align: right">Amount</th>
+                </tr>
+                </thead>
+                <tbody>
+                {{ if .SubcategorySummary }}
+                {{ range .SubcategorySummary }}
+                <tr class="{{ .Type | toLower }}">
+                    <td>{{ .Name }}</td>
+                    <td>{{ .Type }}</td>
+                    <td style="text-align: right" class="amount">৳{{ .Amount | formatBDT }}</td>
+                </tr>
+                {{ end }}
+                {{ else }}
+                <tr>
+                    <td colspan="3" style="text-align: center; font-style: italic;">No data to display</td>
+                </tr>
+                {{ end }}
+                </tbody>
+            </table>
+        </div>
+
+        {{ if .Wallets }}
+        <div style="page-break-inside: avoid !important;">
+            <h2>Wallets</h2>
+            <table class="content-table summary-table">
+                <colgroup>
+                    <col style="width: 60%">
+                    <col style="width: 40%">
+                </colgroup>
+                <thead>
+                <tr>
+                    <th>Account</th>
+                    <th style="text-align: right">Current Balance</th>
+                </tr>
+                </thead>
+                <tbody>
+                {{ range .Wallets }}
+                <tr class="{{ .Balance | balanceClass }}">
+                    <td>{{ .Name }} ({{ .ShortName }})</td>
+                    <td style="text-align: right" class="amount">৳{{ .Balance | formatBDT }}</td>
+                </tr>
+                {{ end }}
+                </tbody>
+            </table>
+        </div>
+        {{ end }}
+
+        {{ if .Contacts }}
+        <div style="page-break-inside: avoid !important;">
+            <h2>Contacts</h2>
+            <table class="content-table summary-table">
+                <colgroup>
+                    <col style="width: 60%">
+                    <col style="width: 40%">
+                </colgroup>
+                <thead>
+                <tr>
+                    <th>Contact</th>
+                    <th style="text-align: right">Net Amount</th>
+                </tr>
+                </thead>
+                <tbody>
+                {{ range .Contacts }}
+                <tr class="{{ .NetBalance | balanceClass }}">
+                    <td>{{ if .FullName }}{{ .FullName }}{{ else }}{{ .NickName }}{{ end }}</td>
+                    <td style="text-align: right" class="amount">৳{{ .NetBalance | formatBDT }}</td>
+                </tr>
+                {{ end }}
+                </tbody>
+            </table>
+        </div>
+        {{ end }}
     </div>
 </body>
 </html>

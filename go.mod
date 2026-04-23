@@ -6,11 +6,16 @@ require (
 	github.com/chromedp/cdproto v0.0.0-20250222051814-50c6cb17f10a
 	github.com/chromedp/chromedp v0.13.1
 	github.com/fogleman/gg v1.3.0
+	github.com/go-chi/chi/v5 v5.2.5
+	github.com/go-chi/cors v1.2.2
+	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0
+	github.com/google/uuid v1.6.0
 	github.com/graphql-go/graphql v0.8.1
 	github.com/jedib0t/go-pretty/v6 v6.4.6
+	github.com/lib/pq v1.10.9
 	github.com/masudur-rahman/go-oneliners v1.0.0
-	github.com/masudur-rahman/styx v1.2.4
+	github.com/masudur-rahman/styx v1.4.0
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/redis/go-redis/v9 v9.17.2
 	github.com/rs/xid v1.5.0
@@ -21,6 +26,7 @@ require (
 	golang.org/x/crypto v0.36.0
 	golang.org/x/image v0.0.0-20190802002840-cff245a6509b
 	golang.org/x/oauth2 v0.23.0
+	golang.org/x/time v0.15.0
 	google.golang.org/api v0.197.0
 	google.golang.org/genai v1.40.0
 	google.golang.org/protobuf v1.34.2
@@ -49,7 +55,6 @@ require (
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/google/go-cmp v0.6.0 // indirect
 	github.com/google/s2a-go v0.1.8 // indirect
-	github.com/google/uuid v1.6.0 // indirect
 	github.com/googleapis/enterprise-certificate-proxy v0.3.4 // indirect
 	github.com/googleapis/gax-go/v2 v2.13.0 // indirect
 	github.com/gorilla/websocket v1.5.3 // indirect
@@ -57,7 +62,6 @@ require (
 	github.com/hokaccha/go-prettyjson v0.0.0-20211117102719-0474bc63780f // indirect
 	github.com/iancoleman/strcase v0.2.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
-	github.com/lib/pq v1.10.9 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.17 // indirect
 	github.com/mattn/go-runewidth v0.0.13 // indirect

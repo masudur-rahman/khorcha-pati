@@ -3,7 +3,6 @@ package handlers
 import (
 	"fmt"
 	"html"
-	"log"
 	"strings"
 	"time"
 
@@ -15,41 +14,41 @@ import (
 	pkgtg "github.com/masudur-rahman/expense-tracker-bot/pkg/telegram"
 	"github.com/masudur-rahman/expense-tracker-bot/services/all"
 
-	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/spf13/pflag"
 	"gopkg.in/telebot.v3"
 )
 
 func StartTrackingExpenses(ctx telebot.Context) error {
+	payload := ctx.Message().Payload
+	logr.DefaultLogger.Infof("Start command received from %d with payload: %s", ctx.Sender().ID, payload)
+
 	us := all.GetServices().User
 	user, err := us.GetUserByTelegramID(ctx.Sender().ID)
-	if err == nil {
-		if err = ensureDefaultWallet(user.ID); err != nil {
-			logr.DefaultLogger.Errorw("Ensure default wallet error", "error", err.Error())
+	if err != nil {
+		if !models.IsErrNotFound(err) {
+			return ctx.Send(models.ErrCommonResponse(err))
 		}
-		return sendStartText(ctx)
-	}
-	if !models.IsErrNotFound(err) {
-		logr.DefaultLogger.Errorw("Start error", "error", err.Error())
-		return ctx.Send(err.Error())
-	}
-	user = &models.Profile{
-		TelegramID: ctx.Sender().ID,
-		Username:   ctx.Sender().Username,
-		FirstName:  ctx.Sender().FirstName,
-		LastName:   ctx.Sender().LastName,
-	}
-	if err = us.SignUp(user); err != nil {
-		logr.DefaultLogger.Errorw("Sign up error", "error", err.Error())
-		return ctx.Send(err.Error())
+		user = &models.Profile{
+			TelegramID: ctx.Sender().ID,
+			Username:   ctx.Sender().Username,
+			FirstName:  ctx.Sender().FirstName,
+			LastName:   ctx.Sender().LastName,
+		}
+		if err = us.SignUp(user); err != nil {
+			return ctx.Send(models.ErrCommonResponse(err))
+		}
+		ctx.Set("new-user", true)
 	}
 
 	if err = ensureDefaultWallet(user.ID); err != nil {
-		logr.DefaultLogger.Errorw("Create default cash wallet error", "error", err.Error())
-		return ctx.Send(err.Error())
+		return ctx.Send(models.ErrCommonResponse(err))
 	}
 
-	ctx.Set("new-user", true)
+	if strings.HasPrefix(payload, "login_") {
+		sessionID := strings.TrimPrefix(payload, "login_")
+		return HandleQRLogin(sessionID, ctx)
+	}
+
 	return sendStartText(ctx)
 }
 
@@ -126,12 +125,6 @@ Examples:
 	return ctx.Send(msg, telebot.ModeHTML)
 }
 
-func Welcome(ctx telebot.Context) error {
-	return ctx.Send(fmt.Sprintf(`Hello %v %v!
-Welcome to Expense Tracker !
-`, ctx.Sender().FirstName, ctx.Sender().LastName))
-}
-
 func Help(ctx telebot.Context) error {
 	return ctx.Send(fmt.Sprintf(`Click the following link to open the Usage documentation.
 %s
@@ -165,7 +158,7 @@ func ListContacts(ctx telebot.Context) error {
 
 	contacts, err := all.GetServices().Contact.ListContacts(user.ID)
 	if err != nil {
-		return ctx.Send(err.Error())
+		return ctx.Send(models.ErrCommonResponse(err))
 	}
 
 	return ctx.Send(printContacts(contacts), telebot.ModeMarkdown)
@@ -177,7 +170,7 @@ func printContacts(contacts []models.Contacts) string {
 	}
 	var sb strings.Builder
 	sb.WriteString("👥 *Your Contacts*\n")
-	sb.WriteString("──────────────\n")
+	sb.WriteString(models.Separator + "\n")
 	for _, c := range contacts {
 		name := c.FullName
 		if name == "" {
@@ -199,14 +192,11 @@ func NewUser(ctx telebot.Context) error {
 	// /newuser <id> <name> <email>
 	ui := pkg.SplitString(ctx.Text(), ' ')
 	if len(ui) < 3 {
-		return ctx.Send(`
-Syntax unknown.
-Format /newuser <id> <name> <email>
-`)
+		return ctx.Send("⚠️ Usage: /newuser <id> <name> <email>")
 	}
 	user, err := all.GetServices().User.GetUserByTelegramID(ctx.Sender().ID)
 	if err != nil {
-		return ctx.Send(err.Error())
+		return ctx.Send(models.ErrCommonResponse(err))
 	}
 	if err := all.GetServices().Contact.CreateContact(&models.Contacts{
 		UserID:   user.ID,
@@ -219,21 +209,17 @@ Format /newuser <id> <name> <email>
 			return ""
 		}(),
 	}); err != nil {
-		log.Println(err)
-		return ctx.Send(err.Error())
+		return ctx.Send(models.ErrCommonResponse(err))
 	}
 
-	return ctx.Send("✅ Contact added!", telebot.ModeMarkdown)
+	return ctx.Send(fmt.Sprintf("✅ Contact *%s* added!", ui[2]), telebot.ModeMarkdown)
 }
 
 func AddAccount(ctx telebot.Context) error {
 	// <type (Cash or Bank)> <unique-short-name> <Wallet Name>
 	aci := pkg.SplitString(ctx.Text(), ' ')
 	if len(aci) != 4 {
-		return ctx.Send(`
-Syntax unknown.
-Format /new <type> <unique-name> <Wallet Name>
-`)
+		return ctx.Send("⚠️ Usage: /new <type> <short-name> <wallet name>")
 	}
 	acc := &models.Wallet{
 		Type:      models.WalletType(aci[1]),
@@ -241,11 +227,10 @@ Format /new <type> <unique-name> <Wallet Name>
 		Name:      aci[3],
 	}
 	if err := all.GetServices().Wallet.CreateWallet(acc); err != nil {
-		log.Println(err)
-		return ctx.Send(err.Error())
+		return ctx.Send(models.ErrCommonResponse(err))
 	}
 
-	return ctx.Send("✅ Wallet added!", telebot.ModeMarkdown)
+	return ctx.Send(fmt.Sprintf("✅ Wallet *%s* added!", aci[3]), telebot.ModeMarkdown)
 }
 
 func ListWallets(ctx telebot.Context) error {
@@ -268,7 +253,7 @@ func printWallets(wallets []models.Wallet) string {
 	}
 	var sb strings.Builder
 	sb.WriteString("💳 *Your Wallets*\n")
-	sb.WriteString("──────────────\n")
+	sb.WriteString(models.Separator + "\n")
 	var total float64
 	for _, w := range wallets {
 		icon := "💵"
@@ -279,7 +264,7 @@ func printWallets(wallets []models.Wallet) string {
 		sb.WriteString(fmt.Sprintf("   Balance: `%.2f`\n\n", w.Balance))
 		total += w.Balance
 	}
-	sb.WriteString("──────────────\n")
+	sb.WriteString(models.Separator + "\n")
 	sb.WriteString(fmt.Sprintf("💰 *Total: `%.2f`*", total))
 	return sb.String()
 }
@@ -373,18 +358,34 @@ func ListTransactions(ctx telebot.Context) error {
 		return ctx.Send(models.ErrCommonResponse(err))
 	}
 
-	txns, err := all.GetServices().Txn.ListTransactions(user.ID)
+	// Fetch transactions from the last 30 days only
+	startTime := time.Now().AddDate(0, 0, -30).Unix()
+	txns, err := all.GetServices().Txn.ListTransactionsByTime(user.ID, "", startTime, time.Now().Unix())
 	if err != nil {
 		return err
 	}
 
-	printer := configs.GetDefaultPrinter()
-	printer.WithStyle(table.StyleLight)
-	printer.WithExceptColumns([]string{"ID"})
-	defer printer.ClearColumns()
-	printer.PrintDocuments(txns)
+	if len(txns) == 0 {
+		return ctx.Send("No transactions found in the last 30 days.")
+	}
 
-	return sendSplitMessage(ctx, printTransactionList(txns))
+	pageSize := 10
+	page := 1
+
+	formatted := pkgtg.FormatTransactionList(txns, page, pageSize)
+	callbackOpts := CallbackOptions{
+		Type: ListPaginationTypeCallback,
+		Pagination: PaginationCallbackOptions{
+			Page: page,
+		},
+	}
+
+	return ctx.Send(formatted, &telebot.SendOptions{
+		ParseMode: telebot.ModeMarkdown,
+		ReplyMarkup: &telebot.ReplyMarkup{
+			InlineKeyboard: generatePaginationKeyboard(callbackOpts, page, len(txns) > pageSize),
+		},
+	})
 }
 
 func ListExpenses(ctx telebot.Context) error {
@@ -393,53 +394,44 @@ func ListExpenses(ctx telebot.Context) error {
 		return ctx.Send(models.ErrCommonResponse(err))
 	}
 
-	txns, err := all.GetServices().Txn.ListTransactionsByTime(user.ID, models.ExpenseTransaction, pkg.StartOfMonth().Unix(), time.Now().Unix())
+	txns, err := all.GetServices().Txn.ListTransactionsByTime(user.ID, models.ExpenseTransaction, 0, time.Now().Unix())
 	if err != nil {
 		return err
 	}
 
-	printer := configs.GetDefaultPrinter()
-	printer.WithStyle(table.StyleLight)
-	printer.WithExceptColumns([]string{"ID"})
-	defer printer.ClearColumns()
-	printer.PrintDocuments(txns)
-
-	return sendSplitMessage(ctx, printTransactionList(txns))
-}
-
-// sendSplitMessage sends text in chunks that fit Telegram's message size limit.
-func sendSplitMessage(ctx telebot.Context, text string) error {
-	for _, chunk := range pkgtg.SplitMessage(text) {
-		if err := ctx.Send(chunk, telebot.ModeMarkdown); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func printTransactionList(txns []models.Transaction) string {
 	if len(txns) == 0 {
-		return "No transactions found."
+		return ctx.Send("No expenses found.")
 	}
-	var sb strings.Builder
-	for i, txn := range txns {
-		sb.WriteString(txn.Summary())
-		if i < len(txns)-1 {
-			sb.WriteString("──────────────\n\n")
-		}
+
+	pageSize := 10
+	page := 1
+
+	formatted := pkgtg.FormatTransactionList(txns, page, pageSize)
+	callbackOpts := CallbackOptions{
+		Type: ListPaginationTypeCallback,
+		Pagination: PaginationCallbackOptions{
+			Page:   page,
+			IsExps: true,
+		},
 	}
-	return sb.String()
+
+	return ctx.Send(formatted, &telebot.SendOptions{
+		ParseMode: telebot.ModeMarkdown,
+		ReplyMarkup: &telebot.ReplyMarkup{
+			InlineKeyboard: generatePaginationKeyboard(callbackOpts, page, len(txns) > pageSize),
+		},
+	})
 }
 
 func SyncSQLiteDatabase(ctx telebot.Context) error {
 	db := configs.TrackerConfig.Database
 	if !(db.Type == configs.DatabaseSQLite && db.SQLite.SyncToDrive) {
-		return ctx.Send("Database needs to be SQLite and sync needs to be enabled")
+		return ctx.Send("⚠️ SQLite with Drive sync must be enabled for this.")
 	}
 
 	if err := google.SyncDatabaseToDrive(); err != nil {
-		return ctx.Send(fmt.Sprintf("Database sync failed, reason: %v", err))
+		return ctx.Send(models.ErrCommonResponse(err))
 	}
 
-	return ctx.Send("Database synced to google drive successfully")
+	return ctx.Send("✅ Database synced to Google Drive")
 }

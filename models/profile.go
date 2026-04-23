@@ -1,14 +1,14 @@
 package models
 
 type Contacts struct {
-	ID               int64  `db:"id,pk"`
-	UserID           int64  `db:",uqs"`
-	NickName         string `db:",uqs"`
-	FullName         string
-	Email            string `db:"email,uqs"`
-	ContactInfo      string
-	NetBalance       float64
-	LastTxnTimestamp int64
+	ID               int64   `db:"id,pk" json:"id"`
+	UserID           int64   `db:",uqs" json:"userId"`
+	NickName         string  `db:",uqs" json:"nickName"`
+	FullName         string  `json:"fullName"`
+	Email            string  `db:"email,uqs" json:"email"`
+	ContactInfo      string  `json:"contactInfo"`
+	NetBalance       float64 `db:"net_balance" json:"netBalance"`
+	LastTxnTimestamp int64   `db:"last_txn_timestamp" json:"lastTxnTimestamp"`
 }
 
 func (Contacts) TableName() string {
@@ -16,12 +16,13 @@ func (Contacts) TableName() string {
 }
 
 type Profile struct {
-	ID         int64  `db:"id,pk"`
-	TelegramID int64  `db:",uq"`
-	Username   string `db:",uq"`
-	FirstName  string
-	LastName   string
-	Timezone   string `db:"timezone"`
+	ID           int64  `db:"id,pk" json:"id"`
+	TelegramID   int64  `db:",uq" json:"telegramId"`
+	Username     string `db:",uq" json:"username"`
+	FirstName    string `json:"firstName"`
+	LastName     string `json:"lastName"`
+	Timezone     string `db:"timezone" json:"timezone"`
+	MobileNumber string `db:"mobile_number" json:"mobileNumber"`
 }
 
 func (Profile) TableName() string {

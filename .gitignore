@@ -17,12 +17,18 @@
 .go/
 .bin/
 bin/
+!.configs/.expense-tracker.yaml.example
+.configs
+.sqlite
 
 .container-*
 .dockerfile-*
+.env
 
-.expense-tracker/expense-tracker.db
+.sqlite/expense-tracker.db
 .DS_Store
 .refactor*
 .claude/settings.local.json
 .claude/plan.md
+# Added by code-review-graph
+.code-review-graph/

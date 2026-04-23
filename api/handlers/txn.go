@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"fmt"
-	"log"
 
 	"github.com/masudur-rahman/expense-tracker-bot/models"
 	"github.com/masudur-rahman/expense-tracker-bot/pkg"
@@ -30,6 +29,9 @@ func handleTransactionWithFlagsCallback(ctx telebot.Context, callbackOpts Callba
 i.e.: 6666 -t=Expense -s=food-rest -f=cash -r="Coffee with no one"
 `, &telebot.SendOptions{
 		ReplyTo: ctx.Message(),
+		ReplyMarkup: &telebot.ReplyMarkup{
+			ForceReply: true,
+		},
 	})
 	if err != nil {
 		return err
@@ -57,7 +59,7 @@ func handleTransactionCategoryCallback(ctx telebot.Context, callbackOptions Call
 	case StepSubcategoryID:
 		return sendTransactionCategoryInformation(ctx, callbackOptions.Category)
 	default:
-		return ctx.Send("Invalid Step")
+		return ctx.Send("⚠️ Invalid step.")
 	}
 }
 
@@ -104,26 +106,21 @@ func sendTransactionCategoryInformation(ctx telebot.Context, cop TxnCategoryCall
 		return ctx.Send(models.ErrCommonResponse(err))
 	}
 
-	return ctx.Send(fmt.Sprintf(`Transaction Category Information:
-
-Category: %v (%v)
-Subcategory: %v (%v)
-`, cat, cop.CategoryID, subcat, cop.SubcategoryID))
+	msg := fmt.Sprintf("🏷 *Category Info*\n%s\n📂 *Category:* %s (`%s`)\n📁 *Subcategory:* %s (`%s`)",
+		models.Separator, cat, cop.CategoryID, subcat, cop.SubcategoryID)
+	return ctx.Send(msg, telebot.ModeMarkdown)
 }
 
 func ListTransactionSubcategories(ctx telebot.Context) error {
 	cat := pkg.SplitString(ctx.Text(), ' ')
 	if len(cat) != 2 {
-		return ctx.Send("Syntax error")
+		return ctx.Send("⚠️ Usage: /subcategories <category-id>")
 	}
 
 	subcats, err := all.GetServices().Txn.ListTxnSubcategories(cat[1])
 	if err != nil {
-		log.Println(err)
-		return ctx.Send("Can't list the transaction categories. Please contact the administrator")
+		return ctx.Send(models.ErrCommonResponse(err))
 	}
-
-	fmt.Println("Subcategory length for", cat[1], ":", len(subcats))
 
 	return ctx.Send("Choose one: ", &telebot.SendOptions{
 		ReplyTo: ctx.Message(),

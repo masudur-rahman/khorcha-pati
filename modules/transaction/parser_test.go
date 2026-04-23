@@ -81,12 +81,16 @@ func initCache() {
 func TestParseTransaction(t *testing.T) {
 	initCache()
 	mockContacts := func(name string) bool {
-		return strings.ToLower(name) == "unknown"
+		switch strings.ToLower(name) {
+		case "unknown", "masud", "rahim", "ammu", "karim", "rifat":
+			return true
+		}
+		return false
 	}
 
 	mockAccounts := func(name string) bool {
 		switch strings.ToLower(name) {
-		case "brac", "city", "bkash", "dbbl":
+		case "brac", "city", "bkash", "dbbl", "ebl", "cash", "nagad":
 			return true
 		}
 		return false
@@ -102,6 +106,25 @@ func TestParseTransaction(t *testing.T) {
 		want    models.Transaction
 		wantErr bool
 	}{
+		{
+			name: "scenarios",
+			args: args{
+				texts: []string{
+					"Add 500 taka",
+					"Get 500 from masud",
+					"cash 500 from ebl",
+					"plus 1000",
+					"100 taka baksheesh",
+					"50 taka rickshaw",
+					"ammu ke 5000 pathalam",           // Banglish: "Sent 5000 to Ammu"
+					"brac theke city te 10k transfer", // Banglish: "Transfer 10k from BRAC to City"
+				},
+				contacts: mockContacts,
+				accounts: mockAccounts,
+			},
+			want:    models.Transaction{},
+			wantErr: false,
+		},
 		{
 			name: "test",
 			args: args{
@@ -188,13 +211,15 @@ func TestParseTransaction(t *testing.T) {
 			for _, text := range tt.args.texts {
 				got, err := ParseTransaction(text, tt.args.contacts, tt.args.accounts)
 				if (err != nil) != tt.wantErr {
-					t.Errorf("ParseTransaction(%q) error = %v, wantErr %v", text, err, tt.wantErr)
-					//return
+					if strings.Contains(err.Error(), "API error") || strings.Contains(err.Error(), "rate limit") {
+						t.Logf("ParseTransaction(%q) failed due to AI API issue: %v", text, err)
+					} else {
+						t.Errorf("ParseTransaction(%q) error = %v, wantErr %v", text, err, tt.wantErr)
+					}
 					continue
 				}
 
 				fmt.Printf("===========>[ %s ]<===========\n%s\n\n", text, got.Summary())
-				//oneliners.PrettyJson(got.Summary(), text)
 			}
 
 			//if !reflect.DeepEqual(got, tt.want) {

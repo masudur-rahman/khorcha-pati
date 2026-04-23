@@ -11,16 +11,19 @@ import (
 )
 
 // ConvertHTMLToPDF converts HTML content to PDF using the specified generator.
-func ConvertHTMLToPDF(generator string, outputFile string, data, header, footer []byte) error {
+func ConvertHTMLToPDF(generator string, outputFile string, data, header, footer []byte, title string) error {
+	if title == "" {
+		title = "Financial Transaction Statement"
+	}
 	switch generator {
 	case "chromedp":
 		return convertViaChromeDP(outputFile, data, header, footer)
 	default:
-		return convertViaWkhtmlToPDF(outputFile, data, header, footer)
+		return convertViaWkhtmlToPDF(outputFile, data, header, footer, title)
 	}
 }
 
-func convertViaWkhtmlToPDF(outputFile string, data, header, footer []byte) error {
+func convertViaWkhtmlToPDF(outputFile string, data, header, footer []byte, title string) error {
 	inputFile, cleanInput, err := writeTempFile("wk-body-*.html", data)
 	if err != nil {
 		return err
@@ -42,7 +45,7 @@ func convertViaWkhtmlToPDF(outputFile string, data, header, footer []byte) error
 	return exec.Command("wkhtmltopdf",
 		"--enable-local-file-access",
 		"--encoding", "UTF-8",
-		"--title", "Transaction Report",
+		"--title", title,
 		"--header-html", headerFile,
 		"--footer-html", footerFile,
 		"--margin-top", "30mm",

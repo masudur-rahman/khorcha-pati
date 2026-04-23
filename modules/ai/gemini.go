@@ -35,6 +35,11 @@ Constraints:
 2. The selected SubcategoryID must exist under the selected CategoryID in the Taxonomy.
 3. Match against Hint keywords first, then Name, then general reasoning.
 4. Use ONLY the exact subcategory IDs from the Taxonomy. Never invent new IDs.
+5. Identify the "intent" of the transaction using these rules:
+   - "transfer": money moving between YOUR OWN accounts/wallets — ATM withdrawal (bank→cash), bank deposit (cash→bank), mobile banking transfer (bkash/nagad/rocket), send money between own accounts, cash out, cash in.
+   - "income": money entering your possession — salary, bonus, interest received, money received from others, loan received.
+   - "expense": money leaving for goods/services/bills — food, transport, shopping, utilities, rent, loan repayment, fees.
+   When in doubt: if the user is moving money between their own accounts, it is "transfer".
 
 Taxonomy:
 %s
@@ -47,11 +52,12 @@ User Input: "%s"
 		ResponseSchema: &genai.Schema{
 			Type: genai.TypeObject,
 			Properties: map[string]*genai.Schema{
+				"intent":         {Type: genai.TypeString, Enum: []string{"income", "expense", "transfer"}},
 				"category_id":    {Type: genai.TypeString},
 				"subcategory_id": {Type: genai.TypeString},
 				"confidence":     {Type: genai.TypeNumber},
 			},
-			Required: []string{"category_id", "subcategory_id", "confidence"},
+			Required: []string{"intent", "category_id", "subcategory_id", "confidence"},
 		},
 	})
 	if err != nil {

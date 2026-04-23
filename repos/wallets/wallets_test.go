@@ -28,8 +28,8 @@ func setupWalletRepo(t *testing.T) testEnv {
 	require.NoError(t, err)
 	t.Cleanup(func() { _ = conn.Close() })
 
-	db := sqlite.NewSQLite(context.Background(), conn)
-	require.NoError(t, db.Sync(models.Wallet{}))
+	db := sqlite.NewSQLite(conn)
+	require.NoError(t, db.Sync(context.Background(), models.Wallet{}))
 
 	logger := zap.NewNop().Sugar()
 	return testEnv{
@@ -46,7 +46,7 @@ func seedWallet(t *testing.T, env testEnv) {
 		Name:      "Cash Wallet",
 		Type:      models.CashAccount,
 		Balance:   1000,
-		Version:   1, // Must be non-zero: styx skips zero-value fields on insert, leaving NULL
+		Version:   1, // Start at version 1 to verify optimistic-lock increments correctly
 	}
 	require.NoError(t, env.repo.AddNewWallet(w))
 }
@@ -194,8 +194,11 @@ func TestUpdateWalletBalance_optimisticLockMechanism(t *testing.T) {
 	w, err := env.repo.GetWalletByShortName(testUserID, "cash")
 	require.NoError(t, err)
 
+	ctx := context.Background()
+
 	// Stale version should affect 0 rows
 	result, err := env.db.Exec(
+		ctx,
 		`UPDATE "wallet" SET balance = ?, version = ? WHERE id = ? AND version = ?`,
 		500.0, 99, w.ID, 999, // version 999 doesn't exist
 	)
@@ -205,6 +208,7 @@ func TestUpdateWalletBalance_optimisticLockMechanism(t *testing.T) {
 
 	// Correct version succeeds
 	result, err = env.db.Exec(
+		ctx,
 		`UPDATE "wallet" SET balance = ?, version = ? WHERE id = ? AND version = ?`,
 		500.0, 2, w.ID, 1, // version 1 matches
 	)

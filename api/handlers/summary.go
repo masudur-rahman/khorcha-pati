@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"bytes"
 	"fmt"
 	"strings"
 	"time"
@@ -26,13 +25,15 @@ const (
 	GroupByTxnType        SummaryGroupBy = "Transaction Type"
 	GroupByTxnCategory    SummaryGroupBy = "Category"
 	GroupByTxnSubCategory SummaryGroupBy = "Subcategory"
+)
 
-	DurationOneWeek   SummaryDuration = "1 Week"
-	DurationThisMonth SummaryDuration = "This Month"
-	DurationOneMonth  SummaryDuration = "One Month"
-	DurationHalfYear  SummaryDuration = "Last 6 Months"
-	DurationThisYear  SummaryDuration = "This Year"
-	DurationOneYear   SummaryDuration = "One Year"
+const (
+	DurationOneWeek   SummaryDuration = "one_week"
+	DurationThisMonth SummaryDuration = "this_month"
+	DurationOneMonth  SummaryDuration = "one_month"
+	DurationHalfYear  SummaryDuration = "half_year"
+	DurationThisYear  SummaryDuration = "this_year"
+	DurationOneYear   SummaryDuration = "one_year"
 )
 
 type SummaryCallbackOptions struct {
@@ -53,20 +54,13 @@ func TransactionSummary(ctx telebot.Context) error {
 	}
 
 	summary := generateSummary(txns)
-	for _, chunk := range pkgtg.SplitMessage(summary.String()) {
-		if err := ctx.Send(chunk, &telebot.SendOptions{ParseMode: telebot.ModeHTML}); err != nil {
+	formatted := pkgtg.FormatSummary(summary, "Transaction Summary (This Month)")
+	for _, chunk := range pkgtg.SplitMessage(formatted) {
+		if err := ctx.Send(chunk, telebot.ModeMarkdown); err != nil {
 			return err
 		}
 	}
 	return nil
-
-	//pngBytes, err := summary.PNG()
-	//if err != nil {
-	//	return err
-	//}
-	//
-	//photo := &telebot.Photo{File: telebot.FromReader(bytes.NewReader(pngBytes)), Caption: "Here is your transaction summary."}
-	//return ctx.Send(photo)
 }
 
 func generateSummary(txns []models.Transaction) gqtypes.SummaryGroups {
@@ -95,15 +89,13 @@ func TransactionSummaryCallback(ctx telebot.Context) error {
 	inlineButtons := make([]telebot.InlineButton, 0, 3)
 	for _, groupBy := range groupBies {
 		callbackOpts.Summary.GroupBy = groupBy
-		btn := generateInlineButton(callbackOpts, groupBy)
+		btn := generateInlineButton(callbackOpts, string(groupBy))
 		inlineButtons = append(inlineButtons, btn)
 	}
 
 	return ctx.Send("Select Summarization Group", &telebot.SendOptions{
-		ReplyTo: ctx.Message(),
 		ReplyMarkup: &telebot.ReplyMarkup{
 			InlineKeyboard: generateInlineKeyboard(inlineButtons),
-			ForceReply:     true,
 		},
 	})
 }
@@ -119,24 +111,17 @@ func handleSummaryCallback(ctx telebot.Context, callbackOpts CallbackOptions) er
 			return ctx.Send(models.ErrCommonResponse(err))
 		}
 
-		//return ctx.Send(sg.String(), &telebot.SendOptions{ParseMode: telebot.ModeHTML})
+		title := fmt.Sprintf("Summary: %s (by %s)", summary.Duration, summary.GroupBy)
+		formatted := pkgtg.FormatSummary(sg, title)
 
-		pngBytes, err := sg.PNG()
-		if err != nil {
-			return err
-		}
-		photo := &telebot.Photo{
-			File:    telebot.FromReader(bytes.NewReader(pngBytes)),
-			Caption: fmt.Sprintf("Transaction summary of \"%s\".", summary.Duration),
-		}
-		return ctx.Send(photo)
+		return ctx.Send(formatted, telebot.ModeMarkdown)
 	default:
-		return ctx.Send("Invalid Step")
+		return ctx.Send("⚠️ Invalid step.")
 	}
 }
 
 func processSummary(ctx telebot.Context, smop SummaryCallbackOptions) (gqtypes.SummaryGroups, error) {
-	now, startTime := time.Now(), calculateStartTime(smop.Duration)
+	now, startTime := time.Now(), CalculateStartTime(smop.Duration)
 
 	svc := all.GetServices()
 	user, err := svc.User.GetUserByTelegramID(ctx.Sender().ID)
@@ -206,11 +191,21 @@ func sendSummaryDurationQuery(ctx telebot.Context, callbackOpts CallbackOptions)
 }
 
 func generateSummaryDurationInlineButton(callbackOpts CallbackOptions) []telebot.InlineButton {
-	durations := []SummaryDuration{DurationOneWeek, DurationThisMonth, DurationOneMonth, DurationHalfYear, DurationThisYear, DurationOneYear}
-	inlineButtons := make([]telebot.InlineButton, 0, 3)
-	for _, duration := range durations {
-		callbackOpts.Summary.Duration = duration
-		btn := generateInlineButton(callbackOpts, duration)
+	durations := []struct {
+		val   SummaryDuration
+		label string
+	}{
+		{DurationOneWeek, "1 Week"},
+		{DurationThisMonth, "This Month"},
+		{DurationOneMonth, "One Month"},
+		{DurationHalfYear, "6 Months"},
+		{DurationThisYear, "This Year"},
+		{DurationOneYear, "1 Year"},
+	}
+	inlineButtons := make([]telebot.InlineButton, 0, len(durations))
+	for _, d := range durations {
+		callbackOpts.Summary.Duration = d.val
+		btn := generateInlineButton(callbackOpts, d.label)
 		inlineButtons = append(inlineButtons, btn)
 	}
 
