@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { getProfile, updateProfile } from '../api/endpoints'
 import { useSearch } from '../context/SearchContext'
@@ -32,22 +32,6 @@ export default function Settings() {
       setTimezone(profile.timezone || 'UTC')
     }
   }, [profile])
-
-  const filteredItems = useMemo(() => {
-    if (!profile) return []
-    const items = [
-        { label: 'Telegram User', value: `@${profile.username}` },
-        { label: 'Full Name', value: `${profile.firstName} ${profile.lastName || ''}` },
-        { label: 'Telegram ID', value: profile.telegramId.toString() },
-        { label: 'Mobile Number', value: profile.mobileNumber || 'Not provided' },
-        { label: 'Timezone', value: timezone || 'UTC' },
-    ]
-    return items.filter(i => 
-        !searchTerm || 
-        i.label.toLowerCase().includes(searchTerm.toLowerCase()) || 
-        i.value.toLowerCase().includes(searchTerm.toLowerCase())
-    )
-  }, [profile, searchTerm, timezone])
 
   if (isLoading) return <p className="text-gray-500">Loading...</p>
   if (!profile) return <p className="text-gray-400">Could not load profile</p>

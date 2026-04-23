@@ -1,4 +1,4 @@
-const API_BASE = import.meta.env.VITE_API_BASE || ''
+const API_BASE = (window as any).__CONFIG__?.API_BASE || import.meta.env.VITE_API_BASE || ''
 
 const RT_KEY = 'expense_rt'
 

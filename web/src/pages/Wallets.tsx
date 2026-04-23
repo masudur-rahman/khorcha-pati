@@ -70,12 +70,12 @@ export default function Wallets() {
                 display: 'flex',
                 flexDirection: 'column',
               }}
-              onMouseEnter={e => {
+              onMouseEnter={(e: React.MouseEvent<HTMLDivElement>) => {
                 e.currentTarget.style.transform = 'translateY(-4px)'
                 e.currentTarget.style.boxShadow = '0 12px 24px rgba(0,0,0,0.04)'
                 e.currentTarget.style.borderColor = (w.type === 'Bank' ? 'var(--color-primary)' : 'var(--color-success)') + '40'
               }}
-              onMouseLeave={e => {
+              onMouseLeave={(e: React.MouseEvent<HTMLDivElement>) => {
                 e.currentTarget.style.transform = 'translateY(0)'
                 e.currentTarget.style.boxShadow = 'none'
                 e.currentTarget.style.borderColor = 'var(--color-border)'

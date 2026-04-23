@@ -5,12 +5,16 @@ interface CardProps {
   style?: React.CSSProperties
   padding?: number | string
   onClick?: () => void
+  onMouseEnter?: React.MouseEventHandler<HTMLDivElement>
+  onMouseLeave?: React.MouseEventHandler<HTMLDivElement>
 }
 
-export default function Card({ children, style, padding = 24, onClick }: CardProps) {
+export default function Card({ children, style, padding = 24, onClick, onMouseEnter, onMouseLeave }: CardProps) {
   return (
-    <div 
+    <div
       onClick={onClick}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
       style={{
         background: 'var(--color-surface)',
         borderRadius: 16,

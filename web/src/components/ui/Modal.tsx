@@ -1,5 +1,4 @@
 import React, { useEffect } from 'react'
-import { ICONS } from './Icons'
 
 interface ModalProps {
   children: React.ReactNode

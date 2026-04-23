@@ -5,13 +5,13 @@ import tailwindcss from '@tailwindcss/vite'
 export default defineConfig({
     plugins: [react(), tailwindcss()],
     server: {
-        host: '0.0.0.0',
-        port: 5173,
+        host: process.env.VITE_HOST || '0.0.0.0',
+        port: Number(process.env.VITE_PORT) || 5173,
         strictPort: true,
-        allowedHosts: ["xpense.mrahman.xyz"],
+        allowedHosts: (process.env.VITE_ALLOWED_HOSTS || 'xpense.mrahman.xyz').split(','),
         proxy: {
             '/api': {
-                target: 'https://xpense-api.mrahman.xyz',
+                target: process.env.VITE_BACKEND_URL || 'https://xpense-api.mrahman.xyz',
                 changeOrigin: true,
                 secure: false,
             },

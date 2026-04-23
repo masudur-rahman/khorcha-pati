@@ -1,7 +1,6 @@
-import { Outlet, useLocation } from 'react-router-dom'
+import { Outlet } from 'react-router-dom'
 import Sidebar from './Sidebar'
 import MobileNav from './MobileNav'
-import TopBar from './TopBar'
 
 export default function AppLayout() {
   return (
