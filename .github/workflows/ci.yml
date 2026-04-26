@@ -92,7 +92,7 @@ jobs:
           fetch-depth: 0  # needed for git describe
 
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+        uses: docker/setup-qemu-action@v4
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
