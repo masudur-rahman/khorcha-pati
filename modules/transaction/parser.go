@@ -76,7 +76,10 @@ func ParseTransaction(text string, isContact ContactVerifier, isAccount AccountV
 
 	// --- STEP 1: Find Amount ---
 	reAmount := regexp.MustCompile(`(?i)(?:(?:total|tk|taka|amount)\s*)?(\d+(?:\.\d+)?)\s*(k)?(?:\s*(?:tk|taka|bdt))?`)
-	loc := reAmount.FindStringSubmatchIndex(text)
+	reUnit := regexp.MustCompile(`(?i)^(?:kg|km|g|gm|lb|lbs|ml|mg|oz|l|pcs?|pieces?)\b`)
+	matches := reAmount.FindAllStringSubmatchIndex(text, -1)
+
+	loc := findMonetaryAmount(text, matches, reUnit)
 	if loc == nil {
 		return models.Transaction{}, fmt.Errorf("no valid amount found in text")
 	}
@@ -149,6 +152,27 @@ func ParseTransaction(text string, isContact ContactVerifier, isAccount AccountV
 	// --- STEP 6: Finalize Struct ---
 	err := p.parseTransaction()
 	return p.txn, err
+}
+
+// findMonetaryAmount picks the best monetary amount from regex matches,
+// skipping numbers followed by measurement units (kg, g, ml, etc.).
+func findMonetaryAmount(text string, matches [][]int, reUnit *regexp.Regexp) []int {
+	// Prefer matches with currency suffix (tk/taka/bdt) or k multiplier
+	var fallback []int
+	for _, loc := range matches {
+		after := text[loc[1]:]
+		if reUnit.MatchString(after) {
+			continue
+		}
+		hasCurrency := loc[1] > loc[3] || (loc[4] != -1)
+		if hasCurrency {
+			return loc
+		}
+		if fallback == nil {
+			fallback = loc
+		}
+	}
+	return fallback
 }
 
 func (p *transactionParser) enrichContext(isAccount AccountVerifier) {
