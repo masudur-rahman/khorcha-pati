@@ -5,26 +5,72 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
-## [Unreleased] — natural branch
+## [v1.4.0] — 2026-05-02
 
-### Added
-- **Unit of Work (UoW) Fix**: Refactored service layer to use named return variables, ensuring robust error capturing and transactional integrity for all balance-modifying operations.
-- **Bot UX Overhaul**: Replaced boxed tables and images with premium hierarchical MarkdownV2 summaries using tree connectors (├, └).
-- **Stateful Pagination**: Implemented `⬅️ Previous` and `Next ➡️` navigation for `/list` and `/expense` commands.
-- **AutoKeyboardReset Middleware**: Automatically removes sticky `ForceReply` or `ReplyKeyboardMarkup` when switching between commands.
-- **Natural Language Refinement**: Added `add` and `plus` keywords to quickly initialize or adjust balances; improved entity disambiguation hierarchy (Contact > Wallet > Remark).
-- **Architecture**: Centralized AI provider selection (Gemini/OpenRouter) and keys into a configuration-driven model with secure environment overrides.
-- **Scenario Testing**: Added end-to-end "User Journey" tests simulating full cycles of income, expenses, and lending.
-- **Docker Optimization**: 
-    - Optimized build context via strict `.dockerignore` (246MB -> <1MB).
-    - Implemented a "Base Layer" pattern for Chromium dependencies to speed up builds.
-    - Fixed architecture-aware `wkhtmltopdf` downloads for ARM64/AMD64 compatibility.
-- **Security**: Integrated `govulncheck` into the CI/CD pipeline.
+### Web Dashboard (new)
+- Full React SPA with dashboard, transactions, wallets, budgets, and settings pages
+- JWT authentication with OTP, QR login (Telegram deep link), and refresh token rotation
+- Chi router with REST API handlers for transactions, wallets, contacts, budgets, and summary
+- Summary service for dashboard charts and overview
+- Transaction CRUD (GetByID, Update, Delete) in repo and service layers
+- Report-data API and Statement page for browser-based PDF generation
+- Statement PDF print layout with repeating header, page numbers, and auto-named file
+- Runtime-configurable Docker setup with web frontend CI release
+- Dashboard and landing page UI redesign with mobile improvements
+- Currency symbols, layout fixes, favicon, mobile logout, PDF download
 
-### Changed
-- /list command now limits output to the **last 30 days** for improved performance and scalability.
-- Default AI selection now prefers **Gemini** if the API key is provided in the environment.
-- Deprecated `pkg/printer.go` and `pkg/formatter.go` for Telegram-based responses.
+### Authentication
+- Auth service with OTP, QR login, and refresh token rotation
+- Auth repository with tests and mocks
+- JWT token generation/parsing and OTP modules
+- QR login deep link, contact share handler, and `/start login_` prefix
+- Auto-confirm QR login with magic link fallback on expiry
+- RefreshToken model, Profile.MobileNumber, and identifier-based user lookup
+
+### Budgeting
+- Budget model, repository, and service layer
+- `/budget` command with set, delete, and status display
+- Budget alerts appended to transaction confirmations
+- Budget alert and overall spending tracking fixes
+
+### Bot UX
+- Overhaul bot UX with hierarchical Markdown, paginated sorted lists, and configuration-driven AI
+- Standardize Telegram response formatting across all handlers
+- ForceReply and placeholder for wallet and contact prompts
+- AutoKeyboardReset middleware
+
+### AI / NLP
+- Overhaul NLP and AI intent engine with structured outputs and entity disambiguation
+- Improve AI intent classification and cache accuracy
+- Validate AI subcategory IDs and strengthen classification prompts
+- Skip measurement units (kg, g, ml, km, pcs) when parsing transaction amounts
+
+### PDF Reports
+- Redesign transaction report templates and fix chromedp converter parity
+- Split Dockerfile for wkhtmltopdf/chromedp targets
+- Unify header layout across PDF converters
+
+### Infrastructure
+- Migrate to styx v1.4.0 (context API, MustFilterCols, req tags)
+- Environment variable overrides for config with logger upgrade
+- Docker/CI multi-stage caching and multi-arch build fixes
+- OCI source labels on all Dockerfiles
+- Rename WebDashboard config to Server, port changed to int
+- Web dashboard HTTP server gated on `WEB_ENABLED=true`
+
+### Bug Fixes
+- Fix Unit of Work error handling and zero-value protection in repositories
+- Fix styx zero-value filter bug
+- Guard against empty contact name in balance update and lookup
+
+### Dependencies (CI)
+- Bump actions/checkout 4 → 6
+- Bump actions/setup-go 5 → 6
+- Bump actions/cache 4 → 5
+- Bump codecov/codecov-action 4 → 6
+- Bump golangci/golangci-lint-action 7 → 9
+- Bump docker/setup-buildx-action 3 → 4
+- Bump docker/setup-qemu-action 3 → 4
 
 ---
 
