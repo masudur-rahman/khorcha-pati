@@ -56,6 +56,14 @@ func NewRouter(jwtSecret, corsOrigin string) chi.Router {
 			r.Get("/subcategories", HandleListSubcategories)
 			r.Get("/profile", HandleGetProfile)
 			r.Put("/profile", HandleUpdateProfile)
+
+			// Admin routes
+			r.Group(func(r chi.Router) {
+				r.Use(AdminAuth)
+				r.Get("/admin/stats", HandleAdminStats)
+				r.Get("/admin/users", HandleAdminUsers)
+				r.Get("/admin/users/{id}", HandleAdminUserDetail)
+			})
 		})
 	})
 

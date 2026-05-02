@@ -43,6 +43,18 @@ func UserFromContext(ctx context.Context) (*authmod.AccessClaims, bool) {
 	return claims, ok
 }
 
+// AdminAuth returns middleware that restricts access to admin users.
+func AdminAuth(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		claims, ok := UserFromContext(r.Context())
+		if !ok || !claims.IsAdmin {
+			WriteError(w, http.StatusForbidden, "forbidden", "admin access required")
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
+}
+
 func extractBearerToken(r *http.Request) string {
 	h := r.Header.Get("Authorization")
 	if !strings.HasPrefix(h, "Bearer ") {
