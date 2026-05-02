@@ -24,7 +24,7 @@ func FormatDocuments(docs any, cols ...string) string {
 		var vals []string
 		for _, col := range cols {
 			elem := reflect.ValueOf(doc)
-			if elem.Kind() == reflect.Ptr {
+			if elem.Kind() == reflect.Pointer {
 				elem = elem.Elem()
 			}
 

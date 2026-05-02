@@ -160,7 +160,7 @@ func (p *printer) retrieveAllColumns(val reflect.Value) []string {
 func (p *printer) generateHeaderRow(doc interface{}) table.Row {
 	hr := table.Row{}
 	val := reflect.ValueOf(doc)
-	if val.Kind() == reflect.Ptr {
+	if val.Kind() == reflect.Pointer {
 		val = val.Elem()
 	}
 
@@ -193,7 +193,7 @@ func (p *printer) generateDataRows(docs interface{}) []table.Row {
 
 func (p *printer) generateDataRow(doc interface{}) table.Row {
 	val := reflect.ValueOf(doc)
-	if val.Kind() == reflect.Ptr {
+	if val.Kind() == reflect.Pointer {
 		val = val.Elem()
 	}
 

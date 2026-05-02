@@ -44,7 +44,7 @@ func SetRefreshCookie(w http.ResponseWriter, token string, maxAge int) {
 		Path:     "/",
 		MaxAge:   maxAge,
 		HttpOnly: true,
-		Secure:   false,
+		Secure:   true,
 		SameSite: http.SameSiteLaxMode,
 	})
 }
