@@ -94,12 +94,12 @@ func buildDashboardURL(ctx telebot.Context) (string, error) {
 
 	user, err := svc.User.GetUserByTelegramID(ctx.Sender().ID)
 	if err != nil {
-		return "", fmt.Errorf("❌ Profile not found. Please /start the bot first.")
+		return "", fmt.Errorf("❌ profile not found, please /start the bot first")
 	}
 
 	token, err := svc.Auth.CreateMagicLink(user.ID)
 	if err != nil {
-		return "", fmt.Errorf("❌ Failed to generate login link. Please try again.")
+		return "", fmt.Errorf("❌ failed to generate login link, please try again")
 	}
 
 	cfg := configs.TrackerConfig.Server
