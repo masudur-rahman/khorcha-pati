@@ -46,6 +46,9 @@ func StartTrackingExpenses(ctx telebot.Context) error {
 
 	if strings.HasPrefix(payload, "login_") {
 		sessionID := strings.TrimPrefix(payload, "login_")
+		if ctx.Get("new-user") != nil {
+			_ = sendStartText(ctx)
+		}
 		return HandleQRLogin(sessionID, ctx)
 	}
 

@@ -124,10 +124,14 @@ const qrRedirectPage = `<!DOCTYPE html>
 <html><head><meta charset="utf-8"><title>Opening Telegram...</title>
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <script>
-// Try tg:// protocol first (direct app handoff with payload).
-// Fallback to https://t.me/ after 2s if app didn't open.
+// Try tg:// first. If app doesn't open within 1.5s, redirect to https://t.me/.
+// Use a flag to prevent both from firing.
+var opened = false;
 window.location.href = %q;
-setTimeout(function(){ window.location.href = %q; }, 2000);
+document.addEventListener("visibilitychange", function() {
+  if (document.hidden) opened = true;
+});
+setTimeout(function(){ if (!opened) window.location.href = %q; }, 1500);
 </script>
 </head><body style="font-family:sans-serif;text-align:center;padding:40px">
 <p>Opening Telegram...</p>
