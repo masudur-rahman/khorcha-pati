@@ -5,6 +5,8 @@ import (
 	"time"
 
 	"github.com/masudur-rahman/expense-tracker-bot/api/handlers"
+	"github.com/masudur-rahman/expense-tracker-bot/models"
+	"github.com/masudur-rahman/expense-tracker-bot/services/all"
 
 	"gopkg.in/telebot.v3"
 )
@@ -53,7 +55,24 @@ func TeleBotRoutes() (*telebot.Bot, error) {
 
 	bot.Handle(telebot.OnContact, handlers.HandleContactShare)
 
+	bot.Handle("/admin", handlers.Admin, adminOnly())
+
 	return bot, nil
+}
+
+func adminOnly() telebot.MiddlewareFunc {
+	return func(next telebot.HandlerFunc) telebot.HandlerFunc {
+		return func(ctx telebot.Context) error {
+			user, err := all.GetServices().User.GetUserByTelegramID(ctx.Sender().ID)
+			if err != nil || !user.IsAdmin {
+				if models.IsErrNotFound(err) {
+					return ctx.Send("You are not registered.")
+				}
+				return ctx.Send("This command is restricted to admins.")
+			}
+			return next(ctx)
+		}
+	}
 }
 
 func rejectBots() telebot.MiddlewareFunc {
