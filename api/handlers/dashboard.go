@@ -42,5 +42,5 @@ func Dashboard(ctx telebot.Context) error {
 	webBtn := btn.URL("Open Dashboard", dashboardURL)
 	btn.Inline(btn.Row(webBtn))
 
-	return ctx.Send("Open your expense dashboard:", btn)
+	return ctx.Send("Click to Open Dashboard", btn)
 }

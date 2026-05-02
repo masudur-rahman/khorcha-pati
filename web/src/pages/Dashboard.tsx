@@ -106,13 +106,13 @@ export default function Dashboard() {
           <h2 style={{ fontSize: 28, fontWeight: 700, margin: '6px 0 24px', letterSpacing: '-0.02em', fontFamily: "'Space Grotesk', sans-serif" }}>
             Current Balance is {fmt(overview.totalBalance)}
           </h2>
-          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+          <div className="balance-actions">
             {quickActions.map(a => (
               <button
                 key={a.label}
                 onClick={a.onClick}
                 style={{
-                  display: 'flex', alignItems: 'center', gap: 8, padding: '10px 18px',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '10px 18px',
                   borderRadius: 'var(--radius-md)',
                   background: 'rgba(255,255,255,0.15)',
                   backdropFilter: 'blur(12px)',
@@ -210,7 +210,7 @@ export default function Dashboard() {
             <thead>
               <tr style={{ borderBottom: '1px solid var(--color-border)' }}>
                 {['Date', 'Type', 'Category', 'Amount', 'Wallet'].map(h => (
-                  <th key={h} style={{ padding: '12px 24px', textAlign: h === 'Amount' ? 'right' : 'left', fontSize: 10, fontWeight: 700, color: 'var(--color-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{h}</th>
+                  <th key={h} style={{ padding: '12px 24px', textAlign: h === 'Amount' ? 'right' : h === 'Wallet' ? 'center' : 'left', fontSize: 10, fontWeight: 700, color: 'var(--color-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{h}</th>
                 ))}
               </tr>
             </thead>

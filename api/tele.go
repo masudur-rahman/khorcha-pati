@@ -1,6 +1,7 @@
 package api
 
 import (
+	"log"
 	"os"
 	"time"
 
@@ -57,7 +58,31 @@ func TeleBotRoutes() (*telebot.Bot, error) {
 
 	bot.Handle("/admin", handlers.Admin, adminOnly())
 
+	if err = setBotCommands(bot); err != nil {
+		log.Printf("Failed to set bot commands: %v", err)
+	}
+
 	return bot, nil
+}
+
+// setBotCommands registers user-visible commands in the Telegram command menu.
+func setBotCommands(bot *telebot.Bot) error {
+	return bot.SetCommands([]telebot.Command{
+		{Text: "new", Description: "Add new wallet or contact"},
+		{Text: "newtxn", Description: "Add new transaction (interactive)"},
+		{Text: "balance", Description: "Show wallet balances"},
+		{Text: "contacts", Description: "List contacts and balances"},
+		{Text: "list", Description: "List recent transactions"},
+		{Text: "expense", Description: "List expenses"},
+		{Text: "summary", Description: "Monthly transaction summary"},
+		{Text: "allsummary", Description: "Detailed summary by type/category"},
+		{Text: "report", Description: "Generate PDF transaction report"},
+		{Text: "budget", Description: "View and manage budgets"},
+		{Text: "cat", Description: "Browse transaction categories"},
+		{Text: "undo", Description: "Undo last transaction"},
+		{Text: "dashboard", Description: "Open web dashboard"},
+		{Text: "help", Description: "Show usage help"},
+	})
 }
 
 func adminOnly() telebot.MiddlewareFunc {
@@ -68,7 +93,7 @@ func adminOnly() telebot.MiddlewareFunc {
 				if models.IsErrNotFound(err) {
 					return ctx.Send("You are not registered.")
 				}
-				return ctx.Send("This command is restricted to admins.")
+				return ctx.Send("Invalid command.")
 			}
 			return next(ctx)
 		}

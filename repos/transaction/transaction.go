@@ -171,41 +171,56 @@ func (t *SQLTransactionRepository) ListTxnSubcategories(catID string) ([]models.
 
 func (t *SQLTransactionRepository) UpdateTxnCategories() error {
 	ctx := context.Background()
-	db := t.db.Table(models.TxnCategory{}.TableName())
+	quiet := t.db.ShowSQL(false)
+
+	catDB := quiet.Table(models.TxnCategory{}.TableName())
 	catt := models.TxnCategory{}
+	var catUpdated, catInserted int
 	for _, cat := range models.TxnCategories {
-		if has, err := db.ID(cat.ID).FindOne(ctx, &catt); err != nil {
+		if has, err := catDB.ID(cat.ID).FindOne(ctx, &catt); err != nil {
 			return err
 		} else if has {
 			if catt.Name != cat.Name {
-				if err = db.ID(catt.ID).UpdateOne(ctx, cat); err != nil {
+				if err = catDB.ID(catt.ID).UpdateOne(ctx, cat); err != nil {
 					return err
 				}
+				catUpdated++
 			}
 			continue
 		}
 
-		if _, err := db.InsertOne(ctx, cat); err != nil {
+		if _, err := catDB.InsertOne(ctx, cat); err != nil {
 			return err
 		}
+		catInserted++
 	}
 
-	db = t.db.Table(models.TxnSubcategory{}.TableName())
+	subcatDB := quiet.Table(models.TxnSubcategory{}.TableName())
 	subcatt := models.TxnSubcategory{}
+	var subcatUpdated, subcatInserted int
 	for _, subcat := range models.TxnSubcategories {
-		if has, err := db.ID(subcat.ID).FindOne(ctx, &subcatt); err != nil {
+		if has, err := subcatDB.ID(subcat.ID).FindOne(ctx, &subcatt); err != nil {
 			return err
 		} else if has {
 			if subcatt.Name != subcat.Name || subcatt.CatID != subcat.CatID {
-				if err = db.ID(subcatt.ID).UpdateOne(ctx, subcat); err != nil {
+				if err = subcatDB.ID(subcatt.ID).UpdateOne(ctx, subcat); err != nil {
 					return err
 				}
+				subcatUpdated++
 			}
 			continue
 		}
-		if _, err := db.InsertOne(ctx, subcat); err != nil {
+		if _, err := subcatDB.InsertOne(ctx, subcat); err != nil {
 			return err
 		}
+		subcatInserted++
 	}
+
+	t.logger.Infow("synced transaction categories",
+		"categories", len(models.TxnCategories),
+		"catInserted", catInserted, "catUpdated", catUpdated,
+		"subcategories", len(models.TxnSubcategories),
+		"subcatInserted", subcatInserted, "subcatUpdated", subcatUpdated,
+	)
 	return nil
 }

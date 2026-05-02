@@ -134,7 +134,7 @@ export default function Transactions() {
             <thead>
               <tr style={{ borderBottom: '1px solid var(--color-border)' }}>
                 {['Date', 'Type', 'Category', 'Amount', 'Wallets', 'Remarks', ''].map(h => (
-                  <th key={h || 'actions'} style={{ padding: '14px 24px', textAlign: h === 'Amount' ? 'right' : 'left', fontSize: 10, fontWeight: 700, color: 'var(--color-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{h}</th>
+                  <th key={h || 'actions'} style={{ padding: '14px 24px', textAlign: h === 'Amount' ? 'right' : h === 'Wallets' ? 'center' : 'left', fontSize: 10, fontWeight: 700, color: 'var(--color-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{h}</th>
                 ))}
               </tr>
             </thead>

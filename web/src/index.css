@@ -1,5 +1,18 @@
 @import "tailwindcss";
 
+.balance-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 768px) {
+  .balance-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
 :root {
   /* Primary Blue */
   --color-primary: #0052CC;

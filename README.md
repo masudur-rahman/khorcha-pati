@@ -203,19 +203,21 @@ Miscellaneous (misc):
 You always can send `/cat` command to list the subcategory
 
 ### Available commands:
-- `/new` - Add new Wallet or Contact
-- `/newtxn` - Add new transaction (Interactive)
-- `/undo` - Undo last transaction (soft-delete + revert balances)
-- `/contacts` - List contacts involved in lending/borrowing
-- `/balance` - List current wallet balances
-- `/list` - List transactions from the last 30 days (Paginated)
-- `/expense` - List expenses of the current month (Paginated)
-- `/summary` - Hierarchical summary of the current month
-- `/allsummary` - Detailed summary based on Type, Category, or Subcategory
-- `/report` - Generate a PDF Transaction Report
-- `/cat` - List Transaction categories and subcategories
+- `/new` - Add new wallet or contact
+- `/newtxn` - Add new transaction (interactive)
+- `/balance` - Show wallet balances
+- `/contacts` - List contacts and balances
+- `/list` - List recent transactions (paginated)
+- `/expense` - List expenses (paginated)
+- `/summary` - Monthly transaction summary
+- `/allsummary` - Detailed summary by type, category, or subcategory
+- `/report` - Generate PDF transaction report
+- `/budget` - View and manage spending budgets
+- `/cat` - Browse transaction categories
+- `/undo` - Undo last transaction
+- `/dashboard` - Open web dashboard
 - `/sync` - Sync database to Google Drive (if configured)
-- `/help` - Show Usage page
+- `/help` - Show usage help
 
 
 ## Live Demonstration
