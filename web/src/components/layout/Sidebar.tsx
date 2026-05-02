@@ -1,9 +1,10 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { NavLink } from 'react-router-dom'
+import { useAuth } from '../../hooks/useAuth'
 import { ICONS } from '../ui/Icons'
 import Logo from '../ui/Logo'
 
-const navItems = [
+const baseNavItems = [
   { id: 'dashboard', to: '/', label: 'Dashboard', icon: ICONS.dashboard },
   { id: 'transactions', to: '/transactions', label: 'Transactions', icon: ICONS.transactions },
   { id: 'wallets', to: '/wallets', label: 'Wallets', icon: ICONS.wallet },
@@ -13,6 +14,11 @@ const navItems = [
 
 export default function Sidebar() {
   const [collapsed, setCollapsed] = useState(false)
+  const { isAdmin } = useAuth()
+  const navItems = useMemo(() => {
+    if (!isAdmin) return baseNavItems
+    return [...baseNavItems, { id: 'admin', to: '/admin', label: 'Admin', icon: ICONS.admin }]
+  }, [isAdmin])
 
   return (
     <div

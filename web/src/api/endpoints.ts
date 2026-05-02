@@ -95,6 +95,30 @@ export const listSubcategories = (catId?: string) => {
   return apiFetch<{ id: string; name: string; catId: string }[]>(`${API}/subcategories${qs}`)
 }
 
+// Admin
+export interface AdminStats {
+  userCount: number
+  txnCount: number
+  walletCount: number
+  databaseType: string
+}
+
+export interface AdminUser {
+  id: number
+  telegramId: number
+  username: string
+  firstName: string
+  lastName: string
+  isAdmin: boolean
+  walletCount: number
+  txnCount: number
+  contactCount: number
+}
+
+export const getAdminStats = () => apiFetch<AdminStats>(`${API}/admin/stats`)
+export const getAdminUsers = () => apiFetch<AdminUser[]>(`${API}/admin/users`)
+export const getAdminUserDetail = (id: number) => apiFetch<AdminUser>(`${API}/admin/users/${id}`)
+
 // Profile
 export const getProfile = () => apiFetch<Profile>(`${API}/profile`)
 

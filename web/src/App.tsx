@@ -12,6 +12,7 @@ import Wallets from './pages/Wallets'
 import Budgets from './pages/Budgets'
 import Settings from './pages/Settings'
 import Statement from './pages/Statement'
+import Admin from './pages/Admin'
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, staleTime: 30_000 } },
@@ -32,7 +33,7 @@ export default function App() {
 }
 
 function AppRoutes() {
-  const { isAuthenticated, isLoading } = useAuth()
+  const { isAuthenticated, isLoading, isAdmin } = useAuth()
 
   if (isLoading) {
     return (
@@ -61,6 +62,7 @@ function AppRoutes() {
         <Route path="/wallets" element={<Wallets />} />
         <Route path="/budgets" element={<Budgets />} />
         <Route path="/settings" element={<Settings />} />
+        {isAdmin && <Route path="/admin" element={<Admin />} />}
       </Route>
       <Route path="/login" element={<Navigate to="/" replace />} />
       <Route path="*" element={<Navigate to="/" replace />} />
