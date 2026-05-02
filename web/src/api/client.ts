@@ -1,4 +1,10 @@
-const API_BASE = (window as any).__CONFIG__?.API_BASE || import.meta.env.VITE_API_BASE || ''
+function getApiBaseUrl(): string {
+  return (window as any).__CONFIG__?.API_BASE || import.meta.env.VITE_API_BASE || ''
+}
+
+export function getApiBase(): string {
+  return getApiBaseUrl()
+}
 
 const RT_KEY = 'expense_rt'
 
@@ -32,7 +38,7 @@ async function refreshAccessToken(): Promise<boolean> {
   const refreshToken = getRefreshToken()
   refreshPromise = (async () => {
     try {
-      const res = await fetch(`${API_BASE}/api/v1/auth/refresh`, {
+      const res = await fetch(`${getApiBaseUrl()}/api/v1/auth/refresh`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ refreshToken }),
@@ -63,7 +69,7 @@ export async function apiFetch<T>(path: string, options: RequestInit = {}): Prom
     headers['Authorization'] = `Bearer ${accessToken}`
   }
 
-  const url = path.startsWith('http') ? path : `${API_BASE}${path}`
+  const url = path.startsWith('http') ? path : `${getApiBaseUrl()}${path}`
   let res = await fetch(url, { ...options, headers, credentials: 'include' })
 
   if (res.status === 401 && accessToken) {
