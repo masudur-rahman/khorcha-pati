@@ -1,9 +1,11 @@
 import { useState, useRef, useEffect } from 'react'
 import { Link } from 'react-router-dom'
+import { useQuery } from '@tanstack/react-query'
 import { ICONS } from '../ui/Icons'
 import { useSearch } from '../../context/SearchContext'
 import { useAuth } from '../../hooks/useAuth'
 import { useBudgetAlerts } from '../../hooks/useBudgets'
+import { getProfile } from '../../api/endpoints'
 import { fmt } from '../../lib/formatter'
 import SearchResults from './SearchResults'
 
@@ -14,8 +16,11 @@ interface TopBarProps {
 
 export default function TopBar({ title, subtitle }: TopBarProps) {
   const { searchTerm, setSearchTerm } = useSearch()
-  const { logout } = useAuth()
+  const { logout, isAuthenticated } = useAuth()
   const { data: alerts } = useBudgetAlerts()
+  const { data: profile } = useQuery({ queryKey: ['profile'], queryFn: getProfile, enabled: isAuthenticated })
+  const fullName = profile ? `${profile.firstName} ${profile.lastName}`.trim() : ''
+  const username = profile?.username ? `@${profile.username}` : ''
   const [isSearchExpanded, setIsSearchExpanded] = useState(false)
   const [showProfile, setShowProfile] = useState(false)
   const [showNotifications, setShowNotifications] = useState(false)
@@ -251,8 +256,9 @@ export default function TopBar({ title, subtitle }: TopBarProps) {
               if (profileBtnRef.current) setDropdownTop(profileBtnRef.current.getBoundingClientRect().bottom + 8)
               setShowProfile(!showProfile); setShowNotifications(false)
             }}
+            aria-label="Profile menu"
           >
-            MR
+            <UserAvatarIcon size={22} />
           </button>
           {showProfile && (
             <div style={{
@@ -270,11 +276,16 @@ export default function TopBar({ title, subtitle }: TopBarProps) {
                     width: 40, height: 40, borderRadius: 'var(--radius-md)',
                     background: 'var(--color-primary)', color: 'white',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontWeight: 700, fontSize: 15,
-                  }}>MR</div>
-                  <div>
-                    <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--color-text-primary)', margin: 0 }}>Masudur Rahman</p>
-                    <p style={{ fontSize: 12, color: 'var(--color-text-tertiary)', margin: 0 }}>@masudur_rahman</p>
+                  }}>
+                    <UserAvatarIcon size={22} />
+                  </div>
+                  <div style={{ minWidth: 0 }}>
+                    <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--color-text-primary)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {fullName || 'Profile'}
+                    </p>
+                    {username && (
+                      <p style={{ fontSize: 12, color: 'var(--color-text-tertiary)', margin: 0 }}>{username}</p>
+                    )}
                   </div>
                 </div>
               </div>
@@ -284,10 +295,6 @@ export default function TopBar({ title, subtitle }: TopBarProps) {
                 <Link to="/settings" onClick={() => setShowProfile(false)} style={menuItemStyle}>
                   <span style={{ display: 'flex', color: 'var(--color-text-tertiary)' }}>{ICONS.user(16)}</span>
                   Profile
-                </Link>
-                <Link to="/settings" onClick={() => setShowProfile(false)} style={menuItemStyle}>
-                  <span style={{ display: 'flex', color: 'var(--color-text-tertiary)' }}>{ICONS.settings(16)}</span>
-                  Settings
                 </Link>
 
                 {/* Dark mode toggle */}
@@ -351,4 +358,13 @@ const menuItemStyle: React.CSSProperties = {
   color: 'var(--color-text-primary)',
   textDecoration: 'none',
   transition: 'background var(--transition-fast)',
+}
+
+function UserAvatarIcon({ size = 22 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+      <circle cx="12" cy="7" r="4" />
+    </svg>
+  )
 }
