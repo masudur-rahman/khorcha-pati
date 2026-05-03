@@ -1,22 +1,20 @@
 <!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <script>
-        function subst() {
-            var vars = {};
-            var query_strings_from_url = document.location.search.substring(1).split('&');
-            for (var query_string in query_strings_from_url) {
-                if (query_strings_from_url.hasOwnProperty(query_string)) {
-                    var temp_var = query_strings_from_url[query_string].split('=', 2);
-                    vars[temp_var[0]] = decodeURI(temp_var[1]);
-                }
-            }
-            var css = 'position:absolute; right:15px; top:0px; text-align:right; font-size:12px; color:#666;';
-            document.body.innerHTML = '<div style="' + css + '">Page ' + vars['page'] + ' of ' + vars['topage'] + '</div>';
-        }
-    </script>
-</head>
-<body style="margin:0; padding:0;" onload="subst()">
-</body>
-</html>
+<html><head><meta charset="UTF-8"><script>
+function subst() {
+  var vars = {};
+  var x = window.location.search.substring(1).split('&');
+  for (var i in x) { var z = x[i].split('=', 2); vars[z[0]] = decodeURIComponent(z[1]); }
+  var els = document.getElementsByClassName('page-counter');
+  for (var j = 0; j < els.length; ++j) { els[j].textContent = vars.page + ' / ' + vars.topage; }
+}
+</script>
+<style>
+  body { margin: 0; padding: 0 10mm; font-family: 'DM Sans', Arial, sans-serif; font-size: 9px; color: #6B778C; }
+  .row { display: flex; justify-content: space-between; align-items: center; padding-top: 4px; border-top: 1px solid #DFE1E6; }
+</style></head>
+<body onload="subst()">
+<div class="row">
+  <span>Expense Tracker Bot</span>
+  <span class="page-counter"></span>
+</div>
+</body></html>

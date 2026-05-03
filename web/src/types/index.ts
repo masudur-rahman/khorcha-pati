@@ -121,6 +121,7 @@ export interface StatementTransaction {
   category: string
   subcategory: string
   remarks: string
+  runningBalance?: number
 }
 
 export interface StatementWallet {
@@ -151,4 +152,5 @@ export interface StatementReport {
   subcategorySummary?: FieldCost[]
   totalAmount: number
   netBalance: number
+  generatedAt?: string
 }

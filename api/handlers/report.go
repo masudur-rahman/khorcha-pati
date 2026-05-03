@@ -131,7 +131,19 @@ func generateReport(ctx telebot.Context, rop ReportCallbackOptions) (gqtypes.Rep
 	for _, txn := range txns {
 		txnApis = append(txnApis, convert.ToTransactionAPIFormat(txn))
 	}
+	sort.Slice(txnApis, func(i, j int) bool { return txnApis[i].Date.Before(txnApis[j].Date) })
+	var running float64
+	for i := range txnApis {
+		switch txnApis[i].Type {
+		case string(models.IncomeTransaction):
+			running += txnApis[i].Amount
+		case string(models.ExpenseTransaction):
+			running -= txnApis[i].Amount
+		}
+		txnApis[i].RunningBalance = running
+	}
 	report.Transactions = txnApis
+	report.GeneratedAt = now
 
 	summary, err := BuildSummary(svc, txns)
 	if err != nil {
@@ -285,9 +297,17 @@ func GenerateTransactionStatementFromTemplate(report gqtypes.Report, title strin
 	converter := string(configs.TrackerConfig.System.PDFGenerator)
 
 	funcMap := template.FuncMap{
-		"formatBDT":    FormatBDT,
-		"toLower":      strings.ToLower,
-		"balanceClass": BalanceClass,
+		"formatBDT":       FormatBDT,
+		"toLower":         strings.ToLower,
+		"balanceClass":    BalanceClass,
+		"formatAmount":    FormatAmount,
+		"formatDate":      FormatStatementDate,
+		"formatDateRange": FormatStatementDateRange,
+		"formatGenAt":     FormatGeneratedAt,
+		"amountColor":     AmountColor,
+		"typeBg":          TypeBgColor,
+		"typeText":        TypeTextColor,
+		"abs":             AbsFloat,
 	}
 
 	bodyBytes, err := executeTemplate("transaction_report.tmpl", funcMap, &report)
@@ -422,4 +442,101 @@ func BalanceClass(amount float64) string {
 		return "expense"
 	}
 	return ""
+}
+
+// FormatAmount renders a value as `৳1,234.56` to mirror the React Statement page.
+func FormatAmount(amount float64) string {
+	neg := amount < 0
+	if neg {
+		amount = -amount
+	}
+	intPart := int64(amount)
+	frac := int64((amount-float64(intPart))*100 + 0.5)
+	if frac >= 100 {
+		intPart++
+		frac -= 100
+	}
+	intStr := strconv.FormatInt(intPart, 10)
+	var b strings.Builder
+	for i, r := range intStr {
+		remaining := len(intStr) - i
+		if i > 0 && remaining%3 == 0 {
+			b.WriteByte(',')
+		}
+		b.WriteRune(r)
+	}
+	out := fmt.Sprintf("৳%s.%02d", b.String(), frac)
+	if neg {
+		out = "-" + out
+	}
+	return out
+}
+
+// FormatStatementDate renders dd/mm to match the React table's date column.
+func FormatStatementDate(t time.Time) string {
+	return t.Format("02/01")
+}
+
+// FormatStatementDateRange renders "Month D, YYYY — Month D, YYYY".
+func FormatStatementDateRange(start, end time.Time) string {
+	const layout = "January 2, 2006"
+	return fmt.Sprintf("%s — %s", start.Format(layout), end.Format(layout))
+}
+
+// FormatGeneratedAt renders the footer timestamp.
+func FormatGeneratedAt(t time.Time) string {
+	if t.IsZero() {
+		t = time.Now()
+	}
+	return t.Format("Jan 2, 2006, 3:04 PM")
+}
+
+const (
+	colorIncome   = "#00875A"
+	colorExpense  = "#DE350B"
+	colorTransfer = "#0052CC"
+	bgIncome      = "#E3FCEF"
+	bgExpense     = "#FFEBE6"
+	bgTransfer    = "#DEEBFF"
+	colorMuted    = "#505F79"
+	bgMuted       = "#F4F5F7"
+)
+
+// AmountColor returns the hex color that mirrors Statement.tsx's amountColor map.
+func AmountColor(txnType string) string {
+	switch txnType {
+	case string(models.IncomeTransaction):
+		return colorIncome
+	case string(models.ExpenseTransaction):
+		return colorExpense
+	case string(models.TransferTransaction):
+		return colorTransfer
+	}
+	return colorMuted
+}
+
+// TypeBgColor returns the badge background hex for a transaction type.
+func TypeBgColor(txnType string) string {
+	switch txnType {
+	case string(models.IncomeTransaction):
+		return bgIncome
+	case string(models.ExpenseTransaction):
+		return bgExpense
+	case string(models.TransferTransaction):
+		return bgTransfer
+	}
+	return bgMuted
+}
+
+// TypeTextColor returns the badge text hex for a transaction type.
+func TypeTextColor(txnType string) string {
+	return AmountColor(txnType)
+}
+
+// AbsFloat returns |x| for use in templates.
+func AbsFloat(x float64) float64 {
+	if x < 0 {
+		return -x
+	}
+	return x
 }

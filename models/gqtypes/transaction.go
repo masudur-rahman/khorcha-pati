@@ -16,15 +16,16 @@ import (
 )
 
 type Transaction struct {
-	Date        time.Time `json:"date"`
-	Type        string    `json:"type"`
-	Amount      float64   `json:"amount"`
-	Source      string    `json:"source"`
-	Destination string    `json:"destination"`
-	Person      string    `json:"person"`
-	Category    string    `json:"category"`
-	Subcategory string    `json:"subcategory"`
-	Remarks     string    `json:"remarks"`
+	Date           time.Time `json:"date"`
+	Type           string    `json:"type"`
+	Amount         float64   `json:"amount"`
+	Source         string    `json:"source"`
+	Destination    string    `json:"destination"`
+	Person         string    `json:"person"`
+	Category       string    `json:"category"`
+	Subcategory    string    `json:"subcategory"`
+	Remarks        string    `json:"remarks"`
+	RunningBalance float64   `json:"runningBalance"`
 }
 
 type Summary struct {
@@ -87,6 +88,7 @@ type Report struct {
 	SubcategorySummary []FieldCost `json:"subcategorySummary,omitempty"`
 	TotalAmount        float64     `json:"totalAmount"`
 	NetBalance         float64     `json:"netBalance"`
+	GeneratedAt        time.Time   `json:"generatedAt"`
 }
 
 // SortMapToSlice converts map to sorted slice (Amount Descending).

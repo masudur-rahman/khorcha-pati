@@ -1,0 +1,10 @@
+<div style="font-family: 'Lohit Bengali', 'DejaVu Sans', Arial, sans-serif; width: 100%; text-align: center;
+            border: 1px solid #009879; border-radius: 8px; padding: 8px; margin: 10px 40px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);">
+    <div style="font-size: 20px; font-weight: bold; color: #333; margin: 0; padding-top: 2px;">
+        Expense Tracker Statement - {{.Name}}
+    </div>
+    <div style="font-size: 14px; color: #555; margin-top: 5px;">
+        Duration: [{{.StartDate.Format "Jan 02, 2006"}} - {{.EndDate.Format "Jan 02, 2006"}}]
+    </div>
+</div>

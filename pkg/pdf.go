@@ -48,10 +48,10 @@ func convertViaWkhtmlToPDF(outputFile string, data, header, footer []byte, title
 		"--title", title,
 		"--header-html", headerFile,
 		"--footer-html", footerFile,
-		"--margin-top", "30mm",
-		"--header-spacing", "5",
-		"--margin-bottom", "15mm",
-		"--footer-spacing", "5",
+		"--margin-top", "12mm",
+		"--header-spacing", "3",
+		"--margin-bottom", "14mm",
+		"--footer-spacing", "3",
 		"--page-size", "A4",
 		"--orientation", "Portrait",
 		inputFile,
@@ -93,8 +93,8 @@ func convertViaChromeDP(outputFile string, htmlContent, header, footer []byte) e
 				WithPrintBackground(true).
 				WithPaperWidth(8.27).
 				WithPaperHeight(11.69).
-				WithMarginTop(1.15).
-				WithMarginBottom(0.5).
+				WithMarginTop(0.5).
+				WithMarginBottom(0.55).
 				WithMarginLeft(0.4).
 				WithMarginRight(0.4).
 				WithScale(0.78).
