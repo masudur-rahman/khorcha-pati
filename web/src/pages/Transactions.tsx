@@ -60,6 +60,16 @@ export default function Transactions() {
         setSearchParams(searchParams, { replace: true })
       }
     }
+
+    const showId = searchParams.get('show')
+    if (showId) {
+      const txn = txns.find(t => t.id === parseInt(showId))
+      if (txn) {
+        setSelectedTxn(txn)
+        searchParams.delete('show')
+        setSearchParams(searchParams, { replace: true })
+      }
+    }
   }, [searchParams, setSearchParams, txns])
 
   const subcatMap = useMemo(() => {

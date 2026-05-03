@@ -5,6 +5,7 @@ import { useSearch } from '../../context/SearchContext'
 import { useAuth } from '../../hooks/useAuth'
 import { useBudgetAlerts } from '../../hooks/useBudgets'
 import { fmt } from '../../lib/formatter'
+import SearchResults from './SearchResults'
 
 interface TopBarProps {
   title: string
@@ -22,7 +23,10 @@ export default function TopBar({ title, subtitle }: TopBarProps) {
   const notifRef = useRef<HTMLDivElement>(null)
   const notifBtnRef = useRef<HTMLButtonElement>(null)
   const profileBtnRef = useRef<HTMLButtonElement>(null)
+  const searchRef = useRef<HTMLDivElement>(null)
+  const searchInputRef = useRef<HTMLInputElement>(null)
   const [dropdownTop, setDropdownTop] = useState(0)
+  const [searchResultsTop, setSearchResultsTop] = useState(0)
 
   const isDark = document.documentElement.classList.contains('dark')
   const [darkMode, setDarkMode] = useState(isDark)
@@ -39,10 +43,31 @@ export default function TopBar({ title, subtitle }: TopBarProps) {
     const handler = (e: MouseEvent) => {
       if (profileRef.current && !profileRef.current.contains(e.target as Node)) setShowProfile(false)
       if (notifRef.current && !notifRef.current.contains(e.target as Node)) setShowNotifications(false)
+      if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
+        setIsSearchExpanded(false)
+      }
     }
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
   }, [])
+
+  // Esc closes search panel
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && searchTerm) {
+        setSearchTerm('')
+        searchInputRef.current?.blur()
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [searchTerm, setSearchTerm])
+
+  // Track search input bottom for results panel anchor
+  useEffect(() => {
+    if (!isSearchExpanded || !searchRef.current) return
+    setSearchResultsTop(searchRef.current.getBoundingClientRect().bottom + 8)
+  }, [isSearchExpanded, searchTerm])
 
   const iconBtnStyle: React.CSSProperties = {
     width: 42,
@@ -72,43 +97,64 @@ export default function TopBar({ title, subtitle }: TopBarProps) {
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, position: 'relative' }}>
         {/* Search */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            background: 'var(--color-surface)',
-            border: '1px solid var(--color-border)',
-            borderRadius: 'var(--radius-md)',
-            padding: '0 12px',
-            height: 42,
-            width: isSearchExpanded ? 260 : 42,
-            transition: 'width 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-            overflow: 'hidden',
-            cursor: isSearchExpanded ? 'default' : 'pointer',
-          }}
-          onClick={() => !isSearchExpanded && setIsSearchExpanded(true)}
-        >
-          <span style={{ color: 'var(--color-text-tertiary)', display: 'flex', flexShrink: 0 }}>
-            {ICONS.search(18)}
-          </span>
-          {isSearchExpanded && (
-            <input
-              autoFocus
-              value={searchTerm}
-              onChange={e => setSearchTerm(e.target.value)}
-              onBlur={() => !searchTerm && setIsSearchExpanded(false)}
-              placeholder="Search anything..."
-              style={{
-                background: 'transparent',
-                border: 'none',
-                outline: 'none',
-                fontSize: 13,
-                color: 'var(--color-text-primary)',
-                marginLeft: 10,
-                width: '100%',
-                fontFamily: 'inherit',
-              }}
-            />
+        <div ref={searchRef}>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              background: 'var(--color-surface)',
+              border: '1px solid var(--color-border)',
+              borderRadius: 'var(--radius-md)',
+              padding: '0 12px',
+              height: 42,
+              width: isSearchExpanded ? 260 : 42,
+              transition: 'width 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+              overflow: 'hidden',
+              cursor: isSearchExpanded ? 'default' : 'pointer',
+            }}
+            onClick={() => !isSearchExpanded && setIsSearchExpanded(true)}
+          >
+            <span style={{ color: 'var(--color-text-tertiary)', display: 'flex', flexShrink: 0 }}>
+              {ICONS.search(18)}
+            </span>
+            {isSearchExpanded && (
+              <>
+                <input
+                  ref={searchInputRef}
+                  autoFocus
+                  value={searchTerm}
+                  onChange={e => setSearchTerm(e.target.value)}
+                  placeholder="Search anything..."
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    outline: 'none',
+                    fontSize: 13,
+                    color: 'var(--color-text-primary)',
+                    marginLeft: 10,
+                    width: '100%',
+                    fontFamily: 'inherit',
+                  }}
+                />
+                {searchTerm && (
+                  <button
+                    onClick={() => { setSearchTerm(''); searchInputRef.current?.focus() }}
+                    aria-label="Clear search"
+                    style={{
+                      width: 22, height: 22, borderRadius: '50%', border: 'none',
+                      background: 'var(--color-bg)', color: 'var(--color-text-tertiary)',
+                      cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      flexShrink: 0,
+                    }}
+                  >
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                  </button>
+                )}
+              </>
+            )}
+          </div>
+          {isSearchExpanded && searchTerm && (
+            <SearchResults anchorTop={searchResultsTop} onClose={() => setIsSearchExpanded(false)} />
           )}
         </div>
 
