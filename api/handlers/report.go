@@ -105,6 +105,8 @@ func generateReport(ctx telebot.Context, rop ReportCallbackOptions) (gqtypes.Rep
 		return gqtypes.Report{}, err
 	}
 
+	startTime = clampStartTime(startTime, user.CreatedAt, txns)
+
 	report := gqtypes.Report{
 		Name:      fmt.Sprintf("%v %v", user.FirstName, user.LastName),
 		StartDate: startTime,
@@ -549,4 +551,28 @@ func AbsFloat(x float64) float64 {
 		return -x
 	}
 	return x
+}
+
+// clampStartTime returns the effective start date for a report period.
+// Fallback chain: registration time → earliest txn time → startTime (computed).
+func clampStartTime(startTime time.Time, registeredAt int64, txns []models.Transaction) time.Time {
+	if registeredAt != 0 {
+		if reg := time.Unix(registeredAt, 0); reg.After(startTime) {
+			return reg
+		}
+		return startTime
+	}
+	// fallback: earliest transaction timestamp
+	if len(txns) > 0 {
+		earliest := txns[0].Timestamp
+		for _, t := range txns[1:] {
+			if t.Timestamp < earliest {
+				earliest = t.Timestamp
+			}
+		}
+		if first := time.Unix(earliest, 0); first.After(startTime) {
+			return first
+		}
+	}
+	return startTime
 }
