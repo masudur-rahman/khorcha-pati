@@ -70,17 +70,17 @@ func setBotCommands(bot *telebot.Bot) error {
 	return bot.SetCommands([]telebot.Command{
 		{Text: "new", Description: "Add new wallet or contact"},
 		{Text: "newtxn", Description: "Add new transaction (interactive)"},
+		{Text: "undo", Description: "Undo last transaction"},
 		{Text: "balance", Description: "Show wallet balances"},
 		{Text: "contacts", Description: "List contacts and balances"},
-		{Text: "list", Description: "List recent transactions"},
-		{Text: "expense", Description: "List expenses"},
+		{Text: "report", Description: "Generate PDF transaction report"},
 		{Text: "summary", Description: "Monthly transaction summary"},
 		{Text: "allsummary", Description: "Detailed summary by type/category"},
-		{Text: "report", Description: "Generate PDF transaction report"},
 		{Text: "budget", Description: "View and manage budgets"},
-		{Text: "cat", Description: "Browse transaction categories"},
-		{Text: "undo", Description: "Undo last transaction"},
 		{Text: "dashboard", Description: "Open web dashboard"},
+		{Text: "list", Description: "List recent transactions"},
+		{Text: "expense", Description: "List expenses"},
+		{Text: "cat", Description: "Browse transaction categories"},
 		{Text: "help", Description: "Show usage help"},
 	})
 }

@@ -2,12 +2,14 @@ package handlers
 
 import (
 	"bytes"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"os"
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"text/template"
 	"time"
 
@@ -320,6 +322,7 @@ func GenerateTransactionStatementFromTemplate(report gqtypes.Report, title strin
 		"typeBg":          TypeBgColor,
 		"typeText":        TypeTextColor,
 		"abs":             AbsFloat,
+		"fontFaceCSS":     FontFaceCSS,
 	}
 
 	bodyBytes, err := executeTemplate("transaction_report.tmpl", funcMap, &report)
@@ -551,6 +554,54 @@ func AbsFloat(x float64) float64 {
 		return -x
 	}
 	return x
+}
+
+var (
+	fontFaceCSSOnce sync.Once
+	fontFaceCSSStr  string
+)
+
+// FontFaceCSS returns a <style> block with @font-face declarations for DM Sans
+// and Space Grotesk, with woff2 binaries embedded as base64 data URIs.
+// Cached after first call.
+func FontFaceCSS() string {
+	fontFaceCSSOnce.Do(func() {
+		fontFaceCSSStr = buildFontFaceCSS()
+	})
+	return fontFaceCSSStr
+}
+
+func buildFontFaceCSS() string {
+	const (
+		latinRange    = "U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD"
+		latinExtRange = "U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF"
+	)
+	faces := []struct {
+		family       string
+		weight       string
+		path         string
+		unicodeRange string
+	}{
+		{"DM Sans", "100 1000", "fonts/dmsans-latin.woff2", latinRange},
+		{"DM Sans", "100 1000", "fonts/dmsans-latin-ext.woff2", latinExtRange},
+		{"Space Grotesk", "100 1000", "fonts/spacegrotesk-latin.woff2", latinRange},
+		{"Space Grotesk", "100 1000", "fonts/spacegrotesk-latin-ext.woff2", latinExtRange},
+	}
+
+	var b strings.Builder
+	b.WriteString("<style>\n")
+	for _, f := range faces {
+		data, err := templates.FS.ReadFile(f.path)
+		if err != nil {
+			continue
+		}
+		encoded := base64.StdEncoding.EncodeToString(data)
+		fmt.Fprintf(&b,
+			"@font-face { font-family: '%s'; font-style: normal; font-weight: %s; font-display: block; src: url(data:font/woff2;base64,%s) format('woff2'); unicode-range: %s; }\n",
+			f.family, f.weight, encoded, f.unicodeRange)
+	}
+	b.WriteString("</style>")
+	return b.String()
 }
 
 // clampStartTime returns the effective start date for a report period.

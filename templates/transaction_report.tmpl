@@ -3,28 +3,27 @@
 <head>
 <meta charset="UTF-8">
 <title>Expense Tracker Statement</title>
+{{ fontFaceCSS }}
 <style>
-  @page { size: A4 portrait; margin: 6mm 6mm 12mm; }
+  @page { size: A4 portrait; margin: 6mm; }
   * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; box-sizing: border-box; }
   html, body { margin: 0; padding: 0; }
-  body { font-family: 'DM Sans', 'Lohit Bengali', 'DejaVu Sans', Arial, sans-serif; color: #172B4D; font-size: 12px; line-height: 1.45; background: white; }
+  body { font-family: 'DM Sans', 'Lohit Bengali', 'DejaVu Sans', Arial, sans-serif; color: #172B4D; font-size: 12px; line-height: 1.5; background: white; }
   @media print {
     body { font-size: 85%; background: white; }
   }
+  .layout-table { width: 100%; border-collapse: collapse; }
   .page { max-width: 900px; margin: 0 auto; padding: 0; background: white; }
   h1, h2, h3 { font-family: 'Space Grotesk', 'DM Sans', Arial, sans-serif; }
   table { border-collapse: collapse; }
 
-  .print-layout { width: 100%; border-collapse: collapse; border: none; }
-  .print-layout > thead > tr > td,
-  .print-layout > tbody > tr > td { padding: 0; vertical-align: top; }
-
-  .stmt-header { text-align: center; margin-bottom: 28px; border-bottom: 3px solid #0052CC; padding-bottom: 20px; }
-  .stmt-header h1 { font-size: 22px; font-weight: 800; color: #0052CC; margin: 0 0 4px; }
-  .stmt-header .name { font-size: 13px; color: #505F79; margin: 0 0 2px; font-weight: 600; }
+  .stmt-header { text-align: center; padding: 0 0 20px; border-bottom: 3px solid #0052CC; margin-bottom: 28px; }
+  .stmt-header h1 { font-size: 22px; font-weight: 800; color: #0052CC; margin: 0 0 4px; font-family: 'Space Grotesk', 'DM Sans', Arial, sans-serif; }
+  .stmt-header .name { font-size: 13px; font-weight: 600; color: #505F79; margin: 0 0 2px; }
   .stmt-header .range { font-size: 11px; color: #6B778C; margin: 0; }
 
-  .stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 0 0 28px; }
+  .stat-grid { width: 100%; table-layout: fixed; border-spacing: 12px 0; margin: 0 0 28px; border-collapse: separate; }
+  .stat-grid td { padding: 0; vertical-align: top; }
   .stat-card { border-radius: 12px; padding: 16px; text-align: center; }
   .stat-card .label { font-size: 10px; color: #6B778C; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin: 0 0 4px; }
   .stat-card .value { font-size: 20px; font-weight: 800; margin: 0; font-family: 'Space Grotesk', 'DM Sans', Arial, sans-serif; }
@@ -38,7 +37,7 @@
 
   .txn-table { width: 100%; table-layout: fixed; font-size: 10px; }
   .txn-table th { background: #0052CC; color: white; padding: 8px 10px; text-align: left; font-weight: 700; font-size: 10px; letter-spacing: 0.02em; }
-  .txn-table td { padding: 6px 10px; font-size: 10px; border-bottom: 1px solid #DFE1E6; }
+  .txn-table td { padding: 6px 10px; font-size: 10px; font-weight: 400; border-bottom: 1px solid #DFE1E6; }
   .txn-table tbody tr:nth-child(odd) td { background: #F4F5F7; }
   .txn-table tbody tr:nth-child(even) td { background: white; }
   .txn-table tr.total-row td { background: #DEEBFF !important; border-top: 2px solid #0052CC; font-weight: 700; }
@@ -49,11 +48,12 @@
   .summary-card h3 { font-size: 11px; font-weight: 700; color: #505F79; text-transform: uppercase; letter-spacing: 0.06em; margin: 0 0 6px; break-after: avoid; }
   .summary-table { width: 100%; font-size: 11px; }
   .summary-table th { background: #0052CC; color: white; padding: 8px 10px; text-align: left; font-weight: 700; font-size: 10px; }
-  .summary-table td { padding: 6px 10px; border-bottom: 1px solid #F4F5F7; }
+  .summary-table td { padding: 6px 10px; font-weight: 400; border-bottom: 1px solid #F4F5F7; }
   .summary-table tbody tr:nth-child(odd) td { background: #FAFBFC; }
   .summary-table tbody tr:nth-child(even) td { background: white; }
 
   .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; white-space: nowrap; }
+  .cell-trunc { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .right, .txn-table th.right, .txn-table td.right, .summary-table th.right, .summary-table td.right { text-align: right; }
   .nowrap { white-space: nowrap; }
@@ -62,10 +62,9 @@
 </head>
 <body>
 <div class="page">
-
-  <table class="print-layout">
+  <table class="layout-table">
     <thead>
-      <tr><td>
+      <tr><td style="padding: 0;">
         <div class="stmt-header">
           <h1>Expense Tracker Statement</h1>
           <p class="name">{{ .Name }}</p>
@@ -74,163 +73,171 @@
       </td></tr>
     </thead>
     <tbody>
-      <tr><td>
+      <tr><td style="padding: 0;">
 
-        <div class="stat-grid">
-          <div class="stat-card" style="background:#E3FCEF; border:1px solid #ABF5D1;">
-            <p class="label">Total Amount</p>
-            <p class="value" style="color:#00875A;">{{ formatAmount .TotalAmount }}</p>
-          </div>
-          <div class="stat-card" style="background:#FFEBE6; border:1px solid #FFBDAD;">
-            <p class="label">Net Balance</p>
-            <p class="value" style="color:{{ if ge .NetBalance 0.0 }}#00875A{{ else }}#DE350B{{ end }};">{{ formatAmount .NetBalance }}</p>
-          </div>
-          <div class="stat-card" style="background:#DEEBFF; border:1px solid #B3D4FF;">
-            <p class="label">Transactions</p>
-            <p class="value" style="color:#0052CC;">{{ len .Transactions }}</p>
-          </div>
+  <table class="stat-grid">
+    <tr>
+      <td>
+        <div class="stat-card" style="background:#E3FCEF; border:1px solid #ABF5D1;">
+          <p class="label">Total Amount</p>
+          <p class="value" style="color:#00875A;">{{ formatAmount .TotalAmount }}</p>
         </div>
-
-        <section class="section">
-          <h2 class="section-title">Transaction Details</h2>
-          <div class="table-wrap">
-            <table class="txn-table">
-              <colgroup>
-                <col style="width:5%"><col style="width:9%"><col style="width:11%">
-                <col style="width:10%"><col style="width:10%"><col style="width:10%">
-                <col style="width:10%"><col style="width:10%"><col style="width:11%">
-                <col style="width:14%">
-              </colgroup>
-              <thead>
-                <tr>
-                  <th>Date</th><th>Type</th><th class="right">Amount</th>
-                  <th>Source</th><th>Dest</th><th>Person</th>
-                  <th>Category</th><th>Subcategory</th><th class="right">Balance</th>
-                  <th>Remarks</th>
-                </tr>
-              </thead>
-              <tbody>
-              {{ range .Transactions }}
-                <tr>
-                  <td class="nowrap">{{ formatDate .Date }}</td>
-                  <td><span class="badge" style="background:{{ typeBg .Type }}; color:{{ typeText .Type }};">{{ .Type }}</span></td>
-                  <td class="right nowrap" style="font-weight:600; color:{{ amountColor .Type }};">{{ formatAmount .Amount }}</td>
-                  <td class="truncate">{{ .Source }}</td>
-                  <td class="truncate">{{ .Destination }}</td>
-                  <td class="truncate">{{ .Person }}</td>
-                  <td class="truncate">{{ .Category }}</td>
-                  <td class="truncate">{{ .Subcategory }}</td>
-                  <td class="right nowrap" style="font-weight:600; color:{{ if ge .RunningBalance 0.0 }}#0052CC{{ else }}#DE350B{{ end }};">{{ formatAmount .RunningBalance }}</td>
-                  <td class="truncate" style="color:#6B778C;">{{ .Remarks }}</td>
-                </tr>
-              {{ end }}
-                <tr class="total-row">
-                  <td colspan="2">Total</td>
-                  <td class="right nowrap" style="color:#0052CC;">{{ formatAmount .TotalAmount }}</td>
-                  <td colspan="7"></td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </section>
-
-        <section class="section">
-          <h2 class="section-title">Summary</h2>
-          <div class="summary-stack">
-            {{ if .TypeSummary }}
-            <div class="summary-card">
-              <h3>By Type</h3>
-              <table class="summary-table">
-                <thead><tr><th>Name</th><th class="right">Amount</th></tr></thead>
-                <tbody>
-                {{ range .TypeSummary }}
-                  <tr>
-                    <td>{{ .Name }}</td>
-                    <td class="right nowrap" style="font-weight:600; color:{{ amountColor .Type }};">{{ formatAmount .Amount }}</td>
-                  </tr>
-                {{ end }}
-                </tbody>
-              </table>
-            </div>
-            {{ end }}
-            {{ if .CategorySummary }}
-            <div class="summary-card">
-              <h3>By Category</h3>
-              <table class="summary-table">
-                <thead><tr><th>Name</th><th>Type</th><th class="right">Amount</th></tr></thead>
-                <tbody>
-                {{ range .CategorySummary }}
-                  <tr>
-                    <td>{{ .Name }}</td>
-                    <td><span class="badge" style="background:{{ typeBg .Type }}; color:{{ typeText .Type }};">{{ .Type }}</span></td>
-                    <td class="right nowrap" style="font-weight:600; color:{{ amountColor .Type }};">{{ formatAmount .Amount }}</td>
-                  </tr>
-                {{ end }}
-                </tbody>
-              </table>
-            </div>
-            {{ end }}
-            {{ if .SubcategorySummary }}
-            <div class="summary-card">
-              <h3>By Subcategory</h3>
-              <table class="summary-table">
-                <thead><tr><th>Name</th><th>Type</th><th class="right">Amount</th></tr></thead>
-                <tbody>
-                {{ range .SubcategorySummary }}
-                  <tr>
-                    <td>{{ .Name }}</td>
-                    <td><span class="badge" style="background:{{ typeBg .Type }}; color:{{ typeText .Type }};">{{ .Type }}</span></td>
-                    <td class="right nowrap" style="font-weight:600; color:{{ amountColor .Type }};">{{ formatAmount .Amount }}</td>
-                  </tr>
-                {{ end }}
-                </tbody>
-              </table>
-            </div>
-            {{ end }}
-          </div>
-        </section>
-
-        {{ if .Wallets }}
-        <section class="section section-avoid">
-          <h2 class="section-title">Wallet Balances</h2>
-          <div class="table-wrap small-table">
-            <table class="summary-table">
-              <thead><tr><th>Name</th><th class="right">Balance</th></tr></thead>
-              <tbody>
-              {{ range .Wallets }}
-                <tr>
-                  <td>{{ .Name }} <span style="color:#6B778C; font-size:9px;">({{ .ShortName }})</span></td>
-                  <td class="right nowrap" style="font-weight:600; color:{{ if ge .Balance 0.0 }}#0052CC{{ else }}#DE350B{{ end }};">{{ formatAmount .Balance }}</td>
-                </tr>
-              {{ end }}
-              </tbody>
-            </table>
-          </div>
-        </section>
-        {{ end }}
-
-        {{ if .Contacts }}
-        <section class="section section-avoid">
-          <h2 class="section-title">Contacts</h2>
-          <div class="table-wrap small-table">
-            <table class="summary-table">
-              <thead><tr><th>Name</th><th class="right">Net Balance</th></tr></thead>
-              <tbody>
-              {{ range .Contacts }}
-                <tr>
-                  <td>{{ if .FullName }}{{ .FullName }}{{ else }}{{ .NickName }}{{ end }}</td>
-                  <td class="right nowrap" style="font-weight:600; color:{{ if ge .NetBalance 0.0 }}#0052CC{{ else }}#DE350B{{ end }};">{{ formatAmount .NetBalance }}</td>
-                </tr>
-              {{ end }}
-              </tbody>
-            </table>
-          </div>
-        </section>
-        {{ end }}
-
-        <div class="footer">
-          Generated by Expense Tracker Bot &nbsp;·&nbsp; {{ formatGenAt .GeneratedAt }}
+      </td>
+      <td>
+        <div class="stat-card" style="background:#FFEBE6; border:1px solid #FFBDAD;">
+          <p class="label">Net Balance</p>
+          <p class="value" style="color:{{ if ge .NetBalance 0.0 }}#00875A{{ else }}#DE350B{{ end }};">{{ formatAmount .NetBalance }}</p>
         </div>
+      </td>
+      <td>
+        <div class="stat-card" style="background:#DEEBFF; border:1px solid #B3D4FF;">
+          <p class="label">Transactions</p>
+          <p class="value" style="color:#0052CC;">{{ len .Transactions }}</p>
+        </div>
+      </td>
+    </tr>
+  </table>
+
+  <section class="section">
+    <h2 class="section-title">Transaction Details</h2>
+    <div class="table-wrap">
+      <table class="txn-table">
+        <colgroup>
+          <col style="width:5%"><col style="width:9%"><col style="width:11%">
+          <col style="width:10%"><col style="width:10%"><col style="width:10%">
+          <col style="width:10%"><col style="width:10%"><col style="width:11%">
+          <col style="width:14%">
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Date</th><th>Type</th><th class="right">Amount</th>
+            <th>Source</th><th>Dest</th><th>Person</th>
+            <th>Category</th><th>Subcategory</th><th class="right">Balance</th>
+            <th>Remarks</th>
+          </tr>
+        </thead>
+        <tbody>
+        {{ range .Transactions }}
+          <tr>
+            <td class="nowrap">{{ formatDate .Date }}</td>
+            <td><span class="badge" style="background:{{ typeBg .Type }}; color:{{ typeText .Type }};">{{ .Type }}</span></td>
+            <td class="right nowrap" style="font-weight:600; color:{{ amountColor .Type }};">{{ formatAmount .Amount }}</td>
+            <td><div class="cell-trunc">{{ .Source }}</div></td>
+            <td><div class="cell-trunc">{{ .Destination }}</div></td>
+            <td><div class="cell-trunc">{{ .Person }}</div></td>
+            <td><div class="cell-trunc">{{ .Category }}</div></td>
+            <td><div class="cell-trunc">{{ .Subcategory }}</div></td>
+            <td class="right nowrap" style="font-weight:600; color:{{ if ge .RunningBalance 0.0 }}#0052CC{{ else }}#DE350B{{ end }};">{{ formatAmount .RunningBalance }}</td>
+            <td style="color:#6B778C;"><div class="cell-trunc">{{ .Remarks }}</div></td>
+          </tr>
+        {{ end }}
+          <tr class="total-row">
+            <td colspan="2">Total</td>
+            <td class="right nowrap" style="color:#0052CC;">{{ formatAmount .TotalAmount }}</td>
+            <td colspan="7"></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="section">
+    <h2 class="section-title">Summary</h2>
+    <div class="summary-stack">
+      {{ if .TypeSummary }}
+      <div class="summary-card">
+        <h3>By Type</h3>
+        <table class="summary-table">
+          <thead><tr><th>Name</th><th class="right">Amount</th></tr></thead>
+          <tbody>
+          {{ range .TypeSummary }}
+            <tr>
+              <td>{{ .Name }}</td>
+              <td class="right nowrap" style="font-weight:600; color:{{ amountColor .Type }};">{{ formatAmount .Amount }}</td>
+            </tr>
+          {{ end }}
+          </tbody>
+        </table>
+      </div>
+      {{ end }}
+      {{ if .CategorySummary }}
+      <div class="summary-card">
+        <h3>By Category</h3>
+        <table class="summary-table">
+          <thead><tr><th>Name</th><th>Type</th><th class="right">Amount</th></tr></thead>
+          <tbody>
+          {{ range .CategorySummary }}
+            <tr>
+              <td>{{ .Name }}</td>
+              <td><span class="badge" style="background:{{ typeBg .Type }}; color:{{ typeText .Type }};">{{ .Type }}</span></td>
+              <td class="right nowrap" style="font-weight:600; color:{{ amountColor .Type }};">{{ formatAmount .Amount }}</td>
+            </tr>
+          {{ end }}
+          </tbody>
+        </table>
+      </div>
+      {{ end }}
+      {{ if .SubcategorySummary }}
+      <div class="summary-card">
+        <h3>By Subcategory</h3>
+        <table class="summary-table">
+          <thead><tr><th>Name</th><th>Type</th><th class="right">Amount</th></tr></thead>
+          <tbody>
+          {{ range .SubcategorySummary }}
+            <tr>
+              <td>{{ .Name }}</td>
+              <td><span class="badge" style="background:{{ typeBg .Type }}; color:{{ typeText .Type }};">{{ .Type }}</span></td>
+              <td class="right nowrap" style="font-weight:600; color:{{ amountColor .Type }};">{{ formatAmount .Amount }}</td>
+            </tr>
+          {{ end }}
+          </tbody>
+        </table>
+      </div>
+      {{ end }}
+    </div>
+  </section>
+
+  {{ if .Wallets }}
+  <section class="section section-avoid">
+    <h2 class="section-title">Wallet Balances</h2>
+    <div class="table-wrap small-table">
+      <table class="summary-table">
+        <thead><tr><th>Name</th><th class="right">Balance</th></tr></thead>
+        <tbody>
+        {{ range .Wallets }}
+          <tr>
+            <td>{{ .Name }} <span style="color:#6B778C; font-size:9px;">({{ .ShortName }})</span></td>
+            <td class="right nowrap" style="font-weight:600; color:{{ if ge .Balance 0.0 }}#0052CC{{ else }}#DE350B{{ end }};">{{ formatAmount .Balance }}</td>
+          </tr>
+        {{ end }}
+        </tbody>
+      </table>
+    </div>
+  </section>
+  {{ end }}
+
+  {{ if .Contacts }}
+  <section class="section section-avoid">
+    <h2 class="section-title">Contacts</h2>
+    <div class="table-wrap small-table">
+      <table class="summary-table">
+        <thead><tr><th>Name</th><th class="right">Net Balance</th></tr></thead>
+        <tbody>
+        {{ range .Contacts }}
+          <tr>
+            <td>{{ if .FullName }}{{ .FullName }}{{ else }}{{ .NickName }}{{ end }}</td>
+            <td class="right nowrap" style="font-weight:600; color:{{ if ge .NetBalance 0.0 }}#0052CC{{ else }}#DE350B{{ end }};">{{ formatAmount .NetBalance }}</td>
+          </tr>
+        {{ end }}
+        </tbody>
+      </table>
+    </div>
+  </section>
+  {{ end }}
+
+  <div class="footer">
+    Generated by Expense Tracker Bot &nbsp;·&nbsp; {{ formatGenAt .GeneratedAt }}
+  </div>
 
       </td></tr>
     </tbody>
