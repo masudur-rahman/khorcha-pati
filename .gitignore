@@ -46,3 +46,8 @@ docker-compose.debug.yml
 
 # Added by code-review-graph
 .code-review-graph/
+
+vendor/
+.vscode/
+*.env.*
+!.env.example
