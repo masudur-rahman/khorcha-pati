@@ -2,16 +2,19 @@ import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { getProfile, updateProfile } from '../api/endpoints'
 import { useSearch } from '../context/SearchContext'
+import { useTheme } from '../context/ThemeContext'
 
 import TopBar from '../components/layout/TopBar'
 import Card from '../components/ui/Card'
 import Button from '../components/ui/Button'
 import Input from '../components/ui/Input'
 import Select from '../components/ui/Select'
+import Eyebrow from '../components/ui/Eyebrow'
 import { ICONS } from '../components/ui/Icons'
 
 export default function Settings() {
   const { searchTerm } = useSearch()
+  const { theme, setTheme } = useTheme()
   const qc = useQueryClient()
   const { data: profile, isLoading } = useQuery({ queryKey: ['profile'], queryFn: getProfile })
   const update = useMutation({
@@ -97,6 +100,35 @@ export default function Settings() {
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+          {/* Appearance */}
+          {matchesSearch('appearance theme dark light') && (
+            <Card padding={0} style={{ overflow: 'hidden' }}>
+              <div style={{ padding: '18px 24px', borderBottom: '1px solid var(--color-border)', background: 'var(--color-bg)' }}>
+                <Eyebrow>Appearance</Eyebrow>
+              </div>
+              <div style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-text-primary)', margin: 0 }}>Theme</p>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                  <ThemeOption
+                    active={theme === 'light'}
+                    label="Light"
+                    icon={ICONS.sun(16)}
+                    onClick={() => setTheme('light')}
+                  />
+                  <ThemeOption
+                    active={theme === 'dark'}
+                    label="Dark"
+                    icon={ICONS.moon(16)}
+                    onClick={() => setTheme('dark')}
+                  />
+                </div>
+                <p style={{ fontSize: 11, color: 'var(--color-text-tertiary)', margin: '4px 0 0' }}>
+                  Theme syncs across the app and persists in this browser.
+                </p>
+              </div>
+            </Card>
+          )}
+
           {/* Pro Tip */}
           {matchesSearch('Pro Tip') && (
             <div style={{
@@ -127,6 +159,26 @@ export default function Settings() {
         </div>
       </div>
     </div>
+  )
+}
+
+function ThemeOption({ active, label, icon, onClick }: { active: boolean; label: string; icon: React.ReactNode; onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        display: 'flex', alignItems: 'center', gap: 10,
+        padding: '12px 16px', borderRadius: 'var(--radius-md)',
+        border: `1px solid ${active ? 'var(--color-primary)' : 'var(--color-border)'}`,
+        background: active ? 'var(--color-primary-subtle)' : 'var(--color-surface)',
+        color: active ? 'var(--color-primary)' : 'var(--color-text-secondary)',
+        fontWeight: 600, fontSize: 13, fontFamily: 'inherit',
+        cursor: 'pointer', transition: 'all var(--transition-fast)',
+      }}
+    >
+      <span style={{ display: 'flex' }}>{icon}</span>
+      {label}
+    </button>
   )
 }
 
