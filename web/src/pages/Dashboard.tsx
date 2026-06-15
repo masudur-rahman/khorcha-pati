@@ -17,6 +17,10 @@ import WalletFlow from '../components/ui/WalletFlow'
 import { useWallets } from '../hooks/useWallets'
 import { useContacts } from '../hooks/useContacts'
 import TransactionDetails from '../components/ui/TransactionDetails'
+import MetricChip from '../components/ui/MetricChip'
+import SectionHeader from '../components/ui/SectionHeader'
+import Eyebrow from '../components/ui/Eyebrow'
+import WalletCard, { WalletCardGhost } from '../components/ui/WalletCard'
 
 export default function Dashboard() {
   const navigate = useNavigate()
@@ -135,42 +139,62 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Summary Stat Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 20 }}>
-        <SummaryCard
-          label="Total Income"
+      {/* Bento metric strip */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 16 }}>
+        <MetricChip
+          label="Income · this month"
           value={`+${fmt(overview.monthIncome)}`}
-          subtext="This month"
-          accentColor="var(--color-success)"
-          icon={ICONS.arrowUp(20)}
+          accent="var(--color-success)"
+          icon={ICONS.arrowUp(16)}
         />
-        <SummaryCard
-          label="Total Expense"
-          value={`-${fmt(overview.monthExpense)}`}
-          subtext="This month"
-          accentColor="var(--color-danger)"
-          icon={ICONS.arrowDown(20)}
+        <MetricChip
+          label="Expense · this month"
+          value={`−${fmt(overview.monthExpense)}`}
+          accent="var(--color-danger)"
+          icon={ICONS.arrowDown(16)}
         />
-        <SummaryCard
-          label="Net Balance"
+        <MetricChip
+          label="Net · all wallets"
           value={fmt(overview.totalBalance)}
-          subtext="All wallets"
-          accentColor="var(--color-primary)"
-          icon={ICONS.money(20)}
+          accent="var(--color-primary)"
+          icon={ICONS.money(16)}
         />
-        <Card style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-          <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Budget Usage</span>
-          <BudgetGauge percent={overview.budgetUsage} size={110} />
+        <Card style={{ display: 'flex', alignItems: 'center', gap: 14, padding: 14, borderLeft: '4px solid var(--color-warning)', borderRadius: 'var(--radius-md)' }}>
+          <BudgetGauge percent={overview.budgetUsage} size={64} />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4, minWidth: 0 }}>
+            <Eyebrow>Budget usage</Eyebrow>
+            <span style={{ fontSize: 20, fontWeight: 700, color: 'var(--color-warning)', fontFamily: 'var(--font-display)', letterSpacing: '-0.02em' }}>
+              {Math.round(overview.budgetUsage)}%
+            </span>
+          </div>
         </Card>
+      </div>
+
+      {/* Wallets carousel */}
+      <div>
+        <SectionHeader
+          title="My Wallets"
+          action={<Link to="/wallets" style={{ fontSize: 12, fontWeight: 600, color: 'var(--color-primary)', textDecoration: 'none' }}>Manage →</Link>}
+        />
+        <div className="wallet-carousel" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 16 }}>
+          {(wallets ?? []).slice(0, 3).map(w => (
+            <WalletCard
+              key={w.id}
+              variant={w.type === 'Bank' ? 'Bank' : 'Cash'}
+              name={w.name}
+              shortName={w.shortName}
+              balance={w.balance}
+              onClick={() => navigate('/wallets')}
+            />
+          ))}
+          <WalletCardGhost onClick={() => navigate('/wallets')} />
+        </div>
       </div>
 
       {/* Charts Row */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 20 }}>
         <Card>
-          <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--color-text-primary)', margin: '0 0 20px', display: 'flex', alignItems: 'center', gap: 10 }}>
-            <span style={{ width: 3, height: 18, borderRadius: 2, background: 'var(--color-primary)' }} />
-            Expense by Category
-          </h3>
+          <SectionHeader title="Expense by Category" />
           <div style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
             <MiniDonut segments={chartCategories} size={130} />
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10, flex: 1 }}>
@@ -185,10 +209,7 @@ export default function Dashboard() {
           </div>
         </Card>
         <Card>
-          <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--color-text-primary)', margin: '0 0 20px', display: 'flex', alignItems: 'center', gap: 10 }}>
-            <span style={{ width: 3, height: 18, borderRadius: 2, background: 'var(--color-success)' }} />
-            Income vs Expense
-          </h3>
+          <SectionHeader title="Income vs Expense" accent="var(--color-success)" />
           <div style={{ display: 'flex', justifyContent: 'center' }}>
             <MiniBarChart data={comparisonData} size={{ w: 280, h: 130 }} />
           </div>
@@ -273,29 +294,6 @@ export default function Dashboard() {
     </div>
   )
 }
-
-/* Summary Card with accent left border */
-function SummaryCard({ label, value, subtext, accentColor, icon }: {
-  label: string; value: string; subtext: string; accentColor: string; icon: React.ReactNode
-}) {
-  return (
-    <Card style={{ borderLeft: `4px solid ${accentColor}`, display: 'flex', flexDirection: 'column', gap: 12 }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{label}</span>
-        <div style={{
-          width: 36, height: 36, borderRadius: 'var(--radius-sm)',
-          background: accentColor + '15', color: accentColor,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-        }}>{icon}</div>
-      </div>
-      <div>
-        <div style={{ fontSize: 24, fontWeight: 700, color: accentColor, letterSpacing: '-0.02em' }}>{value}</div>
-        <p style={{ fontSize: 11, color: 'var(--color-text-tertiary)', marginTop: 4, fontWeight: 500 }}>{subtext}</p>
-      </div>
-    </Card>
-  )
-}
-
 
 function StatementModal({ onClose }: { onClose: () => void }) {
   const durations = [
