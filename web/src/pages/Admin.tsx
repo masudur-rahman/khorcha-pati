@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { getAdminStats, getAdminUsers, type AdminUser } from '../api/endpoints'
 import TopBar from '../components/layout/TopBar'
 import Card from '../components/ui/Card'
+import MetricChip from '../components/ui/MetricChip'
 
 export default function Admin() {
   const { data: stats, isLoading: statsLoading } = useQuery({
@@ -30,13 +31,10 @@ export default function Admin() {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
       <TopBar title="Admin Dashboard" subtitle="System overview and user management" />
 
-      {/* Stats Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 20 }}>
+      {/* Stats chips */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16 }}>
         {statCards.map(card => (
-          <Card key={card.label} style={{ borderLeft: `4px solid ${card.color}` }}>
-            <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 8px' }}>{card.label}</p>
-            <p style={{ fontSize: 26, fontWeight: 700, color: card.color, margin: 0, fontFamily: "var(--font-display)" }}>{card.value}</p>
-          </Card>
+          <MetricChip key={card.label} label={card.label} value={String(card.value)} accent={card.color} />
         ))}
       </div>
 
