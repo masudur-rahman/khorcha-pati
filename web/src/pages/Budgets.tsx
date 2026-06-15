@@ -12,6 +12,8 @@ import Modal from '../components/ui/Modal'
 import Input from '../components/ui/Input'
 import Select from '../components/ui/Select'
 import BudgetGauge from '../components/charts/BudgetGauge'
+import SectionHeader from '../components/ui/SectionHeader'
+import Eyebrow from '../components/ui/Eyebrow'
 import { ICONS } from '../components/ui/Icons'
 
 export default function Budgets() {
@@ -25,16 +27,81 @@ export default function Budgets() {
     (budgets ?? []).filter(b => !searchTerm || b.categoryName.toLowerCase().includes(searchTerm.toLowerCase())),
     [budgets, searchTerm])
 
+  const totals = useMemo(() => {
+    const list = budgets ?? []
+    const spent = list.reduce((s, b) => s + b.spent, 0)
+    const limit = list.reduce((s, b) => s + b.amount, 0)
+    const remaining = limit - spent
+    const percent = limit > 0 ? (spent / limit) * 100 : 0
+    return { spent, limit, remaining, percent }
+  }, [budgets])
+
   if (isLoading) return <p style={{ color: 'var(--color-text-tertiary)', padding: 40 }}>Loading...</p>
+
+  const monthLabel = new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+  const daysLeft = (() => {
+    const now = new Date()
+    const last = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate()
+    return last - now.getDate()
+  })()
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
       <TopBar title="Budgets" subtitle="Plan your monthly spending limits" />
 
-      <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <h2 style={{ fontSize: 18, fontWeight: 700, color: 'var(--color-text-primary)' }}>Active Budgets</h2>
-        <Button onClick={() => setShowAdd(true)} icon={ICONS.plus(16)}>Set Budget</Button>
-      </header>
+      {/* Monthly Overview band */}
+      {(budgets?.length ?? 0) > 0 && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 2fr) minmax(0, 1fr)', gap: 20 }} className="budget-overview">
+          <Card style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <Eyebrow color="var(--color-primary)">{monthLabel}</Eyebrow>
+            <h3 style={{ fontSize: 22, fontWeight: 700, color: 'var(--color-text-primary)', margin: 0, fontFamily: 'var(--font-display)', letterSpacing: '-0.02em' }}>
+              Monthly Overview
+            </h3>
+            <p style={{ fontSize: 13, color: 'var(--color-text-secondary)', margin: 0, lineHeight: 1.55 }}>
+              You've spent <strong style={{ color: 'var(--color-text-primary)' }}>{totals.percent.toFixed(0)}%</strong> of your monthly limit.
+              {totals.remaining >= 0
+                ? ` You're on track to save ${fmt(totals.remaining)}.`
+                : ` You're over by ${fmt(Math.abs(totals.remaining))}.`}
+            </p>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginTop: 4 }}>
+              <Eyebrow>Total spent</Eyebrow>
+              <span style={{ fontSize: 26, fontWeight: 700, color: 'var(--color-text-primary)', fontFamily: 'var(--font-display)', letterSpacing: '-0.02em' }}>
+                {fmt(totals.spent)}
+              </span>
+              <span style={{ fontSize: 13, color: 'var(--color-text-tertiary)' }}>/ {fmt(totals.limit)}</span>
+              <div style={{ marginLeft: 'auto' }}>
+                <Button onClick={() => setShowAdd(true)} icon={ICONS.plus(16)}>Set Budget</Button>
+              </div>
+            </div>
+          </Card>
+
+          <Card style={{
+            background: 'var(--hero-gradient)', color: 'white', overflow: 'hidden',
+            display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center',
+            position: 'relative', gap: 8, padding: 24,
+          }}>
+            <Eyebrow color="rgba(255,255,255,0.85)">Remaining Balance</Eyebrow>
+            <div style={{ width: 130, height: 130, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <BudgetGauge percent={Math.min(100, Math.max(0, totals.percent))} size={130} />
+            </div>
+            <span style={{ fontSize: 24, fontWeight: 700, fontFamily: 'var(--font-display)', letterSpacing: '-0.02em' }}>
+              {fmt(Math.abs(totals.remaining))}
+            </span>
+            <span style={{ fontSize: 11, opacity: 0.85, fontWeight: 600 }}>
+              {(100 - totals.percent).toFixed(0)}% left · {daysLeft}d remaining
+            </span>
+          </Card>
+        </div>
+      )}
+
+      <SectionHeader
+        title="Category Budgets"
+        action={
+          (budgets?.length ?? 0) === 0 ? (
+            <Button onClick={() => setShowAdd(true)} icon={ICONS.plus(16)}>Set Budget</Button>
+          ) : null
+        }
+      />
 
       {/* Alerts */}
       {alerts && alerts.length > 0 && !searchTerm && (

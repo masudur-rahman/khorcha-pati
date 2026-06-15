@@ -144,3 +144,29 @@ h1, h2, h3, h4, h5, h6 {
   background: var(--color-primary-subtle);
   color: var(--color-primary);
 }
+
+/* Budget overview band — stack on mobile */
+@media (max-width: 768px) {
+  .budget-overview {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* Wallet carousel — scroll-snap on mobile */
+@media (max-width: 640px) {
+  .wallet-carousel {
+    grid-template-columns: none !important;
+    display: flex !important;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    gap: 14px;
+    padding-bottom: 6px;
+    scrollbar-width: none;
+  }
+  .wallet-carousel::-webkit-scrollbar { display: none; }
+  .wallet-carousel > * {
+    scroll-snap-align: start;
+    flex: 0 0 80%;
+    max-width: 320px;
+  }
+}
