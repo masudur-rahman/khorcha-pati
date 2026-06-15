@@ -78,7 +78,7 @@ export default function Wallets() {
                     <h3 style={{ fontSize: 17, fontWeight: 700, color: 'var(--color-text-primary)', marginBottom: 2 }}>{w.name}</h3>
                     <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--color-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 20 }}>{w.shortName}</p>
 
-                    <div style={{ fontSize: 28, fontWeight: 800, color: 'var(--color-text-primary)', letterSpacing: '-0.02em', display: 'flex', alignItems: 'baseline', gap: 4, fontFamily: "'Space Grotesk', sans-serif" }}>
+                    <div style={{ fontSize: 28, fontWeight: 800, color: 'var(--color-text-primary)', letterSpacing: '-0.02em', display: 'flex', alignItems: 'baseline', gap: 4, fontFamily: "var(--font-display)" }}>
                       <span style={{ fontSize: 18, fontWeight: 600, color: 'var(--color-text-tertiary)' }}>৳</span>
                       {Math.abs(w.balance).toLocaleString('en-US', { minimumFractionDigits: 2 })}
                       {w.balance < 0 && <span style={{ fontSize: 12, color: 'var(--color-danger)', marginLeft: 4, fontWeight: 700 }}>(DR)</span>}

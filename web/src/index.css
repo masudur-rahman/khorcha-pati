@@ -20,6 +20,7 @@
 :root {
   /* Primary Blue */
   --color-primary: #0052CC;
+  --color-primary-deep: #003D9B;
   --color-primary-hover: #0747A6;
   --color-primary-subtle: #DEEBFF;
   --color-primary-shadow: rgba(0, 82, 204, 0.2);
@@ -28,8 +29,8 @@
   --color-success: #00875A;
   --color-success-subtle: #E3FCEF;
 
-  /* Danger Red */
-  --color-danger: #DE350B;
+  /* Danger Red (Hisab: softer expense rose) */
+  --color-danger: #FF5630;
   --color-danger-subtle: #FFEBE6;
 
   /* Warning */
@@ -49,7 +50,12 @@
   --color-text-tertiary: #6B778C;
 
   /* Gradient hero card */
-  --hero-gradient: linear-gradient(135deg, #0052CC 0%, #00B8D9 100%);
+  --hero-gradient: linear-gradient(135deg, #003D9B 0%, #0052CC 55%, #00B8D9 100%);
+
+  /* Typography */
+  --font-display: 'Geist', 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-body: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'Geist Mono', 'Geist', ui-monospace, SFMono-Regular, monospace;
 
   /* Radius */
   --radius-sm: 8px;
@@ -65,6 +71,7 @@
 /* Dark mode */
 .dark {
   --color-primary: #4C9AFF;
+  --color-primary-deep: #2684FF;
   --color-primary-hover: #2684FF;
   --color-primary-subtle: rgba(76, 154, 255, 0.12);
   --color-primary-shadow: rgba(76, 154, 255, 0.2);
@@ -88,18 +95,18 @@
   --color-text-secondary: #A0AEC0;
   --color-text-tertiary: #718096;
 
-  --hero-gradient: linear-gradient(135deg, #0747A6 0%, #006B77 100%);
+  --hero-gradient: linear-gradient(135deg, #002766 0%, #0747A6 55%, #006B77 100%);
 }
 
 body {
-  font-family: 'DM Sans', sans-serif;
+  font-family: var(--font-body);
   background-color: var(--color-bg);
   color: var(--color-text-primary);
   transition: background-color var(--transition-normal), color var(--transition-normal);
 }
 
 h1, h2, h3, h4, h5, h6 {
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: var(--font-display);
 }
 
 .hover-row {

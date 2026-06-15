@@ -112,17 +112,17 @@ export default function Transactions() {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 20 }}>
         <Card style={{ borderLeft: '4px solid var(--color-success)' }}>
           <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 8px' }}>Total Income</p>
-          <p style={{ fontSize: 26, fontWeight: 700, color: 'var(--color-success)', margin: 0, fontFamily: "'Space Grotesk', sans-serif" }}>+{fmt(totals.income)}</p>
+          <p style={{ fontSize: 26, fontWeight: 700, color: 'var(--color-success)', margin: 0, fontFamily: "var(--font-display)" }}>+{fmt(totals.income)}</p>
           <p style={{ fontSize: 12, color: 'var(--color-text-tertiary)', margin: '8px 0 0', fontWeight: 500 }}>{txns.filter(t => t.type === 'Income').length} transactions</p>
         </Card>
         <Card style={{ borderLeft: '4px solid var(--color-danger)' }}>
           <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 8px' }}>Total Expense</p>
-          <p style={{ fontSize: 26, fontWeight: 700, color: 'var(--color-danger)', margin: 0, fontFamily: "'Space Grotesk', sans-serif" }}>-{fmt(totals.expense)}</p>
+          <p style={{ fontSize: 26, fontWeight: 700, color: 'var(--color-danger)', margin: 0, fontFamily: "var(--font-display)" }}>-{fmt(totals.expense)}</p>
           <p style={{ fontSize: 12, color: 'var(--color-text-tertiary)', margin: '8px 0 0', fontWeight: 500 }}>{txns.filter(t => t.type === 'Expense').length} transactions</p>
         </Card>
         <Card style={{ borderLeft: '4px solid var(--color-primary)' }}>
           <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 8px' }}>Transfers</p>
-          <p style={{ fontSize: 26, fontWeight: 700, color: 'var(--color-primary)', margin: 0, fontFamily: "'Space Grotesk', sans-serif" }}>{fmt(totals.transfers)}</p>
+          <p style={{ fontSize: 26, fontWeight: 700, color: 'var(--color-primary)', margin: 0, fontFamily: "var(--font-display)" }}>{fmt(totals.transfers)}</p>
           <p style={{ fontSize: 12, color: 'var(--color-text-tertiary)', margin: '8px 0 0', fontWeight: 500 }}>{txns.filter(t => t.type === 'Transfer').length} transactions</p>
         </Card>
       </div>

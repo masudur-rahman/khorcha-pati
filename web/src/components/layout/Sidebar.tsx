@@ -170,7 +170,7 @@ export default function Sidebar() {
               textAlign: 'center',
             }}
           >
-            Expense Tracker v2.0
+            Hisab v2.0
           </p>
         )}
       </div>

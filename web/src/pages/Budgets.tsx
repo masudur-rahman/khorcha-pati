@@ -114,11 +114,11 @@ function BudgetCard({ budget }: { budget: import('../types').BudgetStatus }) {
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
           <div style={{ background: 'var(--color-bg)', padding: '12px 16px', borderRadius: 'var(--radius-md)' }}>
             <p style={{ fontSize: 10, fontWeight: 700, color: 'var(--color-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>Spent</p>
-            <p style={{ fontSize: 16, fontWeight: 800, color: 'var(--color-text-primary)', fontFamily: "'Space Grotesk', sans-serif" }}>{fmt(budget.spent)}</p>
+            <p style={{ fontSize: 16, fontWeight: 800, color: 'var(--color-text-primary)', fontFamily: "var(--font-display)" }}>{fmt(budget.spent)}</p>
           </div>
           <div style={{ background: 'var(--color-bg)', padding: '12px 16px', borderRadius: 'var(--radius-md)' }}>
             <p style={{ fontSize: 10, fontWeight: 700, color: 'var(--color-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>Limit</p>
-            <p style={{ fontSize: 16, fontWeight: 800, color: 'var(--color-text-primary)', fontFamily: "'Space Grotesk', sans-serif" }}>{fmt(budget.amount)}</p>
+            <p style={{ fontSize: 16, fontWeight: 800, color: 'var(--color-text-primary)', fontFamily: "var(--font-display)" }}>{fmt(budget.amount)}</p>
           </div>
         </div>
       </div>
@@ -131,7 +131,7 @@ function BudgetCard({ budget }: { budget: import('../types').BudgetStatus }) {
         <span style={{ fontSize: 10, fontWeight: 800, textTransform: 'uppercase', color: budget.remaining >= 0 ? 'var(--color-success)' : 'var(--color-danger)', letterSpacing: '0.05em' }}>
           {budget.remaining >= 0 ? 'Available Balance' : 'Budget Exceeded'}
         </span>
-        <span style={{ fontSize: 15, fontWeight: 800, color: budget.remaining >= 0 ? 'var(--color-success)' : 'var(--color-danger)', fontFamily: "'Space Grotesk', sans-serif" }}>
+        <span style={{ fontSize: 15, fontWeight: 800, color: budget.remaining >= 0 ? 'var(--color-success)' : 'var(--color-danger)', fontFamily: "var(--font-display)" }}>
           {fmt(Math.abs(budget.remaining))}
         </span>
       </div>

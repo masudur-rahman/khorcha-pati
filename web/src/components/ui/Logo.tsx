@@ -8,19 +8,30 @@ export default function Logo({ size = 32, collapsed = false }: LogoProps) {
     <div style={{ display: 'flex', alignItems: 'center', gap: collapsed ? 0 : 12 }}>
       <img
         src="/logo-short.svg"
-        alt="Expense Tracker"
+        alt="Hisab"
         style={{ height: size, width: size, borderRadius: size * 0.22 }}
       />
       {!collapsed && (
-        <span style={{
-          fontSize: size * 0.5,
-          fontWeight: 700,
-          letterSpacing: '-0.03em',
-          color: 'var(--color-text-primary)',
-          lineHeight: 1,
-        }}>
-          Expense<span style={{ color: 'var(--color-primary)' }}> Tracker</span>
-        </span>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 2, lineHeight: 1 }}>
+          <span style={{
+            fontSize: size * 0.55,
+            fontWeight: 700,
+            letterSpacing: '-0.03em',
+            color: 'var(--color-text-primary)',
+            fontFamily: 'var(--font-display)',
+          }}>
+            Hisab
+          </span>
+          <span style={{
+            fontSize: 10,
+            fontWeight: 600,
+            letterSpacing: '0.05em',
+            textTransform: 'uppercase',
+            color: 'var(--color-text-tertiary)',
+          }}>
+            Every taka, accounted for
+          </span>
+        </div>
       )}
     </div>
   )

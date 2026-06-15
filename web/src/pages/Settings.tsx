@@ -104,7 +104,7 @@ export default function Settings() {
               borderRadius: 'var(--radius-xl)', padding: 32, color: 'white', position: 'relative', overflow: 'hidden',
             }}>
               <div style={{ position: 'absolute', top: -20, right: -20, width: 120, height: 120, borderRadius: '50%', background: 'rgba(255,255,255,0.08)' }} />
-              <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 10, fontFamily: "'Space Grotesk', sans-serif" }}>Pro Tip</h3>
+              <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 10, fontFamily: "var(--font-display)" }}>Pro Tip</h3>
               <p style={{ fontSize: 14, opacity: 0.9, lineHeight: 1.7 }}>
                 You can also update your timezone directly via Telegram by sending your location to the bot.
               </p>
@@ -114,7 +114,7 @@ export default function Settings() {
           {/* Security */}
           {matchesSearch('Security') && (
             <div style={{ background: '#172B4D', borderRadius: 'var(--radius-xl)', padding: 32, color: 'white' }}>
-              <h3 style={{ fontSize: 17, fontWeight: 700, marginBottom: 12, fontFamily: "'Space Grotesk', sans-serif" }}>Account Security</h3>
+              <h3 style={{ fontSize: 17, fontWeight: 700, marginBottom: 12, fontFamily: "var(--font-display)" }}>Account Security</h3>
               <p style={{ fontSize: 13, opacity: 0.7, lineHeight: 1.7, marginBottom: 24 }}>
                 Your account is linked to your Telegram profile. For maximum security, enable Two-Step Verification in your Telegram settings.
               </p>

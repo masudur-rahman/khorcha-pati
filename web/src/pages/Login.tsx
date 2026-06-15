@@ -83,8 +83,8 @@ export default function Login() {
 
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
           {/* Logo */}
-          <img src="/logo-short.svg" alt="Expense Tracker" style={{ width: 48, height: 48, margin: '0 auto 16px', borderRadius: 14 }} />
-          <h1 style={{ fontSize: 28, fontWeight: 700, color: '#172B4D', margin: '0 0 6px', letterSpacing: '-0.02em', fontFamily: "'Space Grotesk', sans-serif" }}>Welcome Back</h1>
+          <img src="/logo-short.svg" alt="Hisab" style={{ width: 48, height: 48, margin: '0 auto 16px', borderRadius: 14 }} />
+          <h1 style={{ fontSize: 28, fontWeight: 700, color: '#172B4D', margin: '0 0 6px', letterSpacing: '-0.02em', fontFamily: "var(--font-display)" }}>Welcome Back</h1>
           <p style={{ fontSize: 14, color: '#6B778C', margin: 0, fontWeight: 500 }}>Sign in to your expense dashboard</p>
         </div>
 

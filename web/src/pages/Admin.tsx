@@ -35,7 +35,7 @@ export default function Admin() {
         {statCards.map(card => (
           <Card key={card.label} style={{ borderLeft: `4px solid ${card.color}` }}>
             <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 8px' }}>{card.label}</p>
-            <p style={{ fontSize: 26, fontWeight: 700, color: card.color, margin: 0, fontFamily: "'Space Grotesk', sans-serif" }}>{card.value}</p>
+            <p style={{ fontSize: 26, fontWeight: 700, color: card.color, margin: 0, fontFamily: "var(--font-display)" }}>{card.value}</p>
           </Card>
         ))}
       </div>

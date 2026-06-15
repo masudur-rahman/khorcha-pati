@@ -17,14 +17,14 @@
 .landing-body * { margin: 0; padding: 0; box-sizing: border-box; }
 
 .landing-body {
-  font-family: 'DM Sans', sans-serif;
+  font-family: var(--font-body);
   background: var(--bg);
   color: var(--fg);
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
 }
 .landing-body h1, .landing-body h2, .landing-body h3 {
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: var(--font-display);
   font-weight: 700;
 }
 
@@ -39,7 +39,7 @@
 }
 .logo {
   display: flex; align-items: center; gap: 10px;
-  font-family: 'Space Grotesk'; font-weight: 700; font-size: 20px;
+  font-family: var(--font-display); font-weight: 700; font-size: 20px;
   text-decoration: none; color: inherit;
 }
 .logo-icon {
@@ -159,7 +159,7 @@
 }
 .dash-sidebar span {
   color: white; font-weight: 700; font-size: 13px;
-  font-family: 'Space Grotesk';
+  font-family: var(--font-display);
 }
 .dash-body { padding: 15px; }
 .dash-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
@@ -173,7 +173,7 @@
 }
 .dash-stat-val {
   font-size: 17px; font-weight: 700;
-  font-family: 'Space Grotesk'; margin-top: 4px;
+  font-family: var(--font-display); margin-top: 4px;
 }
 .dash-chart {
   height: 90px; border-radius: 12px; background: var(--bg);
@@ -190,7 +190,7 @@
 }
 .dash-txn:last-child { border: none; }
 .dash-txn-cat { font-weight: 600; }
-.dash-txn-amt { font-weight: 700; font-family: 'Space Grotesk'; }
+.dash-txn-amt { font-weight: 700; font-family: var(--font-display); }
 .dash-txn-amt.neg { color: var(--red); }
 .dash-txn-amt.pos { color: var(--green); }
 
@@ -201,7 +201,7 @@
   letter-spacing: 0.08em; color: var(--accent); margin-bottom: 12px;
 }
 .section-title {
-  font-family: 'Space Grotesk', sans-serif; font-weight: 700;
+  font-family: var(--font-display); font-weight: 700;
   font-size: clamp(28px, 3.5vw, 44px); line-height: 1.15;
   letter-spacing: -0.02em; max-width: 600px;
 }
@@ -216,7 +216,7 @@
 .input-ex {
   display: flex; align-items: center; gap: 14px;
   padding: 13px 20px; border-radius: 14px; background: white;
-  border: 1px solid var(--border); font-family: 'Space Grotesk';
+  border: 1px solid var(--border); font-family: var(--font-display);
   font-size: 15px; font-weight: 500; color: var(--fg);
   transition: transform 0.2s, box-shadow 0.2s;
 }
@@ -224,7 +224,7 @@
 .input-ex .arrow { color: var(--accent); font-size: 18px; flex-shrink: 0; }
 .input-desc { padding: 28px; }
 .input-desc h3 {
-  font-family: 'Space Grotesk', sans-serif; font-weight: 700;
+  font-family: var(--font-display); font-weight: 700;
   font-size: 26px; margin-bottom: 16px; letter-spacing: -0.02em;
 }
 .input-desc p { color: var(--fg-muted); line-height: 1.7; font-size: 15px; }
@@ -244,7 +244,7 @@
 .fi-blue { background: var(--accent-light); color: var(--accent); }
 .fi-green { background: var(--green-light); color: var(--green); }
 .feature-card h3 {
-  font-family: 'Space Grotesk', sans-serif; font-weight: 700;
+  font-family: var(--font-display); font-weight: 700;
   font-size: 18px; margin-bottom: 10px;
 }
 .feature-card p { font-size: 14px; color: var(--fg-muted); line-height: 1.65; }
@@ -269,7 +269,7 @@
   margin: 0 auto 20px; display: grid; place-items: center;
   background: #2D3748;
 }
-.login-card h3 { font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 17px; margin-bottom: 8px; }
+.login-card h3 { font-family: var(--font-display); font-weight: 700; font-size: 17px; margin-bottom: 8px; }
 .login-card p { font-size: 13px; color: #718096; line-height: 1.6; }
 
 /* DASHBOARD FEATURES */
@@ -285,7 +285,7 @@
   width: 40px; height: 40px; border-radius: 10px;
   flex-shrink: 0; display: grid; place-items: center;
 }
-.dash-feat h3 { font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 16px; margin-bottom: 6px; }
+.dash-feat h3 { font-family: var(--font-display); font-weight: 700; font-size: 16px; margin-bottom: 6px; }
 .dash-feat p { font-size: 13px; color: var(--fg-muted); line-height: 1.6; }
 
 /* COMMANDS */
@@ -296,7 +296,7 @@
   background: var(--bg-card); border: 1px solid var(--border);
 }
 .cmd-code {
-  font-family: 'Space Grotesk'; font-weight: 700; font-size: 15px;
+  font-family: var(--font-display); font-weight: 700; font-size: 15px;
   color: var(--accent); white-space: nowrap; min-width: 110px;
 }
 .cmd-desc { font-size: 14px; color: var(--fg-muted); }
@@ -307,7 +307,7 @@
   max-width: 700px; margin: 0 auto;
 }
 .cta-section h2 {
-  font-family: 'Space Grotesk', sans-serif; font-weight: 700;
+  font-family: var(--font-display); font-weight: 700;
   font-size: clamp(32px, 4vw, 48px); line-height: 1.12; letter-spacing: -0.02em;
 }
 .cta-section p { font-size: 17px; color: var(--fg-muted); margin-top: 16px; line-height: 1.7; }

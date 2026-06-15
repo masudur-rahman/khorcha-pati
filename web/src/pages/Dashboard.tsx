@@ -105,8 +105,8 @@ export default function Dashboard() {
         <div style={{ position: 'absolute', top: 20, right: 180, width: 80, height: 80, borderRadius: '50%', background: 'rgba(255,255,255,0.03)' }} />
 
         <div style={{ position: 'relative', zIndex: 1 }}>
-          <p style={{ fontSize: 14, opacity: 0.85, margin: 0, fontWeight: 500 }}>{greeting}, Tracker</p>
-          <h2 style={{ fontSize: 28, fontWeight: 700, margin: '6px 0 24px', letterSpacing: '-0.02em', fontFamily: "'Space Grotesk', sans-serif" }}>
+          <p style={{ fontSize: 14, opacity: 0.85, margin: 0, fontWeight: 500 }}>{greeting}</p>
+          <h2 style={{ fontSize: 28, fontWeight: 700, margin: '6px 0 24px', letterSpacing: '-0.02em', fontFamily: "var(--font-display)" }}>
             Current Balance is {fmt(overview.totalBalance)}
           </h2>
           <div className="balance-actions">
