@@ -19,6 +19,7 @@ import Select from '../components/ui/Select'
 import { ICONS } from '../components/ui/Icons'
 import WalletFlow from '../components/ui/WalletFlow'
 import TransactionDetails from '../components/ui/TransactionDetails'
+import MetricChip from '../components/ui/MetricChip'
 
 type TxnType = 'Expense' | 'Income' | 'Transfer'
 const typeOptions: TxnType[] = ['Expense', 'Income', 'Transfer']
@@ -108,23 +109,29 @@ export default function Transactions() {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
       <TopBar title="Transactions" subtitle="Detailed history of your financial movements" />
 
-      {/* Summary Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 20 }}>
-        <Card style={{ borderLeft: '4px solid var(--color-success)' }}>
-          <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 8px' }}>Total Income</p>
-          <p style={{ fontSize: 26, fontWeight: 700, color: 'var(--color-success)', margin: 0, fontFamily: "var(--font-display)" }}>+{fmt(totals.income)}</p>
-          <p style={{ fontSize: 12, color: 'var(--color-text-tertiary)', margin: '8px 0 0', fontWeight: 500 }}>{txns.filter(t => t.type === 'Income').length} transactions</p>
-        </Card>
-        <Card style={{ borderLeft: '4px solid var(--color-danger)' }}>
-          <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 8px' }}>Total Expense</p>
-          <p style={{ fontSize: 26, fontWeight: 700, color: 'var(--color-danger)', margin: 0, fontFamily: "var(--font-display)" }}>-{fmt(totals.expense)}</p>
-          <p style={{ fontSize: 12, color: 'var(--color-text-tertiary)', margin: '8px 0 0', fontWeight: 500 }}>{txns.filter(t => t.type === 'Expense').length} transactions</p>
-        </Card>
-        <Card style={{ borderLeft: '4px solid var(--color-primary)' }}>
-          <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 8px' }}>Transfers</p>
-          <p style={{ fontSize: 26, fontWeight: 700, color: 'var(--color-primary)', margin: 0, fontFamily: "var(--font-display)" }}>{fmt(totals.transfers)}</p>
-          <p style={{ fontSize: 12, color: 'var(--color-text-tertiary)', margin: '8px 0 0', fontWeight: 500 }}>{txns.filter(t => t.type === 'Transfer').length} transactions</p>
-        </Card>
+      {/* Summary chips */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16 }}>
+        <MetricChip
+          label="Total Income"
+          value={`+${fmt(totals.income)}`}
+          accent="var(--color-success)"
+          icon={ICONS.arrowUp(16)}
+          hint={`${txns.filter(t => t.type === 'Income').length} transactions`}
+        />
+        <MetricChip
+          label="Total Expense"
+          value={`−${fmt(totals.expense)}`}
+          accent="var(--color-danger)"
+          icon={ICONS.arrowDown(16)}
+          hint={`${txns.filter(t => t.type === 'Expense').length} transactions`}
+        />
+        <MetricChip
+          label="Transfers"
+          value={fmt(totals.transfers)}
+          accent="var(--color-primary)"
+          icon={ICONS.transfer(16)}
+          hint={`${txns.filter(t => t.type === 'Transfer').length} transactions`}
+        />
       </div>
 
       {/* Filter Bar */}
@@ -154,8 +161,16 @@ export default function Transactions() {
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
             <thead>
               <tr style={{ borderBottom: '1px solid var(--color-border)' }}>
-                {['Date', 'Type', 'Category', 'Amount', 'Wallets', 'Remarks', ''].map(h => (
-                  <th key={h || 'actions'} style={{ padding: '14px 24px', textAlign: h === 'Amount' ? 'right' : h === 'Wallets' ? 'center' : 'left', fontSize: 10, fontWeight: 700, color: 'var(--color-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{h}</th>
+                {[
+                  { h: 'Date', cls: '' },
+                  { h: 'Type', cls: '' },
+                  { h: 'Category', cls: '' },
+                  { h: 'Amount', cls: '' },
+                  { h: 'Wallets', cls: 'hidden md:table-cell' },
+                  { h: 'Remarks', cls: 'hidden lg:table-cell' },
+                  { h: '', cls: '' },
+                ].map(({ h, cls }) => (
+                  <th key={h || 'actions'} className={cls} style={{ padding: '14px 24px', textAlign: h === 'Amount' ? 'right' : h === 'Wallets' ? 'center' : 'left', fontSize: 10, fontWeight: 700, color: 'var(--color-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{h}</th>
                 ))}
               </tr>
             </thead>
@@ -173,14 +188,15 @@ export default function Transactions() {
                   </td>
                   <td style={{
                     padding: '14px 24px', textAlign: 'right', fontWeight: 700, fontSize: 14,
+                    fontFamily: 'var(--font-mono)',
                     color: t.type === 'Income' ? 'var(--color-success)' : t.type === 'Transfer' ? 'var(--color-primary)' : 'var(--color-danger)',
                   }}>
-                    {t.type === 'Income' ? '+' : t.type === 'Transfer' ? '' : '-'}{fmt(t.amount)}
+                    {t.type === 'Income' ? '+' : t.type === 'Transfer' ? '' : '−'}{fmt(t.amount)}
                   </td>
-                  <td style={{ padding: '14px 24px' }}>
+                  <td className="hidden md:table-cell" style={{ padding: '14px 24px' }}>
                     <WalletFlow srcId={t.srcId} dstId={t.dstId} contactName={t.contactName} />
                   </td>
-                  <td style={{ padding: '14px 24px', color: 'var(--color-text-tertiary)', fontSize: 12, fontStyle: 'italic', maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  <td className="hidden lg:table-cell" style={{ padding: '14px 24px', color: 'var(--color-text-tertiary)', fontSize: 12, fontStyle: 'italic', maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {t.remarks || '—'}
                   </td>
                   <td style={{ padding: '14px 24px', textAlign: 'right' }}>
