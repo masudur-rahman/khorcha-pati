@@ -47,13 +47,21 @@ export default function TransactionDetails({
   const contactMap = new Map(contacts.map(c => [c.nickName, c.fullName]))
 
   const catId = txn.subcategoryId?.split('-')[0] ?? ''
-  const fromLabel = walletMap.get(txn.srcId) || contactMap.get(txn.srcId) || txn.srcId
-  const toLabel = walletMap.get(txn.dstId) || contactMap.get(txn.dstId) || txn.dstId
+  type PartyKind = 'wallet' | 'contact' | 'unknown'
+  const resolveParty = (id: string): { label: string; kind: PartyKind } | null => {
+    if (!id) return null
+    const w = walletMap.get(id)
+    if (w) return { label: w, kind: 'wallet' }
+    const c = contactMap.get(id)
+    if (c) return { label: c || id, kind: 'contact' }
+    return { label: id, kind: 'unknown' }
+  }
+  const from = resolveParty(txn.srcId)
+  const to = resolveParty(txn.dstId)
   const personLabel = contactMap.get(txn.contactName) || txn.contactName
+  const personIsDuplicate = !!personLabel && (personLabel === from?.label || personLabel === to?.label)
   const categoryName = catMap.get(catId) || catId
   const subcategoryName = subcatMap.get(txn.subcategoryId) || txn.subcategoryId
-  const hasFrom = !!txn.srcId
-  const hasTo = !!txn.dstId
 
   return (
     <>
@@ -160,7 +168,7 @@ export default function TransactionDetails({
             </div>
 
             {/* Movement card */}
-            {(hasFrom || hasTo || personLabel) && (
+            {(from || to || (personLabel && !personIsDuplicate)) && (
               <div style={{
                 background: 'var(--color-surface)',
                 borderRadius: 14,
@@ -169,20 +177,20 @@ export default function TransactionDetails({
                 borderLeft: `3px solid ${accentColor}`,
               }}>
                 <SectionLabel icon={ICONS.transfer(13)} text="Movement" />
-                {(hasFrom || hasTo) && (
+                {(from || to) && (
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 12 }}>
-                    {hasFrom && <Field label="From" value={fromLabel} icon={ICONS.wallet(13)} />}
-                    {hasFrom && hasTo && (
+                    {from && <PartyField label="From" party={from} />}
+                    {from && to && (
                       <div style={{ color: 'var(--color-text-tertiary)', fontWeight: 700, fontSize: 16, flexShrink: 0 }}>→</div>
                     )}
-                    {hasTo && <Field label="To" value={toLabel} icon={ICONS.creditCard(13)} />}
+                    {to && <PartyField label="To" party={to} />}
                   </div>
                 )}
-                {personLabel && (
+                {personLabel && !personIsDuplicate && (
                   <div style={{
-                    marginTop: hasFrom || hasTo ? 12 : 0,
-                    paddingTop: hasFrom || hasTo ? 12 : 0,
-                    borderTop: hasFrom || hasTo ? '1px dashed var(--color-border)' : 'none',
+                    marginTop: from || to ? 12 : 0,
+                    paddingTop: from || to ? 12 : 0,
+                    borderTop: from || to ? '1px dashed var(--color-border)' : 'none',
                   }}>
                     <Field label="Person" value={personLabel} icon={ICONS.user(13)} />
                   </div>
@@ -250,6 +258,39 @@ function SectionLabel({ icon, text }: { icon: React.ReactNode; text: string }) {
     <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--color-text-tertiary)' }}>
       {icon}
       <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>{text}</span>
+    </div>
+  )
+}
+
+function PartyField({ label, party }: { label: string; party: { label: string; kind: 'wallet' | 'contact' | 'unknown' } }) {
+  const isContact = party.kind === 'contact'
+  const tone = isContact ? 'var(--color-primary)' : 'var(--color-text-tertiary)'
+  const icon = isContact ? ICONS.user(13) : ICONS.wallet(13)
+  return (
+    <div style={{ flex: 1, minWidth: 0 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 5, color: 'var(--color-text-tertiary)' }}>
+        <span style={{ display: 'flex' }}>{icon}</span>
+        <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{label}</span>
+      </div>
+      <div style={{
+        fontSize: 13, fontWeight: 600,
+        color: 'var(--color-text-primary)',
+        marginTop: 4,
+        display: 'flex', alignItems: 'center', gap: 6,
+        minWidth: 0,
+      }}>
+        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{party.label}</span>
+        {isContact && (
+          <span style={{
+            flexShrink: 0,
+            fontSize: 9, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase',
+            padding: '2px 7px', borderRadius: 999,
+            background: 'var(--color-primary-subtle)', color: tone,
+          }}>
+            Contact
+          </span>
+        )}
+      </div>
     </div>
   )
 }
