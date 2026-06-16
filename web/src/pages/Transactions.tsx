@@ -38,6 +38,7 @@ export default function Transactions() {
   const [filterType, setFilterType] = useState<string>('')
   const [showAdd, setShowAdd] = useState(false)
   const [initialType, setInitialType] = useState<TxnType | undefined>()
+  const [initialContact, setInitialContact] = useState<string | undefined>()
   const [editTxn, setEditTxn] = useState<Transaction | null>(null)
   const [deleteTxn, setDeleteTxn] = useState<Transaction | null>(null)
   const [selectedTxn, setSelectedTxn] = useState<Transaction | null>(null)
@@ -47,8 +48,11 @@ export default function Transactions() {
     const addType = searchParams.get('add') as TxnType
     if (addType && typeOptions.includes(addType)) {
       setInitialType(addType)
+      const c = searchParams.get('contact')
+      if (c) setInitialContact(c)
       setShowAdd(true)
       searchParams.delete('add')
+      searchParams.delete('contact')
       setSearchParams(searchParams, { replace: true })
     }
 
@@ -274,11 +278,12 @@ export default function Transactions() {
         <TxnDialog
           txn={editTxn || undefined}
           initialType={initialType}
+          initialContact={initialContact}
           wallets={wallets ?? []}
           contacts={contacts ?? []}
           categories={categories ?? []}
           subcategories={subcategories ?? []}
-          onClose={() => { setShowAdd(false); setEditTxn(null); setInitialType(undefined) }}
+          onClose={() => { setShowAdd(false); setEditTxn(null); setInitialType(undefined); setInitialContact(undefined) }}
         />
       )}
       {deleteTxn && <DeleteDialog txn={deleteTxn} onClose={() => setDeleteTxn(null)} />}
@@ -290,6 +295,7 @@ export default function Transactions() {
 interface TxnDialogProps {
   txn?: Transaction
   initialType?: TxnType
+  initialContact?: string
   wallets: Wallet[]
   contacts: Contact[]
   categories: TxnCategory[]
@@ -297,7 +303,7 @@ interface TxnDialogProps {
   onClose: () => void
 }
 
-function TxnDialog({ txn, initialType, wallets, contacts, categories, subcategories, onClose }: TxnDialogProps) {
+function TxnDialog({ txn, initialType, initialContact, wallets, contacts, categories, subcategories, onClose }: TxnDialogProps) {
   const create = useCreateTransaction()
   const update = useUpdateTransaction()
   const isEdit = !!txn
@@ -310,8 +316,8 @@ function TxnDialog({ txn, initialType, wallets, contacts, categories, subcategor
   })
   const [subcategoryId, setSubcategoryId] = useState(txn?.subcategoryId ?? '')
   const [srcId, setSrcId] = useState(txn?.srcId ?? '')
-  const [dstId, setDstId] = useState(txn?.dstId ?? '')
-  const [contactName, setContactName] = useState(txn?.contactName ?? '')
+  const [dstId, setDstId] = useState(txn?.dstId ?? initialContact ?? '')
+  const [contactName, setContactName] = useState(txn?.contactName ?? initialContact ?? '')
   const [remarks, setRemarks] = useState(txn?.remarks ?? '')
 
   useEffect(() => {

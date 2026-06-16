@@ -7,6 +7,8 @@ import { useSearch } from '../context/SearchContext'
 import { fmt } from '../lib/formatter'
 import type { Contact } from '../types'
 
+import { useNavigate } from 'react-router-dom'
+
 import TopBar from '../components/layout/TopBar'
 import Card from '../components/ui/Card'
 import Button from '../components/ui/Button'
@@ -14,7 +16,6 @@ import Modal from '../components/ui/Modal'
 import Input from '../components/ui/Input'
 import Eyebrow from '../components/ui/Eyebrow'
 import SectionHeader from '../components/ui/SectionHeader'
-import Badge from '../components/ui/Badge'
 import DrawerPanel from '../components/ui/DrawerPanel'
 import { ICONS } from '../components/ui/Icons'
 
@@ -167,6 +168,7 @@ function ContactRow({ contact, onClick }: { contact: Contact; onClick: () => voi
 }
 
 function ContactDrawer({ contact, onClose }: { contact: Contact; onClose: () => void }) {
+  const navigate = useNavigate()
   const { data: resp } = useTransactions()
   const nick = contact.nickName.toLowerCase()
   const txns = (resp?.data ?? [])
@@ -181,6 +183,11 @@ function ContactDrawer({ contact, onClose }: { contact: Contact; onClose: () => 
   const owesYou = contact.netBalance > 0
   const settled = contact.netBalance === 0
   const color = settled ? 'var(--color-text-tertiary)' : owesYou ? 'var(--color-success)' : 'var(--color-danger)'
+
+  const goAdd = (type: 'Expense' | 'Income') => {
+    onClose()
+    navigate(`/transactions?add=${type}&contact=${encodeURIComponent(contact.nickName)}`)
+  }
 
   return (
     <DrawerPanel
@@ -197,6 +204,13 @@ function ContactDrawer({ contact, onClose }: { contact: Contact; onClose: () => 
           </span>
         </Card>
 
+        {/* Action buttons */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
+          <ActionBtn icon={ICONS.trendingDown(18)} label="Pay them" accent="var(--color-danger)" onClick={() => goAdd('Expense')} />
+          <ActionBtn icon={ICONS.trendingUp(18)} label="Got from them" accent="var(--color-success)" onClick={() => goAdd('Income')} />
+          <ActionBtn icon={ICONS.bell(18)} label="Remind" accent="var(--color-primary)" onClick={() => {/* TODO reminder API */ }} />
+        </div>
+
         {contact.email && (
           <div>
             <Eyebrow>Email</Eyebrow>
@@ -205,36 +219,79 @@ function ContactDrawer({ contact, onClose }: { contact: Contact; onClose: () => 
         )}
 
         <div>
-          <SectionHeader title="Recent Activity" />
+          <SectionHeader title="History with them" />
           {txns.length === 0 ? (
             <p style={{ color: 'var(--color-text-tertiary)', fontSize: 13, fontWeight: 500 }}>No transactions with this contact yet.</p>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {txns.map(t => (
-                <div key={t.id} style={{
-                  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                  padding: '12px 14px', background: 'var(--color-bg)',
-                  borderRadius: 'var(--radius-md)', gap: 12,
-                }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0, gap: 4 }}>
-                    <Badge type={t.type as any} />
-                    <span style={{ fontSize: 11, color: 'var(--color-text-tertiary)', fontWeight: 600 }}>
-                      {new Date(t.timestamp * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+              {txns.map(t => {
+                // Reframe from the contact relationship POV:
+                //   Income to user = "Received from them" (money came in)
+                //   Expense to user = "Paid to them"     (money went out)
+                //   Transfer = literal transfer
+                const isReceived = t.type === 'Income'
+                const isPaid = t.type === 'Expense'
+                const label = isReceived ? 'Received from them' : isPaid ? 'Paid to them' : 'Transfer'
+                const sign = isReceived ? '+' : isPaid ? '−' : ''
+                const txnColor = isReceived ? 'var(--color-success)' : isPaid ? 'var(--color-danger)' : 'var(--color-primary)'
+                const subtleBg = isReceived ? 'var(--color-success-subtle)' : isPaid ? 'var(--color-danger-subtle)' : 'var(--color-primary-subtle)'
+                return (
+                  <div key={t.id} style={{
+                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                    padding: '12px 14px', background: 'var(--color-bg)',
+                    borderRadius: 'var(--radius-md)', gap: 12,
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
+                      <div style={{
+                        width: 32, height: 32, borderRadius: '50%',
+                        background: subtleBg, color: txnColor,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                      }}>
+                        {isReceived ? ICONS.trendingUp(16) : isPaid ? ICONS.trendingDown(16) : ICONS.swapHoriz(16)}
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0, gap: 2 }}>
+                        <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--color-text-primary)' }}>{label}</span>
+                        <span style={{ fontSize: 11, color: 'var(--color-text-tertiary)', fontWeight: 600 }}>
+                          {new Date(t.timestamp * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                          {t.remarks ? ` · ${t.remarks}` : ''}
+                        </span>
+                      </div>
+                    </div>
+                    <span style={{
+                      fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: 14, whiteSpace: 'nowrap',
+                      color: txnColor,
+                    }}>
+                      {sign}{fmt(t.amount)}
                     </span>
                   </div>
-                  <span style={{
-                    fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: 14, whiteSpace: 'nowrap',
-                    color: t.type === 'Income' ? 'var(--color-success)' : t.type === 'Transfer' ? 'var(--color-primary)' : 'var(--color-danger)',
-                  }}>
-                    {t.type === 'Income' ? '+' : t.type === 'Transfer' ? '' : '−'}{fmt(t.amount)}
-                  </span>
-                </div>
-              ))}
+                )
+              })}
             </div>
           )}
         </div>
       </div>
     </DrawerPanel>
+  )
+}
+
+function ActionBtn({ icon, label, accent, onClick }: { icon: React.ReactNode; label: string; accent: string; onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
+        padding: '12px 8px', borderRadius: 'var(--radius-md)',
+        background: 'var(--color-surface)', border: `1px solid var(--color-border)`,
+        color: accent, cursor: 'pointer', fontFamily: 'inherit',
+        fontSize: 11, fontWeight: 700, transition: 'all var(--transition-fast)',
+        textTransform: 'uppercase', letterSpacing: '0.04em',
+      }}
+      onMouseEnter={e => { e.currentTarget.style.borderColor = accent; e.currentTarget.style.background = `color-mix(in srgb, ${accent} 8%, var(--color-surface))` }}
+      onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--color-border)'; e.currentTarget.style.background = 'var(--color-surface)' }}
+    >
+      <span style={{ display: 'flex' }}>{icon}</span>
+      {label}
+    </button>
   )
 }
 

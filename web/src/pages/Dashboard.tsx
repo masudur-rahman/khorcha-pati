@@ -20,7 +20,7 @@ import TransactionDetails from '../components/ui/TransactionDetails'
 import MetricChip from '../components/ui/MetricChip'
 import SectionHeader from '../components/ui/SectionHeader'
 import Eyebrow from '../components/ui/Eyebrow'
-import WalletCard, { WalletCardGhost, inferVariant } from '../components/ui/WalletCard'
+import WalletCard, { inferVariant } from '../components/ui/WalletCard'
 
 export default function Dashboard() {
   const navigate = useNavigate()
@@ -182,7 +182,7 @@ export default function Dashboard() {
         <div className="wallet-carousel" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 16 }}>
           {(() => {
             const counts: Record<string, number> = {}
-            return (wallets ?? []).slice(0, 3).map(w => {
+            return (wallets ?? []).slice(0, 4).map(w => {
               const variant = inferVariant(w.type, w.name, w.shortName)
               const idx = counts[variant] ?? 0
               counts[variant] = idx + 1
@@ -199,7 +199,6 @@ export default function Dashboard() {
               )
             })
           })()}
-          <WalletCardGhost onClick={() => navigate('/wallets')} />
         </div>
       </div>
 
