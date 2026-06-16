@@ -137,8 +137,9 @@
   line-height: 1.65;
   color: #505F79;
   max-width: 520px;
-  margin: 0 0 28px;
+  margin: 0 0 14px;
 }
+.hero-copy .lead.sub { color: #6B778C; font-size: 14.5px; margin-bottom: 28px; }
 .hero-cta { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 18px; }
 
 .btn {
@@ -405,6 +406,89 @@ footer a:hover { opacity: 1; }
   padding-top: 18px; margin-top: 18px;
   font-size: 12px; opacity: 0.5; text-align: center;
 }
+
+/* ---------- HOW IT WORKS STEPS ---------- */
+.steps {
+  margin-top: 40px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 22px;
+  max-width: 1080px;
+  margin-left: auto;
+  margin-right: auto;
+}
+@media (max-width: 820px) { .steps { grid-template-columns: 1fr; } }
+.step {
+  background: white;
+  border: 1px solid #DFE1E6;
+  border-radius: 16px;
+  padding: 28px 24px 24px;
+  text-align: left;
+  box-shadow: 0 4px 12px rgba(23, 43, 77, 0.04);
+  position: relative;
+}
+.step-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #003D9B 0%, #0052CC 100%);
+  color: white;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 16px;
+  margin-bottom: 14px;
+  box-shadow: 0 6px 16px rgba(0, 82, 204, 0.25);
+}
+.step h3 {
+  font-family: var(--font-display);
+  font-size: 17px; font-weight: 700;
+  margin: 0 0 8px; color: #172B4D;
+  letter-spacing: -0.01em;
+}
+.step p { font-size: 13px; line-height: 1.6; color: #505F79; margin: 0; }
+
+/* ---------- COMMANDS ---------- */
+.commands {
+  max-width: 1180px;
+  margin: 32px auto 0;
+  padding: 64px 24px;
+  text-align: center;
+}
+.commands h2 {
+  font-family: var(--font-display);
+  font-size: clamp(24px, 3.4vw, 36px);
+  font-weight: 700; letter-spacing: -0.02em;
+  margin: 8px 0 32px; color: #172B4D;
+}
+.cmd-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 14px;
+  text-align: left;
+}
+.cmd {
+  background: white;
+  border: 1px solid #DFE1E6;
+  border-radius: 12px;
+  padding: 16px 18px;
+  display: flex; flex-direction: column; gap: 6px;
+  transition: border-color 0.18s, transform 0.18s;
+}
+.cmd:hover { border-color: #0052CC; transform: translateY(-2px); }
+.cmd code {
+  font-family: var(--font-mono);
+  background: #F4F5F7;
+  color: #003D9B;
+  padding: 3px 10px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  align-self: flex-start;
+}
+.cmd span { font-size: 13px; line-height: 1.55; color: #505F79; }
 
 /* ---------- REDUCED MOTION ---------- */
 @media (prefers-reduced-motion: reduce) {
