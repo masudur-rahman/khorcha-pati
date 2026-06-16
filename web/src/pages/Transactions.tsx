@@ -115,21 +115,21 @@ export default function Transactions() {
           label="Total Income"
           value={`+${fmt(totals.income)}`}
           accent="var(--color-success)"
-          icon={ICONS.arrowUp(16)}
+          icon={ICONS.trendingUp(16)}
           hint={`${txns.filter(t => t.type === 'Income').length} transactions`}
         />
         <MetricChip
           label="Total Expense"
           value={`−${fmt(totals.expense)}`}
           accent="var(--color-danger)"
-          icon={ICONS.arrowDown(16)}
+          icon={ICONS.trendingDown(16)}
           hint={`${txns.filter(t => t.type === 'Expense').length} transactions`}
         />
         <MetricChip
           label="Transfers"
           value={fmt(totals.transfers)}
           accent="var(--color-primary)"
-          icon={ICONS.transfer(16)}
+          icon={ICONS.swapHoriz(16)}
           hint={`${txns.filter(t => t.type === 'Transfer').length} transactions`}
         />
       </div>
@@ -152,7 +152,7 @@ export default function Transactions() {
             </button>
           ))}
         </div>
-        <Button onClick={() => setShowAdd(true)} icon={ICONS.plus(16)}>Add Transaction</Button>
+        <Button onClick={() => setShowAdd(true)} icon={ICONS.addCircle(16)}>Add Transaction</Button>
       </div>
 
       {/* Table */}

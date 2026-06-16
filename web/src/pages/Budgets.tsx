@@ -70,7 +70,7 @@ export default function Budgets() {
               </span>
               <span style={{ fontSize: 13, color: 'var(--color-text-tertiary)' }}>/ {fmt(totals.limit)}</span>
               <div style={{ marginLeft: 'auto' }}>
-                <Button onClick={() => setShowAdd(true)} icon={ICONS.plus(16)}>Set Budget</Button>
+                <Button onClick={() => setShowAdd(true)} icon={ICONS.savings(16)}>Set Budget</Button>
               </div>
             </div>
           </Card>
@@ -154,7 +154,7 @@ function BudgetCard({ budget }: { budget: import('../types').BudgetStatus }) {
               width: 42, height: 42, borderRadius: 'var(--radius-md)',
               background: accentColor + '15', color: accentColor,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-            }}>{ICONS.budget(20)}</div>
+            }}>{ICONS.pieChart(20)}</div>
             <h3 style={{ fontSize: 17, fontWeight: 700, color: 'var(--color-text-primary)' }}>{budget.categoryName}</h3>
           </div>
           <button

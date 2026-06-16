@@ -53,7 +53,7 @@ export default function Wallets() {
       <section>
         <SectionHeader
           title="My Wallets"
-          action={<Button onClick={() => setShowAddWallet(true)} icon={ICONS.plus(16)}>Add Wallet</Button>}
+          action={<Button onClick={() => setShowAddWallet(true)} icon={ICONS.addCircle(16)}>Add Wallet</Button>}
         />
 
         {filteredWallets.length === 0 ? (

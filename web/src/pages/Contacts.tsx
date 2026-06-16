@@ -54,13 +54,13 @@ export default function Contacts() {
           label="Others owe you"
           amount={owedToYou}
           accent="var(--color-success)"
-          icon={ICONS.arrowDown(18)}
+          icon={ICONS.trendingUp(18)}
         />
         <CirclePanel
           label="You owe others"
           amount={oweOthers}
           accent="var(--color-danger)"
-          icon={ICONS.arrowUp(18)}
+          icon={ICONS.trendingDown(18)}
         />
         <Card style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: 12, padding: 18 }}>
           <Eyebrow>Reminders</Eyebrow>
@@ -72,7 +72,7 @@ export default function Contacts() {
       <section>
         <SectionHeader
           title="Contacts"
-          action={<Button onClick={() => setShowAddContact(true)} icon={ICONS.plus(16)}>Add Contact</Button>}
+          action={<Button onClick={() => setShowAddContact(true)} icon={ICONS.personAdd(16)}>Add Contact</Button>}
         />
 
         {filtered.length === 0 ? (

@@ -84,10 +84,10 @@ export default function Dashboard() {
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
 
   const quickActions = [
-    { label: 'Add Expense', icon: ICONS.arrowDown, onClick: () => navigate('/transactions?add=Expense'), mobileOrder: 1 },
-    { label: 'Add Income', icon: ICONS.arrowUp, onClick: () => navigate('/transactions?add=Income'), mobileOrder: 3 },
-    { label: 'Transfer', icon: ICONS.transfer, onClick: () => navigate('/transactions?add=Transfer'), mobileOrder: 2 },
-    { label: 'Statement', icon: ICONS.file, onClick: () => setShowStatementModal(true), mobileOrder: 4 },
+    { label: 'Add Expense', icon: ICONS.shoppingCart, onClick: () => navigate('/transactions?add=Expense'), mobileOrder: 1 },
+    { label: 'Add Income', icon: ICONS.trendingUp, onClick: () => navigate('/transactions?add=Income'), mobileOrder: 3 },
+    { label: 'Transfer', icon: ICONS.swapHoriz, onClick: () => navigate('/transactions?add=Transfer'), mobileOrder: 2 },
+    { label: 'Statement', icon: ICONS.receiptLong, onClick: () => setShowStatementModal(true), mobileOrder: 4 },
   ]
 
   return (
@@ -145,24 +145,27 @@ export default function Dashboard() {
           label="Income · this month"
           value={`+${fmt(overview.monthIncome)}`}
           accent="var(--color-success)"
-          icon={ICONS.arrowUp(16)}
+          icon={ICONS.trendingUp(16)}
         />
         <MetricChip
           label="Expense · this month"
           value={`−${fmt(overview.monthExpense)}`}
           accent="var(--color-danger)"
-          icon={ICONS.arrowDown(16)}
+          icon={ICONS.trendingDown(16)}
         />
         <MetricChip
           label="Net · all wallets"
           value={fmt(overview.totalBalance)}
           accent="var(--color-primary)"
-          icon={ICONS.money(16)}
+          icon={ICONS.wallet(16)}
         />
         <Card style={{ display: 'flex', alignItems: 'center', gap: 14, padding: 14, borderLeft: '4px solid var(--color-warning)', borderRadius: 'var(--radius-md)' }}>
           <BudgetGauge percent={overview.budgetUsage} size={64} />
           <div style={{ display: 'flex', flexDirection: 'column', gap: 4, minWidth: 0 }}>
-            <Eyebrow>Budget usage</Eyebrow>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span style={{ color: 'var(--color-warning)', display: 'flex' }}>{ICONS.pieChart(14)}</span>
+              <Eyebrow>Budget usage</Eyebrow>
+            </div>
             <span style={{ fontSize: 20, fontWeight: 700, color: 'var(--color-warning)', fontFamily: 'var(--font-display)', letterSpacing: '-0.02em' }}>
               {Math.round(overview.budgetUsage)}%
             </span>
