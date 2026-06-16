@@ -143,7 +143,16 @@ function ContactRow({ contact, onClick }: { contact: Contact; onClick: () => voi
           {contact.nickName}{contact.email ? ` · ${contact.email}` : ''}
         </div>
       </div>
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 2, flexShrink: 0 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4, flexShrink: 0 }}>
+        <span style={{
+          padding: '2px 8px', borderRadius: 999, fontSize: 9, fontWeight: 800,
+          letterSpacing: '0.06em', textTransform: 'uppercase',
+          background: settled ? 'var(--color-bg)' : owesYou ? 'var(--color-success-subtle)' : 'var(--color-danger-subtle)',
+          color,
+          whiteSpace: 'nowrap',
+        }}>
+          {settled ? 'Settled' : owesYou ? 'Owes you' : 'You owe'}
+        </span>
         <span style={{ fontFamily: 'var(--font-mono)', fontSize: 14, fontWeight: 700, color }}>
           {settled ? fmt(0) : `${owesYou ? '+' : '−'}${fmt(Math.abs(contact.netBalance))}`}
         </span>
@@ -159,8 +168,13 @@ function ContactRow({ contact, onClick }: { contact: Contact; onClick: () => voi
 
 function ContactDrawer({ contact, onClose }: { contact: Contact; onClose: () => void }) {
   const { data: resp } = useTransactions()
+  const nick = contact.nickName.toLowerCase()
   const txns = (resp?.data ?? [])
-    .filter(t => t.contactName === contact.nickName)
+    .filter(t =>
+      (t.contactName ?? '').toLowerCase() === nick ||
+      (t.srcId ?? '').toLowerCase() === nick ||
+      (t.dstId ?? '').toLowerCase() === nick
+    )
     .sort((a, b) => b.timestamp - a.timestamp)
     .slice(0, 20)
 
