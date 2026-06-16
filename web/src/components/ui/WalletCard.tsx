@@ -8,16 +8,33 @@ interface Props {
   name: string
   shortName: string
   balance: number
+  paletteIndex?: number
   trend?: { amount: number; days?: number }
   onClick?: () => void
   style?: CSSProperties
 }
 
-const gradients: Record<WalletCardVariant, string> = {
-  Bank: 'linear-gradient(135deg, #003D9B 0%, #0052CC 55%, #00B8D9 100%)',
-  Cash: 'linear-gradient(135deg, #00875A 0%, #36B37E 100%)',
-  Mobile: 'linear-gradient(135deg, #E2136E 0%, #FF5630 100%)',
-  Credit: 'linear-gradient(135deg, #172B4D 0%, #0A1628 100%)',
+const palettes: Record<WalletCardVariant, string[]> = {
+  Bank: [
+    'linear-gradient(135deg, #003D9B 0%, #0052CC 55%, #00B8D9 100%)',
+    'linear-gradient(135deg, #1E1A78 0%, #4C3FB6 55%, #7C4DFF 100%)',
+    'linear-gradient(135deg, #0A4D68 0%, #088395 55%, #05BFDB 100%)',
+    'linear-gradient(135deg, #1E3A5F 0%, #2C5282 55%, #3182CE 100%)',
+  ],
+  Cash: [
+    'linear-gradient(135deg, #00875A 0%, #36B37E 100%)',
+    'linear-gradient(135deg, #006844 0%, #2BAE66 55%, #7BC47F 100%)',
+    'linear-gradient(135deg, #1B5E20 0%, #43A047 55%, #C8E6C9 100%)',
+  ],
+  Mobile: [
+    'linear-gradient(135deg, #E2136E 0%, #FF5630 100%)',
+    'linear-gradient(135deg, #FF6F00 0%, #FF9100 55%, #FFC400 100%)',
+    'linear-gradient(135deg, #6A1B9A 0%, #C2185B 55%, #FF5630 100%)',
+  ],
+  Credit: [
+    'linear-gradient(135deg, #172B4D 0%, #0A1628 100%)',
+    'linear-gradient(135deg, #1A1A2E 0%, #16213E 55%, #0F3460 100%)',
+  ],
 }
 
 const typeLabel: Record<WalletCardVariant, string> = {
@@ -27,8 +44,27 @@ const typeLabel: Record<WalletCardVariant, string> = {
   Credit: 'CREDIT',
 }
 
-export default function WalletCard({ variant, name, shortName, balance, trend, onClick, style }: Props) {
+const PATTERNS = [
+  '',
+  'radial-gradient(circle at 88% 18%, rgba(255,255,255,0.14) 0 12%, transparent 13%), radial-gradient(circle at 92% 30%, rgba(255,255,255,0.10) 0 8%, transparent 9%)',
+  'linear-gradient(115deg, transparent 0 55%, rgba(255,255,255,0.10) 55% 60%, transparent 60% 70%, rgba(255,255,255,0.07) 70% 73%, transparent 73%)',
+  'repeating-linear-gradient(45deg, transparent 0 14px, rgba(255,255,255,0.05) 14px 15px)',
+]
+
+export function inferVariant(type: string, name: string, shortName: string): WalletCardVariant {
+  const hay = `${name} ${shortName}`.toLowerCase()
+  if (/bkash|nagad|rocket|upay|mcash|tap|tap pay|sure ?cash/.test(hay)) return 'Mobile'
+  if (/credit|amex|visa|master|card/.test(hay)) return 'Credit'
+  if (type === 'Bank') return 'Bank'
+  return 'Cash'
+}
+
+export default function WalletCard({ variant, name, shortName, balance, paletteIndex = 0, trend, onClick, style }: Props) {
+  const palette = palettes[variant]
+  const bg = palette[paletteIndex % palette.length]
+  const pattern = PATTERNS[paletteIndex % PATTERNS.length]
   const trendPositive = trend && trend.amount >= 0
+
   return (
     <button
       onClick={onClick}
@@ -39,7 +75,7 @@ export default function WalletCard({ variant, name, shortName, balance, trend, o
         color: 'white',
         position: 'relative',
         overflow: 'hidden',
-        background: gradients[variant],
+        background: bg,
         boxShadow: '0 10px 30px rgba(23,43,77,0.12)',
         border: 'none',
         cursor: onClick ? 'pointer' : 'default',
@@ -62,6 +98,7 @@ export default function WalletCard({ variant, name, shortName, balance, trend, o
         e.currentTarget.style.boxShadow = '0 10px 30px rgba(23,43,77,0.12)'
       }}
     >
+      <span aria-hidden style={{ position: 'absolute', inset: 0, background: pattern, pointerEvents: 'none' }} />
       <span aria-hidden style={{ position: 'absolute', top: -40, right: -40, width: 160, height: 160, borderRadius: '50%', background: 'rgba(255,255,255,0.08)' }} />
       <span aria-hidden style={{ position: 'absolute', bottom: -60, right: 30, width: 140, height: 140, borderRadius: '50%', background: 'rgba(255,255,255,0.05)' }} />
       <span aria-hidden style={{ position: 'absolute', inset: 0, boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.15)', borderRadius: 16, pointerEvents: 'none' }} />

@@ -20,7 +20,7 @@ import TransactionDetails from '../components/ui/TransactionDetails'
 import MetricChip from '../components/ui/MetricChip'
 import SectionHeader from '../components/ui/SectionHeader'
 import Eyebrow from '../components/ui/Eyebrow'
-import WalletCard, { WalletCardGhost } from '../components/ui/WalletCard'
+import WalletCard, { WalletCardGhost, inferVariant } from '../components/ui/WalletCard'
 
 export default function Dashboard() {
   const navigate = useNavigate()
@@ -180,16 +180,25 @@ export default function Dashboard() {
           action={<Link to="/wallets" style={{ fontSize: 12, fontWeight: 600, color: 'var(--color-primary)', textDecoration: 'none' }}>Manage →</Link>}
         />
         <div className="wallet-carousel" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 16 }}>
-          {(wallets ?? []).slice(0, 3).map(w => (
-            <WalletCard
-              key={w.id}
-              variant={w.type === 'Bank' ? 'Bank' : 'Cash'}
-              name={w.name}
-              shortName={w.shortName}
-              balance={w.balance}
-              onClick={() => navigate('/wallets')}
-            />
-          ))}
+          {(() => {
+            const counts: Record<string, number> = {}
+            return (wallets ?? []).slice(0, 3).map(w => {
+              const variant = inferVariant(w.type, w.name, w.shortName)
+              const idx = counts[variant] ?? 0
+              counts[variant] = idx + 1
+              return (
+                <WalletCard
+                  key={w.id}
+                  variant={variant}
+                  paletteIndex={idx}
+                  name={w.name}
+                  shortName={w.shortName}
+                  balance={w.balance}
+                  onClick={() => navigate('/wallets')}
+                />
+              )
+            })
+          })()}
           <WalletCardGhost onClick={() => navigate('/wallets')} />
         </div>
       </div>

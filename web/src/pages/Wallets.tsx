@@ -16,13 +16,12 @@ import Select from '../components/ui/Select'
 import SectionHeader from '../components/ui/SectionHeader'
 import Eyebrow from '../components/ui/Eyebrow'
 import Badge from '../components/ui/Badge'
-import WalletCard, { WalletCardGhost, WalletCardVariant } from '../components/ui/WalletCard'
+import WalletCard, { WalletCardGhost, inferVariant } from '../components/ui/WalletCard'
 import DrawerPanel from '../components/ui/DrawerPanel'
 import { ICONS } from '../components/ui/Icons'
 
-function variantOf(w: Wallet): WalletCardVariant {
-  if (w.type === 'Bank') return 'Bank'
-  return 'Cash'
+function variantOf(w: Wallet) {
+  return inferVariant(w.type, w.name, w.shortName)
 }
 
 export default function Wallets() {
@@ -64,16 +63,25 @@ export default function Wallets() {
           </Card>
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 20 }}>
-            {filteredWallets.map(w => (
-              <WalletCard
-                key={w.id}
-                variant={variantOf(w)}
-                name={w.name}
-                shortName={w.shortName}
-                balance={w.balance}
-                onClick={() => setActiveWalletId(w.id)}
-              />
-            ))}
+            {(() => {
+              const counts: Record<string, number> = {}
+              return filteredWallets.map(w => {
+                const variant = variantOf(w)
+                const idx = counts[variant] ?? 0
+                counts[variant] = idx + 1
+                return (
+                  <WalletCard
+                    key={w.id}
+                    variant={variant}
+                    paletteIndex={idx}
+                    name={w.name}
+                    shortName={w.shortName}
+                    balance={w.balance}
+                    onClick={() => setActiveWalletId(w.id)}
+                  />
+                )
+              })
+            })()}
             <WalletCardGhost onClick={() => setShowAddWallet(true)} />
           </div>
         )}
