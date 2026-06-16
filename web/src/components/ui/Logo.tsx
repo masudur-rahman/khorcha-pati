@@ -23,13 +23,13 @@ export default function Logo({ size = 32, collapsed = false }: LogoProps) {
             Hisab
           </span>
           <span style={{
-            fontSize: 10,
-            fontWeight: 600,
-            letterSpacing: '0.05em',
-            textTransform: 'uppercase',
+            fontSize: 11,
+            fontWeight: 500,
+            fontStyle: 'italic',
             color: 'var(--color-text-tertiary)',
+            letterSpacing: 0,
           }}>
-            Every taka, accounted for
+            Every taka, accounted for.
           </span>
         </div>
       )}

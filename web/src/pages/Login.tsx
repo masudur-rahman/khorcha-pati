@@ -85,7 +85,7 @@ export default function Login() {
           {/* Logo */}
           <img src="/logo-short.svg" alt="Hisab" style={{ width: 48, height: 48, margin: '0 auto 16px', borderRadius: 14 }} />
           <h1 style={{ fontSize: 28, fontWeight: 700, color: 'var(--color-text-primary)', margin: '0 0 6px', letterSpacing: '-0.02em', fontFamily: "var(--font-display)" }}>Welcome to Hisab</h1>
-          <p style={{ fontSize: 13, color: 'var(--color-text-tertiary)', margin: 0, fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase' }}>Every taka, accounted for.</p>
+          <p style={{ fontSize: 14, color: 'var(--color-text-tertiary)', margin: 0, fontWeight: 500, fontStyle: 'italic' }}>Every taka, accounted for.</p>
         </div>
 
         {magicError && (

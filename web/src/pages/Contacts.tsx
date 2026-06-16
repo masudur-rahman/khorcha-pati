@@ -84,7 +84,7 @@ export default function Contacts() {
           </Card>
         ) : (
           <Card padding={0}>
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
+            <div className="contact-list">
               {filtered.map(c => (
                 <ContactRow key={c.id} contact={c} onClick={() => setActiveId(c.id)} />
               ))}
@@ -123,8 +123,9 @@ function ContactRow({ contact, onClick }: { contact: Contact; onClick: () => voi
       className="hover-row"
       style={{
         display: 'flex', alignItems: 'center', gap: 14,
-        padding: '14px 20px', borderBottom: '1px solid var(--color-border)',
-        background: 'transparent', border: 'none', borderBottomColor: 'var(--color-border)',
+        padding: '14px 20px',
+        background: 'transparent',
+        border: 'none',
         cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left', width: '100%',
       }}
     >

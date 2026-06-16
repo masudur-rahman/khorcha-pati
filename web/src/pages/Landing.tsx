@@ -97,7 +97,7 @@ export default function Landing() {
               <Link className="btn ghost" to="/login">View Dashboard</Link>
             </div>
             <div className="trust">
-              <span>⭐ 4.8 · happy trackers</span>
+              <span>Open source</span>
               <span>•</span>
               <span>Free, forever</span>
               <span>•</span>
@@ -265,7 +265,7 @@ export default function Landing() {
 
       <section className="cta">
         <h2>Ready to master your money?</h2>
-        <p>Join trackers who reconcile their finances in seconds, not hours. Free. Forever. Open source.</p>
+        <p>Reconcile your finances in seconds, not hours. Free. Forever. Open source.</p>
         <div className="cta-actions">
           <a className="btn primary" href={BOT_URL} target="_blank" rel="noreferrer">Start tracking on Telegram</a>
           <Link className="btn ghost" to="/login">Explore Dashboard</Link>
