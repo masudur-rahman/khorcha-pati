@@ -52,6 +52,8 @@ export default function TransactionDetails({
   const personLabel = contactMap.get(txn.contactName) || txn.contactName
   const categoryName = catMap.get(catId) || catId
   const subcategoryName = subcatMap.get(txn.subcategoryId) || txn.subcategoryId
+  const hasFrom = !!txn.srcId
+  const hasTo = !!txn.dstId
 
   return (
     <>
@@ -158,25 +160,35 @@ export default function TransactionDetails({
             </div>
 
             {/* Movement card */}
-            <div style={{
-              background: 'var(--color-surface)',
-              borderRadius: 14,
-              padding: 14,
-              border: '1px solid var(--color-border)',
-              borderLeft: `3px solid ${accentColor}`,
-            }}>
-              <SectionLabel icon={ICONS.transfer(13)} text="Movement" />
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 12 }}>
-                <Field label="From" value={fromLabel || '—'} icon={ICONS.wallet(13)} />
-                <div style={{ color: 'var(--color-text-tertiary)', fontWeight: 700, fontSize: 16, flexShrink: 0 }}>→</div>
-                <Field label="To" value={toLabel || '—'} icon={ICONS.creditCard(13)} />
+            {(hasFrom || hasTo || personLabel) && (
+              <div style={{
+                background: 'var(--color-surface)',
+                borderRadius: 14,
+                padding: 14,
+                border: '1px solid var(--color-border)',
+                borderLeft: `3px solid ${accentColor}`,
+              }}>
+                <SectionLabel icon={ICONS.transfer(13)} text="Movement" />
+                {(hasFrom || hasTo) && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 12 }}>
+                    {hasFrom && <Field label="From" value={fromLabel} icon={ICONS.wallet(13)} />}
+                    {hasFrom && hasTo && (
+                      <div style={{ color: 'var(--color-text-tertiary)', fontWeight: 700, fontSize: 16, flexShrink: 0 }}>→</div>
+                    )}
+                    {hasTo && <Field label="To" value={toLabel} icon={ICONS.creditCard(13)} />}
+                  </div>
+                )}
+                {personLabel && (
+                  <div style={{
+                    marginTop: hasFrom || hasTo ? 12 : 0,
+                    paddingTop: hasFrom || hasTo ? 12 : 0,
+                    borderTop: hasFrom || hasTo ? '1px dashed var(--color-border)' : 'none',
+                  }}>
+                    <Field label="Person" value={personLabel} icon={ICONS.user(13)} />
+                  </div>
+                )}
               </div>
-              {personLabel && (
-                <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px dashed var(--color-border)' }}>
-                  <Field label="Person" value={personLabel} icon={ICONS.user(13)} />
-                </div>
-              )}
-            </div>
+            )}
 
             {/* Remarks card */}
             <div style={{
