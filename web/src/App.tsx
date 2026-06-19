@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { AuthProvider } from './context/AuthContext'
 import { SearchProvider } from './context/SearchContext'
+import { ThemeProvider } from './context/ThemeContext'
 import { useAuth } from './hooks/useAuth'
 import AppLayout from './components/layout/AppLayout'
 import Landing from './pages/Landing'
@@ -9,6 +10,7 @@ import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
 import Transactions from './pages/Transactions'
 import Wallets from './pages/Wallets'
+import Contacts from './pages/Contacts'
 import Budgets from './pages/Budgets'
 import Settings from './pages/Settings'
 import Statement from './pages/Statement'
@@ -21,13 +23,15 @@ const queryClient = new QueryClient({
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <SearchProvider>
-          <BrowserRouter>
-            <AppRoutes />
-          </BrowserRouter>
-        </SearchProvider>
-      </AuthProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <SearchProvider>
+            <BrowserRouter>
+              <AppRoutes />
+            </BrowserRouter>
+          </SearchProvider>
+        </AuthProvider>
+      </ThemeProvider>
     </QueryClientProvider>
   )
 }
@@ -60,6 +64,7 @@ function AppRoutes() {
         <Route path="/" element={<Dashboard />} />
         <Route path="/transactions" element={<Transactions />} />
         <Route path="/wallets" element={<Wallets />} />
+        <Route path="/contacts" element={<Contacts />} />
         <Route path="/budgets" element={<Budgets />} />
         <Route path="/settings" element={<Settings />} />
         {isAdmin && <Route path="/admin" element={<Admin />} />}

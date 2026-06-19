@@ -32,9 +32,38 @@ func Admin(ctx telebot.Context) error {
 			return ctx.Send("Usage: `/admin user <username>`", telebot.ModeMarkdown)
 		}
 		return adminUserDetail(ctx, parts[1])
+	case "disable":
+		if len(parts) < 2 {
+			return ctx.Send("Usage: `/admin disable <username>`", telebot.ModeMarkdown)
+		}
+		return adminSetActive(ctx, parts[1], false)
+	case "enable":
+		if len(parts) < 2 {
+			return ctx.Send("Usage: `/admin enable <username>`", telebot.ModeMarkdown)
+		}
+		return adminSetActive(ctx, parts[1], true)
 	default:
-		return ctx.Send("Unknown subcommand. Available: `stats`, `users`, `user <username>`", telebot.ModeMarkdown)
+		return ctx.Send("Unknown subcommand. Available: `stats`, `users`, `user <username>`, `disable <username>`, `enable <username>`", telebot.ModeMarkdown)
 	}
+}
+
+func adminSetActive(ctx telebot.Context, username string, active bool) error {
+	svc := all.GetServices()
+	user, err := svc.User.GetUserByUsername(username)
+	if err != nil {
+		return ctx.Send(fmt.Sprintf("User `%s` not found.", username), telebot.ModeMarkdown)
+	}
+	if user.TelegramID == ctx.Sender().ID {
+		return ctx.Send("You cannot change your own active status.")
+	}
+	if err := svc.User.SetActive(user.ID, active); err != nil {
+		return ctx.Send(fmt.Sprintf("Failed to update user: %v", err))
+	}
+	state := "disabled"
+	if active {
+		state = "enabled"
+	}
+	return ctx.Send(fmt.Sprintf("User `@%s` %s.", username, state), telebot.ModeMarkdown)
 }
 
 func adminStats(ctx telebot.Context) error {

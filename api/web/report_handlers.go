@@ -118,7 +118,7 @@ func HandleGetReport(w http.ResponseWriter, r *http.Request) {
 	report.TotalAmount, report.NetBalance = handlers.ComputeTotals(txns)
 	handlers.FinalizeReportTxns(&report, now)
 
-	pdfFile, err := handlers.GenerateTransactionStatementFromTemplate(report, "")
+	pdfFile, err := handlers.GenerateTransactionStatementFromTemplate(report, "Khorcha-Pati Statement")
 	if err != nil {
 		WriteError(w, http.StatusInternalServerError, "pdf_failed", err.Error())
 		return
@@ -127,7 +127,7 @@ func HandleGetReport(w http.ResponseWriter, r *http.Request) {
 
 	startFmt := startTime.Format("Jan-2006")
 	endFmt := now.Format("Jan-2006")
-	filename := fmt.Sprintf("expense-statement-%s-to-%s.pdf", startFmt, endFmt)
+	filename := fmt.Sprintf("khorcha-pati-statement-%s-to-%s.pdf", startFmt, endFmt)
 	w.Header().Set("Content-Type", "application/pdf")
 	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%q", filename))
 	http.ServeFile(w, r, pdfFile)

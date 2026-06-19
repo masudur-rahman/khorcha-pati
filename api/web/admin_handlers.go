@@ -27,9 +27,23 @@ type adminUserResponse struct {
 	FirstName    string `json:"firstName"`
 	LastName     string `json:"lastName"`
 	IsAdmin      bool   `json:"isAdmin"`
+	IsActive     bool   `json:"isActive"`
 	WalletCount  int    `json:"walletCount"`
 	TxnCount     int    `json:"txnCount"`
 	ContactCount int    `json:"contactCount"`
+	CreatedAt    int64  `json:"createdAt"`
+	LastTxnAt    int64  `json:"lastTxnAt"`
+}
+
+// lastTxnTime returns the most recent CreatedAt across a user's transactions, or 0 if none.
+func lastTxnTime(txns []models.Transaction) int64 {
+	var last int64
+	for _, t := range txns {
+		if t.CreatedAt > last {
+			last = t.CreatedAt
+		}
+	}
+	return last
 }
 
 // HandleAdminStats returns system-wide statistics.
@@ -77,9 +91,12 @@ func HandleAdminUsers(w http.ResponseWriter, _ *http.Request) {
 			FirstName:    u.FirstName,
 			LastName:     u.LastName,
 			IsAdmin:      u.IsAdmin,
+			IsActive:     u.IsActive,
 			WalletCount:  len(wallets),
 			TxnCount:     len(txns),
 			ContactCount: len(contacts),
+			CreatedAt:    u.CreatedAt,
+			LastTxnAt:    lastTxnTime(txns),
 		})
 	}
 
@@ -117,10 +134,60 @@ func HandleAdminUserDetail(w http.ResponseWriter, r *http.Request) {
 		FirstName:    user.FirstName,
 		LastName:     user.LastName,
 		IsAdmin:      user.IsAdmin,
+		IsActive:     user.IsActive,
 		WalletCount:  len(wallets),
 		TxnCount:     len(txns),
 		ContactCount: len(contacts),
+		CreatedAt:    user.CreatedAt,
+		LastTxnAt:    lastTxnTime(txns),
 	})
+}
+
+// HandleAdminSetUserActive enables or disables a user. Body: {"isActive": bool}.
+// Returns 400 if the admin tries to disable themselves.
+func HandleAdminSetUserActive(w http.ResponseWriter, r *http.Request) {
+	claims, ok := UserFromContext(r.Context())
+	if !ok {
+		WriteError(w, http.StatusUnauthorized, "unauthorized", "missing claims")
+		return
+	}
+
+	idStr := chi.URLParam(r, "id")
+	id, err := strconv.ParseInt(idStr, 10, 64)
+	if err != nil {
+		WriteError(w, http.StatusBadRequest, "invalid_id", "user ID must be a number")
+		return
+	}
+
+	if id == claims.UserID {
+		WriteError(w, http.StatusBadRequest, "self_action", "cannot change your own active status")
+		return
+	}
+
+	var body struct {
+		IsActive bool `json:"isActive"`
+	}
+	if err := ReadJSON(r, &body); err != nil {
+		WriteError(w, http.StatusBadRequest, "bad_request", "invalid request body")
+		return
+	}
+
+	svc := all.GetServices()
+	if _, err := svc.User.GetUserByID(id); err != nil {
+		if strings.Contains(err.Error(), "not found") {
+			WriteError(w, http.StatusNotFound, "not_found", "user not found")
+			return
+		}
+		WriteError(w, http.StatusInternalServerError, "user_error", err.Error())
+		return
+	}
+
+	if err := svc.User.SetActive(id, body.IsActive); err != nil {
+		WriteError(w, http.StatusInternalServerError, "update_failed", err.Error())
+		return
+	}
+
+	WriteJSON(w, http.StatusOK, map[string]any{"id": id, "isActive": body.IsActive})
 }
 
 func countResources() (txnCount, walletCount int64) {

@@ -180,7 +180,7 @@ func TestAddTransaction_invalidSubcategoryForExpense(t *testing.T) {
 	err := svc.AddTransaction(txn)
 
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "should be under Income type")
+	assert.Contains(t, err.Error(), "not allowed for transaction type")
 }
 
 func TestAddTransaction_invalidSubcategoryForIncome(t *testing.T) {
@@ -198,7 +198,7 @@ func TestAddTransaction_invalidSubcategoryForIncome(t *testing.T) {
 	err := svc.AddTransaction(txn)
 
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "should be under Expense type")
+	assert.Contains(t, err.Error(), "not allowed for transaction type")
 }
 
 func TestAddTransaction_walletUpdateFails(t *testing.T) {

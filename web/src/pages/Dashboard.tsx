@@ -17,6 +17,11 @@ import WalletFlow from '../components/ui/WalletFlow'
 import { useWallets } from '../hooks/useWallets'
 import { useContacts } from '../hooks/useContacts'
 import TransactionDetails from '../components/ui/TransactionDetails'
+import MetricChip from '../components/ui/MetricChip'
+import SectionHeader from '../components/ui/SectionHeader'
+import Eyebrow from '../components/ui/Eyebrow'
+import WalletCard, { inferVariant } from '../components/ui/WalletCard'
+import TxnDialog, { TxnType } from '../components/ui/TxnDialog'
 
 export default function Dashboard() {
   const navigate = useNavigate()
@@ -32,6 +37,8 @@ export default function Dashboard() {
   const { data: subcategories, isLoading: isSubsLoading } = useQuery({ queryKey: ['subcategories'], queryFn: () => listSubcategories() })
   const [showStatementModal, setShowStatementModal] = useState(false)
   const [selectedTxn, setSelectedTxn] = useState<any>(null)
+  const [addTxnType, setAddTxnType] = useState<TxnType | null>(null)
+  const [editTxn, setEditTxn] = useState<any>(null)
 
   const isLoading = isChartsLoading || isCatsLoading || isSubsLoading
 
@@ -80,10 +87,10 @@ export default function Dashboard() {
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
 
   const quickActions = [
-    { label: 'Add Expense', icon: ICONS.arrowDown, onClick: () => navigate('/transactions?add=Expense'), mobileOrder: 1 },
-    { label: 'Add Income', icon: ICONS.arrowUp, onClick: () => navigate('/transactions?add=Income'), mobileOrder: 3 },
-    { label: 'Transfer', icon: ICONS.transfer, onClick: () => navigate('/transactions?add=Transfer'), mobileOrder: 2 },
-    { label: 'Statement', icon: ICONS.file, onClick: () => setShowStatementModal(true), mobileOrder: 4 },
+    { label: 'Add Expense', icon: ICONS.shoppingCart, onClick: () => setAddTxnType('Expense'), mobileOrder: 1 },
+    { label: 'Add Income', icon: ICONS.trendingUp, onClick: () => setAddTxnType('Income'), mobileOrder: 3 },
+    { label: 'Transfer', icon: ICONS.swapHoriz, onClick: () => setAddTxnType('Transfer'), mobileOrder: 2 },
+    { label: 'Statement', icon: ICONS.receiptLong, onClick: () => setShowStatementModal(true), mobileOrder: 4 },
   ]
 
   return (
@@ -105,8 +112,8 @@ export default function Dashboard() {
         <div style={{ position: 'absolute', top: 20, right: 180, width: 80, height: 80, borderRadius: '50%', background: 'rgba(255,255,255,0.03)' }} />
 
         <div style={{ position: 'relative', zIndex: 1 }}>
-          <p style={{ fontSize: 14, opacity: 0.85, margin: 0, fontWeight: 500 }}>{greeting}, Tracker</p>
-          <h2 style={{ fontSize: 28, fontWeight: 700, margin: '6px 0 24px', letterSpacing: '-0.02em', fontFamily: "'Space Grotesk', sans-serif" }}>
+          <p style={{ fontSize: 14, opacity: 0.85, margin: 0, fontWeight: 500 }}>{greeting}</p>
+          <h2 style={{ fontSize: 28, fontWeight: 700, margin: '6px 0 24px', letterSpacing: '-0.02em', fontFamily: "var(--font-display)" }}>
             Current Balance is {fmt(overview.totalBalance)}
           </h2>
           <div className="balance-actions">
@@ -135,42 +142,73 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Summary Stat Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 20 }}>
-        <SummaryCard
-          label="Total Income"
+      {/* Bento metric strip */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 16 }}>
+        <MetricChip
+          label="Income · this month"
           value={`+${fmt(overview.monthIncome)}`}
-          subtext="This month"
-          accentColor="var(--color-success)"
-          icon={ICONS.arrowUp(20)}
+          accent="var(--color-success)"
+          icon={ICONS.trendingUp(16)}
         />
-        <SummaryCard
-          label="Total Expense"
-          value={`-${fmt(overview.monthExpense)}`}
-          subtext="This month"
-          accentColor="var(--color-danger)"
-          icon={ICONS.arrowDown(20)}
+        <MetricChip
+          label="Expense · this month"
+          value={`−${fmt(overview.monthExpense)}`}
+          accent="var(--color-danger)"
+          icon={ICONS.trendingDown(16)}
         />
-        <SummaryCard
-          label="Net Balance"
+        <MetricChip
+          label="Net · all wallets"
           value={fmt(overview.totalBalance)}
-          subtext="All wallets"
-          accentColor="var(--color-primary)"
-          icon={ICONS.money(20)}
+          accent="var(--color-primary)"
+          icon={ICONS.wallet(16)}
         />
-        <Card style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-          <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Budget Usage</span>
-          <BudgetGauge percent={overview.budgetUsage} size={110} />
+        <Card style={{ display: 'flex', alignItems: 'center', gap: 14, padding: 14, borderLeft: '4px solid var(--color-warning)', borderRadius: 'var(--radius-md)' }}>
+          <BudgetGauge percent={overview.budgetUsage} size={64} />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4, minWidth: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span style={{ color: 'var(--color-warning)', display: 'flex' }}>{ICONS.pieChart(14)}</span>
+              <Eyebrow>Budget usage</Eyebrow>
+            </div>
+            <span style={{ fontSize: 20, fontWeight: 700, color: 'var(--color-warning)', fontFamily: 'var(--font-display)', letterSpacing: '-0.02em' }}>
+              {Math.round(overview.budgetUsage)}%
+            </span>
+          </div>
         </Card>
+      </div>
+
+      {/* Wallets carousel */}
+      <div>
+        <SectionHeader
+          title="My Wallets"
+          action={<Link to="/wallets" style={{ fontSize: 12, fontWeight: 600, color: 'var(--color-primary)', textDecoration: 'none' }}>Manage →</Link>}
+        />
+        <div className="wallet-carousel" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 16 }}>
+          {(() => {
+            const counts: Record<string, number> = {}
+            return (wallets ?? []).slice(0, 4).map(w => {
+              const variant = inferVariant(w.type, w.name, w.shortName)
+              const idx = counts[variant] ?? 0
+              counts[variant] = idx + 1
+              return (
+                <WalletCard
+                  key={w.id}
+                  variant={variant}
+                  paletteIndex={idx}
+                  name={w.name}
+                  shortName={w.shortName}
+                  balance={w.balance}
+                  onClick={() => navigate('/wallets')}
+                />
+              )
+            })
+          })()}
+        </div>
       </div>
 
       {/* Charts Row */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 20 }}>
         <Card>
-          <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--color-text-primary)', margin: '0 0 20px', display: 'flex', alignItems: 'center', gap: 10 }}>
-            <span style={{ width: 3, height: 18, borderRadius: 2, background: 'var(--color-primary)' }} />
-            Expense by Category
-          </h3>
+          <SectionHeader title="Expense by Category" />
           <div style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
             <MiniDonut segments={chartCategories} size={130} />
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10, flex: 1 }}>
@@ -185,10 +223,7 @@ export default function Dashboard() {
           </div>
         </Card>
         <Card>
-          <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--color-text-primary)', margin: '0 0 20px', display: 'flex', alignItems: 'center', gap: 10 }}>
-            <span style={{ width: 3, height: 18, borderRadius: 2, background: 'var(--color-success)' }} />
-            Income vs Expense
-          </h3>
+          <SectionHeader title="Income vs Expense" accent="var(--color-success)" />
           <div style={{ display: 'flex', justifyContent: 'center' }}>
             <MiniBarChart data={comparisonData} size={{ w: 280, h: 130 }} />
           </div>
@@ -240,7 +275,7 @@ export default function Dashboard() {
                     {t.type === 'Income' ? '+' : t.type === 'Transfer' ? '' : '-'}{fmt(t.amount)}
                   </td>
                   <td style={{ padding: '14px 24px' }}>
-                    <WalletFlow srcId={t.srcId} dstId={t.dstId} contactName={t.contactName} />
+                    <WalletFlow srcId={t.srcId} dstId={t.dstId} contactName={t.contactName} type={t.type as any} />
                   </td>
                 </tr>
               ))}
@@ -265,37 +300,22 @@ export default function Dashboard() {
           categories={allCategories ?? []}
           subcategories={subcategories ?? []}
           onClose={() => setSelectedTxn(null)}
-          onEdit={(t) => navigate(`/transactions?edit=${t.id}`)}
+          onEdit={(t) => { setSelectedTxn(null); setEditTxn(t) }}
         />
       )}
 
       {showStatementModal && <StatementModal onClose={() => setShowStatementModal(false)} />}
+
+      {(addTxnType || editTxn) && (
+        <TxnDialog
+          txn={editTxn || undefined}
+          initialType={addTxnType ?? undefined}
+          onClose={() => { setAddTxnType(null); setEditTxn(null) }}
+        />
+      )}
     </div>
   )
 }
-
-/* Summary Card with accent left border */
-function SummaryCard({ label, value, subtext, accentColor, icon }: {
-  label: string; value: string; subtext: string; accentColor: string; icon: React.ReactNode
-}) {
-  return (
-    <Card style={{ borderLeft: `4px solid ${accentColor}`, display: 'flex', flexDirection: 'column', gap: 12 }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{label}</span>
-        <div style={{
-          width: 36, height: 36, borderRadius: 'var(--radius-sm)',
-          background: accentColor + '15', color: accentColor,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-        }}>{icon}</div>
-      </div>
-      <div>
-        <div style={{ fontSize: 24, fontWeight: 700, color: accentColor, letterSpacing: '-0.02em' }}>{value}</div>
-        <p style={{ fontSize: 11, color: 'var(--color-text-tertiary)', marginTop: 4, fontWeight: 500 }}>{subtext}</p>
-      </div>
-    </Card>
-  )
-}
-
 
 function StatementModal({ onClose }: { onClose: () => void }) {
   const durations = [

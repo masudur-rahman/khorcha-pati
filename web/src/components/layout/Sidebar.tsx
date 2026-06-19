@@ -1,19 +1,28 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { NavLink } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
 import { ICONS } from '../ui/Icons'
 import Logo from '../ui/Logo'
 
+const SIDEBAR_KEY = 'sidebar.collapsed'
+
 const baseNavItems = [
   { id: 'dashboard', to: '/', label: 'Dashboard', icon: ICONS.dashboard },
   { id: 'transactions', to: '/transactions', label: 'Transactions', icon: ICONS.transactions },
   { id: 'wallets', to: '/wallets', label: 'Wallets', icon: ICONS.wallet },
+  { id: 'contacts', to: '/contacts', label: 'Contacts', icon: ICONS.users },
   { id: 'budgets', to: '/budgets', label: 'Budgets', icon: ICONS.budget },
   { id: 'settings', to: '/settings', label: 'Settings', icon: ICONS.settings },
 ]
 
 export default function Sidebar() {
-  const [collapsed, setCollapsed] = useState(false)
+  const [collapsed, setCollapsed] = useState(() => {
+    if (typeof window === 'undefined') return false
+    return localStorage.getItem(SIDEBAR_KEY) === '1'
+  })
+  useEffect(() => {
+    localStorage.setItem(SIDEBAR_KEY, collapsed ? '1' : '0')
+  }, [collapsed])
   const { isAdmin } = useAuth()
   const navItems = useMemo(() => {
     if (!isAdmin) return baseNavItems
@@ -170,7 +179,7 @@ export default function Sidebar() {
               textAlign: 'center',
             }}
           >
-            Expense Tracker v2.0
+            Khorcha-Pati v2.0
           </p>
         )}
       </div>

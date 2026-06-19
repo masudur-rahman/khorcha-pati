@@ -33,6 +33,12 @@ type ClassificationResult struct {
 }
 
 func TxnCategoryGenerator(ctx context.Context, userInput string, ai ...GeneratorAI) (result *ClassificationResult, err error) {
+	return TxnCategoryGeneratorForType(ctx, userInput, "", ai...)
+}
+
+// TxnCategoryGeneratorForType narrows the taxonomy passed to the AI to subcategories matching txnType.
+// Pass an empty txnType to use the full taxonomy.
+func TxnCategoryGeneratorForType(ctx context.Context, userInput string, txnType models.TransactionType, ai ...GeneratorAI) (result *ClassificationResult, err error) {
 	generator := GeneratorAI(configs.TrackerConfig.System.AIGenerator)
 	if len(ai) > 0 {
 		generator = ai[0]
@@ -42,7 +48,18 @@ func TxnCategoryGenerator(ctx context.Context, userInput string, ai ...Generator
 		return nil, err
 	}
 
-	taxonomyJSON, err := json.MarshalIndent(models.TxnSubcategories, "", "  ")
+	taxonomy := models.TxnSubcategories
+	if txnType != "" {
+		filtered := make([]models.TxnSubcategory, 0, len(taxonomy))
+		for _, sub := range taxonomy {
+			if models.ContainsType(models.SubcategoryTypes[sub.ID], txnType) {
+				filtered = append(filtered, sub)
+			}
+		}
+		taxonomy = filtered
+	}
+
+	taxonomyJSON, err := json.MarshalIndent(taxonomy, "", "  ")
 	if err != nil {
 		return nil, err
 	}

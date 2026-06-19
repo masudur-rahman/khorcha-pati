@@ -5,8 +5,43 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/masudur-rahman/expense-tracker-bot/models"
 	"github.com/masudur-rahman/expense-tracker-bot/services/all"
 )
+
+type categoryWithTypes struct {
+	models.TxnCategory
+	Types []models.TransactionType `json:"types"`
+}
+
+type subcategoryWithTypes struct {
+	models.TxnSubcategory
+	Types []models.TransactionType `json:"types"`
+}
+
+// parseTxnTypeQuery reads the optional ?type= filter and validates it.
+func parseTxnTypeQuery(r *http.Request) (models.TransactionType, bool, error) {
+	raw := r.URL.Query().Get("type")
+	if raw == "" {
+		return "", false, nil
+	}
+	typ := models.TransactionType(raw)
+	switch typ {
+	case models.ExpenseTransaction, models.IncomeTransaction, models.TransferTransaction:
+		return typ, true, nil
+	}
+	return "", false, errUnknownTxnType
+}
+
+var errUnknownTxnType = &httpError{Status: http.StatusBadRequest, Code: "invalid_type", Message: "type must be Expense, Income or Transfer"}
+
+type httpError struct {
+	Status  int
+	Code    string
+	Message string
+}
+
+func (e *httpError) Error() string { return e.Message }
 
 // HandleChartData handles GET /summary/charts?year=&month=&months=.
 func HandleChartData(w http.ResponseWriter, r *http.Request) {
@@ -46,14 +81,30 @@ func HandleChartData(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// HandleListCategories handles GET /categories.
+// HandleListCategories handles GET /categories?type=Expense|Income|Transfer (type optional).
 func HandleListCategories(w http.ResponseWriter, r *http.Request) {
+	typ, hasFilter, err := parseTxnTypeQuery(r)
+	if err != nil {
+		he := err.(*httpError)
+		WriteError(w, he.Status, he.Code, he.Message)
+		return
+	}
+
 	cats, err := all.GetServices().Txn.ListTxnCategories()
 	if err != nil {
 		WriteError(w, http.StatusInternalServerError, "list_failed", err.Error())
 		return
 	}
-	WriteJSON(w, http.StatusOK, cats)
+
+	out := make([]categoryWithTypes, 0, len(cats))
+	for _, cat := range cats {
+		types := models.CategoryTypes[cat.ID]
+		if hasFilter && !models.ContainsType(types, typ) {
+			continue
+		}
+		out = append(out, categoryWithTypes{TxnCategory: cat, Types: types})
+	}
+	WriteJSON(w, http.StatusOK, out)
 }
 
 // HandleGetProfile handles GET /profile.
@@ -106,15 +157,31 @@ func HandleUpdateProfile(w http.ResponseWriter, r *http.Request) {
 	WriteJSON(w, http.StatusOK, user)
 }
 
-// HandleListSubcategories handles GET /subcategories.
+// HandleListSubcategories handles GET /subcategories?catId=&type=Expense|Income|Transfer (both optional).
 func HandleListSubcategories(w http.ResponseWriter, r *http.Request) {
+	typ, hasFilter, err := parseTxnTypeQuery(r)
+	if err != nil {
+		he := err.(*httpError)
+		WriteError(w, he.Status, he.Code, he.Message)
+		return
+	}
+
 	catID := r.URL.Query().Get("catId")
 	subs, err := all.GetServices().Txn.ListTxnSubcategories(catID)
 	if err != nil {
 		WriteError(w, http.StatusInternalServerError, "list_failed", err.Error())
 		return
 	}
-	WriteJSON(w, http.StatusOK, subs)
+
+	out := make([]subcategoryWithTypes, 0, len(subs))
+	for _, sub := range subs {
+		types := models.SubcategoryTypes[sub.ID]
+		if hasFilter && !models.ContainsType(types, typ) {
+			continue
+		}
+		out = append(out, subcategoryWithTypes{TxnSubcategory: sub, Types: types})
+	}
+	WriteJSON(w, http.StatusOK, out)
 }
 
 func intParam(r *http.Request, key string, fallback int) int {

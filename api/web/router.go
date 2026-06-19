@@ -63,6 +63,7 @@ func NewRouter(jwtSecret, corsOrigin string) chi.Router {
 				r.Get("/admin/stats", HandleAdminStats)
 				r.Get("/admin/users", HandleAdminUsers)
 				r.Get("/admin/users/{id}", HandleAdminUserDetail)
+				r.Patch("/admin/users/{id}/activate", HandleAdminSetUserActive)
 			})
 		})
 	})
@@ -95,7 +96,7 @@ func corsMiddleware(origin string) func(next http.Handler) http.Handler {
 	}
 	return cors.Handler(cors.Options{
 		AllowedOrigins:   origins,
-		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedMethods:   []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
 		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type"},
 		AllowCredentials: true,
 		MaxAge:           300,

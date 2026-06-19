@@ -3,6 +3,7 @@ package handlers
 import (
 	"fmt"
 
+	"github.com/masudur-rahman/expense-tracker-bot/models"
 	"github.com/masudur-rahman/expense-tracker-bot/modules/cache"
 	"github.com/masudur-rahman/expense-tracker-bot/services/all"
 
@@ -58,8 +59,12 @@ func generateTransactionCategoryTypeInlineButton(callbackOpts CallbackOptions) (
 		return nil, err
 	}
 
+	txnType := callbackOpts.Transaction.Type
 	inlineButtons := make([]telebot.InlineButton, 0, len(cats))
 	for _, cat := range cats {
+		if txnType != "" && !models.ContainsType(models.CategoryTypes[cat.ID], txnType) {
+			continue
+		}
 		callbackOpts.Transaction.CategoryID = cat.ID
 		btn := generateInlineButton(callbackOpts, cat.Name)
 		inlineButtons = append(inlineButtons, btn)
@@ -92,8 +97,12 @@ func generateTransactionSubcategoryTypeInlineButton(callbackOpts CallbackOptions
 		return nil, err
 	}
 
+	txnType := callbackOpts.Transaction.Type
 	inlineButtons := make([]telebot.InlineButton, 0, len(subcats))
 	for _, subcat := range subcats {
+		if txnType != "" && !models.ContainsType(models.SubcategoryTypes[subcat.ID], txnType) {
+			continue
+		}
 		callbackOpts.Transaction.SubcategoryID = subcat.ID
 		btn := generateInlineButton(callbackOpts, subcat.Name)
 		inlineButtons = append(inlineButtons, btn)

@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query'
 import { ICONS } from '../ui/Icons'
 import { useSearch } from '../../context/SearchContext'
 import { useAuth } from '../../hooks/useAuth'
+import { useTheme } from '../../context/ThemeContext'
 import { useBudgetAlerts } from '../../hooks/useBudgets'
 import { getProfile } from '../../api/endpoints'
 import { fmt } from '../../lib/formatter'
@@ -33,15 +34,8 @@ export default function TopBar({ title, subtitle }: TopBarProps) {
   const [dropdownTop, setDropdownTop] = useState(0)
   const [searchResultsTop, setSearchResultsTop] = useState(0)
 
-  const isDark = document.documentElement.classList.contains('dark')
-  const [darkMode, setDarkMode] = useState(isDark)
-
-  const toggleDarkMode = () => {
-    const next = !darkMode
-    setDarkMode(next)
-    document.documentElement.classList.toggle('dark', next)
-    localStorage.setItem('theme', next ? 'dark' : 'light')
-  }
+  const { theme, toggle: toggleDarkMode } = useTheme()
+  const darkMode = theme === 'dark'
 
   // Close dropdowns on outside click
   useEffect(() => {

@@ -134,6 +134,32 @@ type TxnSubcategory struct {
 	Hint  string `db:"-" json:"-"` // AI-only context, not persisted
 }
 
+// ContainsType reports whether typ is present in the given slice.
+func ContainsType(types []TransactionType, typ TransactionType) bool {
+	for _, t := range types {
+		if t == typ {
+			return true
+		}
+	}
+	return false
+}
+
+var (
+	typExpense  = []TransactionType{ExpenseTransaction}
+	typIncome   = []TransactionType{IncomeTransaction}
+	typTransfer = []TransactionType{TransferTransaction}
+	typExpOrInc = []TransactionType{ExpenseTransaction, IncomeTransaction}
+)
+
+// SubcategoryByID indexes every subcategory for O(1) lookup. Populated in init().
+var SubcategoryByID = make(map[string]TxnSubcategory)
+
+// SubcategoryTypes maps a subcategory ID to the transaction types it belongs to.
+var SubcategoryTypes = make(map[string][]TransactionType)
+
+// CategoryTypes maps a category ID to the union of types across its subcategories.
+var CategoryTypes = make(map[string][]TransactionType)
+
 func (TxnSubcategory) TableName() string {
 	return "txn_subcategory"
 }
@@ -315,18 +341,102 @@ func init() {
 	TxnSubcategories = append(TxnSubcategories, festSubs...)
 	TxnSubcategories = append(TxnSubcategories, miscSubs...)
 
+	assignSubcategoryTypes()
+
 	catIDToName := make(map[string]string)
 	for _, cat := range TxnCategories {
 		catIDToName[cat.ID] = cat.Name
 	}
 
+	catTypeSet := make(map[string]map[TransactionType]bool)
 	for _, sub := range TxnSubcategories {
 		SubCatNameMap[sub.ID] = sub.Name
+		SubcategoryByID[sub.ID] = sub
 
 		if catName, ok := catIDToName[sub.CatID]; ok {
 			SubCatToCatNameMap[sub.ID] = catName
 		} else {
 			SubCatToCatNameMap[sub.ID] = "Unknown"
 		}
+
+		set, ok := catTypeSet[sub.CatID]
+		if !ok {
+			set = make(map[TransactionType]bool)
+			catTypeSet[sub.CatID] = set
+		}
+		for _, t := range SubcategoryTypes[sub.ID] {
+			set[t] = true
+		}
 	}
+
+	for _, cat := range TxnCategories {
+		CategoryTypes[cat.ID] = collectTypes(catTypeSet[cat.ID])
+	}
+}
+
+// assignSubcategoryTypes populates SubcategoryTypes for every subcategory.
+// Most categories are Expense-only; fin and misc are mixed and use per-subcategory maps.
+func assignSubcategoryTypes() {
+	expenseOnlyCats := map[string]bool{
+		"food": true, "trans": true, "shop": true, "house": true,
+		"health": true, "pc": true, "fam": true, "edu": true,
+		"ent": true, "trv": true, "fest": true,
+	}
+
+	finSubTypes := map[string][]TransactionType{
+		"fin-sal":      typIncome,
+		"fin-prof":     typIncome,
+		"fin-interest": typIncome,
+		"fin-deposit":  typTransfer,
+		"fin-with":     typTransfer,
+		"fin-transfer": typTransfer,
+		"fin-flexi":    typExpense,
+		"fin-ccpay":    typExpense,
+		"fin-dps":      typExpense,
+		"fin-loan":     typIncome,
+		"fin-repay":    typExpense,
+		"fin-lend":     typExpense,
+		"fin-recover":  typIncome,
+		"fin-borrow":   typIncome,
+		"fin-return":   typExpense,
+		"fin-tax":      typExpense,
+		"fin-charge":   typExpense,
+		"fin-ins":      typExpense,
+		"fin-gold":     typExpense,
+		"fin-invest":   typExpense,
+		"fin-misc":     typExpense,
+	}
+
+	miscSubTypes := map[string][]TransactionType{
+		"misc-init":    typExpOrInc,
+		"misc-gift":    typExpOrInc,
+		"misc-charity": typExpOrInc,
+		"misc-office":  typExpense,
+		"misc-loss":    typExpense,
+		"misc-adj":     typExpOrInc,
+		"misc-misc":    typExpOrInc,
+	}
+
+	for _, sub := range TxnSubcategories {
+		switch {
+		case expenseOnlyCats[sub.CatID]:
+			SubcategoryTypes[sub.ID] = typExpense
+		case sub.CatID == "fin":
+			SubcategoryTypes[sub.ID] = finSubTypes[sub.ID]
+		case sub.CatID == "misc":
+			SubcategoryTypes[sub.ID] = miscSubTypes[sub.ID]
+		}
+	}
+}
+
+// collectTypes returns Types in canonical order (Expense, Income, Transfer).
+func collectTypes(set map[TransactionType]bool) []TransactionType {
+	order := []TransactionType{ExpenseTransaction, IncomeTransaction, TransferTransaction}
+	out := make([]TransactionType, 0, len(order))
+	for _, t := range order {
+		if set[t] {
+			out = append(out, t)
+		}
+	}
+	return out
 }

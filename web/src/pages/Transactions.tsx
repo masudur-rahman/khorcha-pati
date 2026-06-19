@@ -1,12 +1,12 @@
 import { useState, useMemo, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { useTransactions, useCreateTransaction, useUpdateTransaction, useDeleteTransaction } from '../hooks/useTransactions'
+import { useTransactions, useDeleteTransaction } from '../hooks/useTransactions'
 import { useSearch } from '../context/SearchContext'
 import { useWallets } from '../hooks/useWallets'
 import { useContacts } from '../hooks/useContacts'
 import { useQuery } from '@tanstack/react-query'
 import { listCategories, listSubcategories } from '../api/endpoints'
-import type { Transaction, Wallet, Contact, TxnCategory } from '../types'
+import type { Transaction } from '../types'
 import { fmt } from '../lib/formatter'
 
 import TopBar from '../components/layout/TopBar'
@@ -14,14 +14,13 @@ import Card from '../components/ui/Card'
 import Badge from '../components/ui/Badge'
 import Button from '../components/ui/Button'
 import Modal from '../components/ui/Modal'
-import Input from '../components/ui/Input'
-import Select from '../components/ui/Select'
 import { ICONS } from '../components/ui/Icons'
 import WalletFlow from '../components/ui/WalletFlow'
 import TransactionDetails from '../components/ui/TransactionDetails'
+import MetricChip from '../components/ui/MetricChip'
+import TxnDialog, { TXN_TYPE_OPTIONS, TxnType } from '../components/ui/TxnDialog'
 
-type TxnType = 'Expense' | 'Income' | 'Transfer'
-const typeOptions: TxnType[] = ['Expense', 'Income', 'Transfer']
+const typeOptions = TXN_TYPE_OPTIONS
 const PAGE_SIZE = 15
 
 export default function Transactions() {
@@ -31,12 +30,13 @@ export default function Transactions() {
   const txns = resp?.data ?? []
   const { data: wallets } = useWallets()
   const { data: contacts } = useContacts()
-  const { data: categories } = useQuery({ queryKey: ['categories'], queryFn: listCategories })
+  const { data: categories } = useQuery({ queryKey: ['categories'], queryFn: () => listCategories() })
   const { data: subcategories } = useQuery({ queryKey: ['subcategories'], queryFn: () => listSubcategories() })
 
   const [filterType, setFilterType] = useState<string>('')
   const [showAdd, setShowAdd] = useState(false)
   const [initialType, setInitialType] = useState<TxnType | undefined>()
+  const [initialContact, setInitialContact] = useState<string | undefined>()
   const [editTxn, setEditTxn] = useState<Transaction | null>(null)
   const [deleteTxn, setDeleteTxn] = useState<Transaction | null>(null)
   const [selectedTxn, setSelectedTxn] = useState<Transaction | null>(null)
@@ -46,8 +46,11 @@ export default function Transactions() {
     const addType = searchParams.get('add') as TxnType
     if (addType && typeOptions.includes(addType)) {
       setInitialType(addType)
+      const c = searchParams.get('contact')
+      if (c) setInitialContact(c)
       setShowAdd(true)
       searchParams.delete('add')
+      searchParams.delete('contact')
       setSearchParams(searchParams, { replace: true })
     }
 
@@ -108,23 +111,29 @@ export default function Transactions() {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
       <TopBar title="Transactions" subtitle="Detailed history of your financial movements" />
 
-      {/* Summary Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 20 }}>
-        <Card style={{ borderLeft: '4px solid var(--color-success)' }}>
-          <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 8px' }}>Total Income</p>
-          <p style={{ fontSize: 26, fontWeight: 700, color: 'var(--color-success)', margin: 0, fontFamily: "'Space Grotesk', sans-serif" }}>+{fmt(totals.income)}</p>
-          <p style={{ fontSize: 12, color: 'var(--color-text-tertiary)', margin: '8px 0 0', fontWeight: 500 }}>{txns.filter(t => t.type === 'Income').length} transactions</p>
-        </Card>
-        <Card style={{ borderLeft: '4px solid var(--color-danger)' }}>
-          <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 8px' }}>Total Expense</p>
-          <p style={{ fontSize: 26, fontWeight: 700, color: 'var(--color-danger)', margin: 0, fontFamily: "'Space Grotesk', sans-serif" }}>-{fmt(totals.expense)}</p>
-          <p style={{ fontSize: 12, color: 'var(--color-text-tertiary)', margin: '8px 0 0', fontWeight: 500 }}>{txns.filter(t => t.type === 'Expense').length} transactions</p>
-        </Card>
-        <Card style={{ borderLeft: '4px solid var(--color-primary)' }}>
-          <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 8px' }}>Transfers</p>
-          <p style={{ fontSize: 26, fontWeight: 700, color: 'var(--color-primary)', margin: 0, fontFamily: "'Space Grotesk', sans-serif" }}>{fmt(totals.transfers)}</p>
-          <p style={{ fontSize: 12, color: 'var(--color-text-tertiary)', margin: '8px 0 0', fontWeight: 500 }}>{txns.filter(t => t.type === 'Transfer').length} transactions</p>
-        </Card>
+      {/* Summary chips */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16 }}>
+        <MetricChip
+          label="Total Income"
+          value={`+${fmt(totals.income)}`}
+          accent="var(--color-success)"
+          icon={ICONS.trendingUp(16)}
+          hint={`${txns.filter(t => t.type === 'Income').length} transactions`}
+        />
+        <MetricChip
+          label="Total Expense"
+          value={`−${fmt(totals.expense)}`}
+          accent="var(--color-danger)"
+          icon={ICONS.trendingDown(16)}
+          hint={`${txns.filter(t => t.type === 'Expense').length} transactions`}
+        />
+        <MetricChip
+          label="Transfers"
+          value={fmt(totals.transfers)}
+          accent="var(--color-primary)"
+          icon={ICONS.swapHoriz(16)}
+          hint={`${txns.filter(t => t.type === 'Transfer').length} transactions`}
+        />
       </div>
 
       {/* Filter Bar */}
@@ -145,7 +154,7 @@ export default function Transactions() {
             </button>
           ))}
         </div>
-        <Button onClick={() => setShowAdd(true)} icon={ICONS.plus(16)}>Add Transaction</Button>
+        <Button onClick={() => setShowAdd(true)} icon={ICONS.addCircle(16)}>Add Transaction</Button>
       </div>
 
       {/* Table */}
@@ -154,8 +163,16 @@ export default function Transactions() {
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
             <thead>
               <tr style={{ borderBottom: '1px solid var(--color-border)' }}>
-                {['Date', 'Type', 'Category', 'Amount', 'Wallets', 'Remarks', ''].map(h => (
-                  <th key={h || 'actions'} style={{ padding: '14px 24px', textAlign: h === 'Amount' ? 'right' : h === 'Wallets' ? 'center' : 'left', fontSize: 10, fontWeight: 700, color: 'var(--color-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{h}</th>
+                {[
+                  { h: 'Date', cls: '' },
+                  { h: 'Type', cls: '' },
+                  { h: 'Category', cls: '' },
+                  { h: 'Amount', cls: '' },
+                  { h: 'Wallets', cls: 'hidden md:table-cell' },
+                  { h: 'Remarks', cls: 'hidden lg:table-cell' },
+                  { h: '', cls: '' },
+                ].map(({ h, cls }) => (
+                  <th key={h || 'actions'} className={cls} style={{ padding: '14px 24px', textAlign: h === 'Amount' ? 'right' : h === 'Wallets' ? 'center' : 'left', fontSize: 10, fontWeight: 700, color: 'var(--color-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{h}</th>
                 ))}
               </tr>
             </thead>
@@ -173,14 +190,15 @@ export default function Transactions() {
                   </td>
                   <td style={{
                     padding: '14px 24px', textAlign: 'right', fontWeight: 700, fontSize: 14,
+                    fontFamily: 'var(--font-mono)',
                     color: t.type === 'Income' ? 'var(--color-success)' : t.type === 'Transfer' ? 'var(--color-primary)' : 'var(--color-danger)',
                   }}>
-                    {t.type === 'Income' ? '+' : t.type === 'Transfer' ? '' : '-'}{fmt(t.amount)}
+                    {t.type === 'Income' ? '+' : t.type === 'Transfer' ? '' : '−'}{fmt(t.amount)}
                   </td>
-                  <td style={{ padding: '14px 24px' }}>
-                    <WalletFlow srcId={t.srcId} dstId={t.dstId} contactName={t.contactName} />
+                  <td className="hidden md:table-cell" style={{ padding: '14px 24px' }}>
+                    <WalletFlow srcId={t.srcId} dstId={t.dstId} contactName={t.contactName} type={t.type as any} />
                   </td>
-                  <td style={{ padding: '14px 24px', color: 'var(--color-text-tertiary)', fontSize: 12, fontStyle: 'italic', maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  <td className="hidden lg:table-cell" style={{ padding: '14px 24px', color: 'var(--color-text-tertiary)', fontSize: 12, fontStyle: 'italic', maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {t.remarks || '—'}
                   </td>
                   <td style={{ padding: '14px 24px', textAlign: 'right' }}>
@@ -258,11 +276,8 @@ export default function Transactions() {
         <TxnDialog
           txn={editTxn || undefined}
           initialType={initialType}
-          wallets={wallets ?? []}
-          contacts={contacts ?? []}
-          categories={categories ?? []}
-          subcategories={subcategories ?? []}
-          onClose={() => { setShowAdd(false); setEditTxn(null); setInitialType(undefined) }}
+          initialContact={initialContact}
+          onClose={() => { setShowAdd(false); setEditTxn(null); setInitialType(undefined); setInitialContact(undefined) }}
         />
       )}
       {deleteTxn && <DeleteDialog txn={deleteTxn} onClose={() => setDeleteTxn(null)} />}
@@ -270,99 +285,6 @@ export default function Transactions() {
   )
 }
 
-
-interface TxnDialogProps {
-  txn?: Transaction
-  initialType?: TxnType
-  wallets: Wallet[]
-  contacts: Contact[]
-  categories: TxnCategory[]
-  subcategories: { id: string; name: string; catId: string }[]
-  onClose: () => void
-}
-
-function TxnDialog({ txn, initialType, wallets, contacts, categories, subcategories, onClose }: TxnDialogProps) {
-  const create = useCreateTransaction()
-  const update = useUpdateTransaction()
-  const isEdit = !!txn
-
-  const [type, setType] = useState<TxnType>(txn?.type as any ?? initialType ?? 'Expense')
-  const [amount, setAmount] = useState(txn?.amount?.toString() ?? '')
-  const [catId, setCatId] = useState(() => {
-    if (txn?.subcategoryId) return subcategories.find(s => s.id === txn.subcategoryId)?.catId || ''
-    return ''
-  })
-  const [subcategoryId, setSubcategoryId] = useState(txn?.subcategoryId ?? '')
-  const [srcId, setSrcId] = useState(txn?.srcId ?? '')
-  const [dstId, setDstId] = useState(txn?.dstId ?? '')
-  const [contactName, setContactName] = useState(txn?.contactName ?? '')
-  const [remarks, setRemarks] = useState(txn?.remarks ?? '')
-
-  useEffect(() => {
-    if (isEdit) return
-    if (type === 'Transfer') {
-      const finCat = categories.find(c => c.name.toLowerCase() === 'financial')
-      if (finCat) {
-        setCatId(finCat.id)
-        const transSub = subcategories.find(s => s.catId === finCat.id && s.name.toLowerCase().includes('transfer'))
-        if (transSub) setSubcategoryId(transSub.id)
-      }
-    } else {
-      const finCat = categories.find(c => c.name.toLowerCase() === 'financial')
-      if (catId === finCat?.id) { setCatId(''); setSubcategoryId('') }
-    }
-  }, [type, categories, subcategories, isEdit])
-
-  const filteredSubs = useMemo(() => {
-    let subs = subcategories
-    if (catId) subs = subs.filter(s => s.catId === catId)
-    if (type === 'Transfer') subs = subs.filter(s => s.name.toLowerCase().includes('transfer') || s.name.toLowerCase().includes('withdraw') || s.name.toLowerCase().includes('deposit'))
-    return subs
-  }, [subcategories, catId, type])
-
-  useEffect(() => {
-    if (isEdit) return
-    const sub = subcategories.find(s => s.id === subcategoryId)
-    if (sub?.name.toLowerCase() === 'withdraw') {
-      const cashWallet = wallets.find(w => w.type === 'Cash' || w.shortName.toLowerCase() === 'cash')
-      if (cashWallet) setDstId(cashWallet.shortName)
-    }
-  }, [subcategoryId, subcategories, wallets, isEdit])
-
-  const handleSubmit = () => {
-    const payload: Partial<Transaction> = { type, amount: parseFloat(amount), subcategoryId, srcId, dstId, contactName, remarks }
-    if (isEdit) update.mutate({ id: txn.id, ...payload }, { onSuccess: onClose })
-    else create.mutate(payload, { onSuccess: onClose })
-  }
-
-  return (
-    <Modal title={isEdit ? 'Edit Transaction' : 'Add Transaction'} onClose={onClose}>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-          <Select label="Type" value={type} onChange={e => setType(e.target.value as TxnType)} options={typeOptions.map(t => ({ value: t, label: t }))} />
-          <Input label="Amount" type="number" value={amount} onChange={e => setAmount(e.target.value)} placeholder="0.00" />
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-          <Select label="Category" value={catId} onChange={e => { setCatId(e.target.value); setSubcategoryId('') }} options={categories.map(c => ({ value: c.id, label: c.name }))} />
-          <Select label="Sub Category" value={subcategoryId} onChange={e => setSubcategoryId(e.target.value)} options={filteredSubs.map(s => ({ value: s.id, label: s.name }))} />
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-          <Select label="From (Wallet)" value={srcId} onChange={e => setSrcId(e.target.value)} options={wallets.map(w => ({ value: w.shortName, label: w.name }))} />
-          <Select label={type === 'Transfer' ? 'To (Wallet)' : 'To'} value={dstId} onChange={e => setDstId(e.target.value)}
-            options={type === 'Transfer' ? wallets.map(w => ({ value: w.shortName, label: w.name })) : [{ value: '', label: 'Select Contact' }, ...contacts.map(c => ({ value: c.nickName, label: c.fullName || c.nickName }))]} />
-        </div>
-        {type !== 'Transfer' && <Input label="Contact (Optional)" value={contactName} onChange={e => setContactName(e.target.value)} placeholder="Who is this with?" />}
-        <Input label="Remarks" value={remarks} onChange={e => setRemarks(e.target.value)} placeholder="Any notes..." />
-        <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', marginTop: 12 }}>
-          <Button variant="secondary" onClick={onClose} style={{ padding: '12px 24px' }}>Cancel</Button>
-          <Button onClick={handleSubmit} disabled={!amount || !subcategoryId} style={{ padding: '12px 32px' }}>
-            {isEdit ? 'Update Changes' : 'Create Transaction'}
-          </Button>
-        </div>
-      </div>
-    </Modal>
-  )
-}
 
 function DeleteDialog({ txn, onClose }: { txn: Transaction; onClose: () => void }) {
   const del = useDeleteTransaction()

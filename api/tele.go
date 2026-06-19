@@ -24,6 +24,7 @@ func TeleBotRoutes() (*telebot.Bot, error) {
 	}
 
 	bot.Use(rejectBots())
+	bot.Use(rejectDisabledUsers())
 	bot.Use(AutoKeyboardReset())
 
 	bot.Handle("/start", handlers.StartTrackingExpenses)
@@ -94,6 +95,20 @@ func adminOnly() telebot.MiddlewareFunc {
 					return ctx.Send("You are not registered.")
 				}
 				return ctx.Send("Invalid command.")
+			}
+			return next(ctx)
+		}
+	}
+}
+
+// rejectDisabledUsers blocks bot interaction for users whose IsActive=false.
+// Unregistered senders pass through (registration flows must remain reachable).
+func rejectDisabledUsers() telebot.MiddlewareFunc {
+	return func(next telebot.HandlerFunc) telebot.HandlerFunc {
+		return func(ctx telebot.Context) error {
+			user, err := all.GetServices().User.GetUserByTelegramID(ctx.Sender().ID)
+			if err == nil && !user.IsActive {
+				return ctx.Send("Account disabled. Contact admin.")
 			}
 			return next(ctx)
 		}

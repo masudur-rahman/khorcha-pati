@@ -47,7 +47,13 @@ func (us *userService) ListUsers() ([]models.Profile, error) {
 
 func (us *userService) SignUp(user *models.Profile) error {
 	user.CreatedAt = time.Now().Unix()
+	user.IsActive = true
 	return us.userRepo.AddNewUser(user)
+}
+
+// SetActive enables or disables a user. Disabled users are blocked from web auth and bot interaction.
+func (us *userService) SetActive(userID int64, active bool) error {
+	return us.userRepo.SetActive(userID, active)
 }
 
 func (us *userService) UpdateUser(id int64, user *models.Profile) error {

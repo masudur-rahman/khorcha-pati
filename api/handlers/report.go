@@ -72,7 +72,7 @@ func handleReportCallback(ctx telebot.Context, callbackOpts CallbackOptions) err
 		return ctx.Send(models.ErrCommonResponse(err))
 	}
 
-	pdfFile, err := GenerateTransactionStatementFromTemplate(report, "")
+	pdfFile, err := GenerateTransactionStatementFromTemplate(report, "Khorcha-Pati Statement")
 	if err != nil {
 		return ctx.Send(models.ErrCommonResponse(err))
 	}
