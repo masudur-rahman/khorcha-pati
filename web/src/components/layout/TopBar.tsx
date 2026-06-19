@@ -157,17 +157,6 @@ export default function TopBar({ title, subtitle }: TopBarProps) {
           )}
         </div>
 
-        {/* Theme toggle (desktop) */}
-        <button
-          className="hidden md:flex"
-          style={iconBtnStyle}
-          onClick={toggleDarkMode}
-          aria-label={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
-          title={darkMode ? 'Light mode' : 'Dark mode'}
-        >
-          {darkMode ? ICONS.sun(18) : ICONS.moon(18)}
-        </button>
-
         {/* Notifications */}
         <div ref={notifRef}>
           <button

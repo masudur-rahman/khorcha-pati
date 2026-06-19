@@ -2,15 +2,23 @@ interface WalletFlowProps {
   srcId?: string
   dstId?: string
   contactName?: string
+  type?: 'Income' | 'Expense' | 'Transfer'
 }
 
 function capitalize(s: string) {
   return s.charAt(0).toUpperCase() + s.slice(1)
 }
 
-export default function WalletFlow({ srcId, dstId, contactName }: WalletFlowProps) {
-  const from = srcId || ''
-  const to = dstId || contactName || ''
+export default function WalletFlow({ srcId, dstId, contactName, type }: WalletFlowProps) {
+  let from = srcId || ''
+  let to = dstId || ''
+
+  // Slot the loose contactName into the missing side based on direction.
+  if (contactName) {
+    if (type === 'Expense' && !to) to = contactName
+    else if (type === 'Income' && !from) from = contactName
+    else if (!type && !to) to = contactName
+  }
 
   const pillBase: React.CSSProperties = {
     fontSize: 11,

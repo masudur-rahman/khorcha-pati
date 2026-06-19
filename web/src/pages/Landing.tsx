@@ -62,7 +62,7 @@ export default function Landing() {
     <div className="landing-body">
       <nav className="landing-nav">
         <Link to="/" className="logo">
-          <img src="/logo-short.svg" alt="" className="logo-icon" />Hisab
+          <img src="/logo-short.svg" alt="" className="logo-icon" />Khorcha-Pati
         </Link>
         <ul>
           <li><a href="#features">Features</a></li>
@@ -85,7 +85,7 @@ export default function Landing() {
               one chat &amp; <span className="hl">one dashboard.</span>
             </h1>
             <p className="lead">
-              Every taka, accounted for. Hisab turns plain-English chat messages into structured ledger entries
+              Keep your khorcha on track. Khorcha-Pati turns plain-English chat messages into structured ledger entries
               — categorized, balanced, and ready to review whenever you open the dashboard.
             </p>
             <p className="lead sub">
@@ -109,7 +109,7 @@ export default function Landing() {
             <div ref={registerLayer} className="parallax bg-art" data-speed="0.08" />
             <div ref={registerLayer} className="parallax phone" data-speed="0.18">
               <div className="phone-screen">
-                <div className="phone-head"><span className="dot" /> Hisab Bot</div>
+                <div className="phone-head"><span className="dot" /> Khorcha-Pati Bot</div>
                 <div className="chat">
                   <div className="bubble user">Lunch 320</div>
                   <div className="bubble bot">Saved 🍱 Food · Dining · ৳320 from bKash</div>
@@ -121,13 +121,13 @@ export default function Landing() {
               </div>
             </div>
             <div ref={registerLayer} className="parallax card-floater bank" data-speed="0.26" data-base-rotate="-2deg" data-rotate="0.003">
-              <span className="card-brand">HISAB</span>
+              <span className="card-brand">Khorcha-Pati</span>
               <span className="card-num">•••• 4521</span>
               <span className="card-amt">৳ 37,630</span>
               <span className="card-name">BRAC BANK</span>
             </div>
             <div ref={registerLayer} className="parallax card-floater cash" data-speed="0.32" data-base-rotate="-6deg" data-rotate="0.005">
-              <span className="card-brand">HISAB</span>
+              <span className="card-brand">Khorcha-Pati</span>
               <span className="card-num">— — — —</span>
               <span className="card-amt">৳ 3,210</span>
               <span className="card-name">WALLET</span>
@@ -167,7 +167,7 @@ export default function Landing() {
           <span className="emoji">💬</span>
           <h3>Write like you talk</h3>
           <p>
-            Forget rigid forms. Hisab understands free-text shorthand — "lunch 320", "paid karim 500", "salary 52k" — and parses
+            Forget rigid forms. Khorcha-Pati understands free-text shorthand — "lunch 320", "paid karim 500", "salary 52k" — and parses
             amount, date, wallet, and contact into structured entries you can audit later.
           </p>
         </div>
@@ -207,7 +207,7 @@ export default function Landing() {
           <span className="emoji">🎯</span>
           <h3>Budgets &amp; alerts</h3>
           <p>
-            Set monthly limits per category. Hisab notifies you when you're approaching the cap and shows whether you're
+            Set monthly limits per category. Khorcha-Pati notifies you when you're approaching the cap and shows whether you're
             on track to save — or about to overshoot.
           </p>
         </div>
@@ -217,7 +217,7 @@ export default function Landing() {
         <div className="dash">
           <div className="dash-side">
             <img src="/logo-short.svg" alt="" />
-            <span>Hisab</span>
+            <span>Khorcha-Pati</span>
           </div>
           <div className="dash-main">
             <div className="dash-hero">
@@ -275,9 +275,9 @@ export default function Landing() {
       <footer>
         <div>
           <Link to="/" className="logo small">
-            <img src="/logo-short.svg" alt="" /> Hisab
+            <img src="/logo-short.svg" alt="" /> Khorcha-Pati
           </Link>
-          <p>Every taka, accounted for.</p>
+          <p>Keep your khorcha on track.</p>
         </div>
         <div>
           <h4>Product</h4>
@@ -289,7 +289,7 @@ export default function Landing() {
           <a href={REPO_URL} target="_blank" rel="noreferrer">GitHub</a>
           <a href={`${REPO_URL}/issues`} target="_blank" rel="noreferrer">Issues</a>
         </div>
-        <div className="copy">© {new Date().getFullYear()} Hisab.</div>
+        <div className="copy">© {new Date().getFullYear()} Khorcha-Pati.</div>
       </footer>
     </div>
   )

@@ -179,7 +179,7 @@ export default function Sidebar() {
               textAlign: 'center',
             }}
           >
-            Hisab v2.0
+            Khorcha-Pati v2.0
           </p>
         )}
       </div>

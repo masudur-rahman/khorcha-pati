@@ -29,7 +29,7 @@
   --color-success: #00875A;
   --color-success-subtle: #E3FCEF;
 
-  /* Danger Red (Hisab: softer expense rose) */
+  /* Danger Red (Khorcha-Pati: softer expense rose) */
   --color-danger: #FF5630;
   --color-danger-subtle: #FFEBE6;
 
@@ -143,6 +143,48 @@ h1, h2, h3, h4, h5, h6 {
 ::selection {
   background: var(--color-primary-subtle);
   color: var(--color-primary);
+}
+
+/* FAB tooltip — visible pill that appears on hover/focus */
+.khp-fab { position: fixed; }
+.khp-fab::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  right: calc(100% + 12px);
+  top: 50%;
+  transform: translateY(-50%) translateX(6px);
+  background: #172B4D;
+  color: white;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 8px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.18s ease, transform 0.18s ease;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.18);
+}
+.khp-fab::before {
+  content: '';
+  position: absolute;
+  right: calc(100% + 6px);
+  top: 50%;
+  width: 0;
+  height: 0;
+  border: 6px solid transparent;
+  border-left-color: #172B4D;
+  transform: translateY(-50%) translateX(6px);
+  opacity: 0;
+  transition: opacity 0.18s ease, transform 0.18s ease;
+  pointer-events: none;
+}
+.khp-fab:hover::after,
+.khp-fab:focus-visible::after,
+.khp-fab:hover::before,
+.khp-fab:focus-visible::before {
+  opacity: 1;
+  transform: translateY(-50%) translateX(0);
 }
 
 /* Contact list — divider between rows */

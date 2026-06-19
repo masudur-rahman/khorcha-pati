@@ -1,4 +1,4 @@
-/* ===== Hisab Landing ===== */
+/* ===== Khorcha-Pati Landing ===== */
 
 .landing-body {
   background: #f8f9fb;
@@ -236,7 +236,7 @@
   transform: rotate(-6deg);
   width: 180px;
 }
-.card-brand { font-family: var(--font-display); font-weight: 700; font-size: 12px; letter-spacing: 0.2em; opacity: 0.95; }
+.card-brand { font-family: var(--font-display); font-weight: 700; font-size: 12px; letter-spacing: 0.08em; opacity: 0.95; }
 .card-num { font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.24em; opacity: 0.85; }
 .card-amt { font-family: var(--font-display); font-weight: 700; font-size: 20px; letter-spacing: -0.02em; }
 .card-name { font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; opacity: 0.85; }

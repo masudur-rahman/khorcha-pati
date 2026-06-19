@@ -8,28 +8,29 @@ export default function Logo({ size = 32, collapsed = false }: LogoProps) {
     <div style={{ display: 'flex', alignItems: 'center', gap: collapsed ? 0 : 12 }}>
       <img
         src="/logo-short.svg"
-        alt="Hisab"
+        alt="Khorcha-Pati"
         style={{ height: size, width: size, borderRadius: size * 0.22 }}
       />
       {!collapsed && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 2, lineHeight: 1 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 4, lineHeight: 1 }}>
           <span style={{
-            fontSize: size * 0.55,
-            fontWeight: 700,
-            letterSpacing: '-0.03em',
+            fontSize: size * 0.62,
+            fontWeight: 800,
+            letterSpacing: '-0.025em',
             color: 'var(--color-text-primary)',
             fontFamily: 'var(--font-display)',
+            lineHeight: 1,
           }}>
-            Hisab
+            Khorcha<span style={{ color: 'var(--color-primary)' }}>-Pati</span>
           </span>
           <span style={{
             fontSize: 11,
             fontWeight: 500,
-            fontStyle: 'italic',
             color: 'var(--color-text-tertiary)',
-            letterSpacing: 0,
+            letterSpacing: '0.01em',
+            lineHeight: 1.2,
           }}>
-            Every taka, accounted for.
+            Keep your <span style={{ color: 'var(--color-primary)', fontWeight: 600 }}>khorcha</span> on track.
           </span>
         </div>
       )}

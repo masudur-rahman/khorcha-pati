@@ -7,8 +7,6 @@ import { useSearch } from '../context/SearchContext'
 import { fmt } from '../lib/formatter'
 import type { Contact } from '../types'
 
-import { useNavigate } from 'react-router-dom'
-
 import TopBar from '../components/layout/TopBar'
 import Card from '../components/ui/Card'
 import Button from '../components/ui/Button'
@@ -17,6 +15,7 @@ import Input from '../components/ui/Input'
 import Eyebrow from '../components/ui/Eyebrow'
 import SectionHeader from '../components/ui/SectionHeader'
 import DrawerPanel from '../components/ui/DrawerPanel'
+import TxnDialog, { TxnType } from '../components/ui/TxnDialog'
 import { ICONS } from '../components/ui/Icons'
 
 export default function Contacts() {
@@ -169,7 +168,7 @@ function ContactRow({ contact, onClick }: { contact: Contact; onClick: () => voi
 }
 
 function ContactDrawer({ contact, onClose }: { contact: Contact; onClose: () => void }) {
-  const navigate = useNavigate()
+  const [addType, setAddType] = useState<TxnType | null>(null)
   const { data: resp } = useTransactions()
   const nick = contact.nickName.toLowerCase()
   const txns = (resp?.data ?? [])
@@ -185,10 +184,7 @@ function ContactDrawer({ contact, onClose }: { contact: Contact; onClose: () => 
   const settled = contact.netBalance === 0
   const color = settled ? 'var(--color-text-tertiary)' : owesYou ? 'var(--color-success)' : 'var(--color-danger)'
 
-  const goAdd = (type: 'Expense' | 'Income') => {
-    onClose()
-    navigate(`/transactions?add=${type}&contact=${encodeURIComponent(contact.nickName)}`)
-  }
+  const goAdd = (type: 'Expense' | 'Income') => setAddType(type)
 
   return (
     <DrawerPanel
@@ -271,6 +267,13 @@ function ContactDrawer({ contact, onClose }: { contact: Contact; onClose: () => 
           )}
         </div>
       </div>
+      {addType && (
+        <TxnDialog
+          initialType={addType}
+          initialContact={contact.nickName}
+          onClose={() => setAddType(null)}
+        />
+      )}
     </DrawerPanel>
   )
 }

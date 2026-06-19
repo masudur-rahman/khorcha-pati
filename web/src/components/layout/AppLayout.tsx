@@ -1,12 +1,14 @@
-import { Outlet, useNavigate, useLocation } from 'react-router-dom'
+import { useState } from 'react'
+import { Outlet, useLocation } from 'react-router-dom'
 import Sidebar from './Sidebar'
 import MobileNav from './MobileNav'
 import { ICONS } from '../ui/Icons'
+import TxnDialog from '../ui/TxnDialog'
 
 export default function AppLayout() {
-  const navigate = useNavigate()
   const location = useLocation()
   const showFab = location.pathname !== '/transactions'
+  const [showAddTxn, setShowAddTxn] = useState(false)
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--color-bg)' }}>
@@ -18,8 +20,9 @@ export default function AppLayout() {
       {showFab && (
         <button
           aria-label="Add transaction"
-          onClick={() => navigate('/transactions?add=Expense')}
-          className="md:hidden"
+          onClick={() => setShowAddTxn(true)}
+          className="khp-fab md:hidden"
+          data-tooltip="Add transaction"
           style={{
             position: 'fixed',
             right: 20,
@@ -41,6 +44,7 @@ export default function AppLayout() {
           {ICONS.plus(24)}
         </button>
       )}
+      {showAddTxn && <TxnDialog initialType="Expense" onClose={() => setShowAddTxn(false)} />}
     </div>
   )
 }

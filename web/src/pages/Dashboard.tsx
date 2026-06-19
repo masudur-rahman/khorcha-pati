@@ -21,6 +21,7 @@ import MetricChip from '../components/ui/MetricChip'
 import SectionHeader from '../components/ui/SectionHeader'
 import Eyebrow from '../components/ui/Eyebrow'
 import WalletCard, { inferVariant } from '../components/ui/WalletCard'
+import TxnDialog, { TxnType } from '../components/ui/TxnDialog'
 
 export default function Dashboard() {
   const navigate = useNavigate()
@@ -36,6 +37,8 @@ export default function Dashboard() {
   const { data: subcategories, isLoading: isSubsLoading } = useQuery({ queryKey: ['subcategories'], queryFn: () => listSubcategories() })
   const [showStatementModal, setShowStatementModal] = useState(false)
   const [selectedTxn, setSelectedTxn] = useState<any>(null)
+  const [addTxnType, setAddTxnType] = useState<TxnType | null>(null)
+  const [editTxn, setEditTxn] = useState<any>(null)
 
   const isLoading = isChartsLoading || isCatsLoading || isSubsLoading
 
@@ -84,9 +87,9 @@ export default function Dashboard() {
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
 
   const quickActions = [
-    { label: 'Add Expense', icon: ICONS.shoppingCart, onClick: () => navigate('/transactions?add=Expense'), mobileOrder: 1 },
-    { label: 'Add Income', icon: ICONS.trendingUp, onClick: () => navigate('/transactions?add=Income'), mobileOrder: 3 },
-    { label: 'Transfer', icon: ICONS.swapHoriz, onClick: () => navigate('/transactions?add=Transfer'), mobileOrder: 2 },
+    { label: 'Add Expense', icon: ICONS.shoppingCart, onClick: () => setAddTxnType('Expense'), mobileOrder: 1 },
+    { label: 'Add Income', icon: ICONS.trendingUp, onClick: () => setAddTxnType('Income'), mobileOrder: 3 },
+    { label: 'Transfer', icon: ICONS.swapHoriz, onClick: () => setAddTxnType('Transfer'), mobileOrder: 2 },
     { label: 'Statement', icon: ICONS.receiptLong, onClick: () => setShowStatementModal(true), mobileOrder: 4 },
   ]
 
@@ -272,7 +275,7 @@ export default function Dashboard() {
                     {t.type === 'Income' ? '+' : t.type === 'Transfer' ? '' : '-'}{fmt(t.amount)}
                   </td>
                   <td style={{ padding: '14px 24px' }}>
-                    <WalletFlow srcId={t.srcId} dstId={t.dstId} contactName={t.contactName} />
+                    <WalletFlow srcId={t.srcId} dstId={t.dstId} contactName={t.contactName} type={t.type as any} />
                   </td>
                 </tr>
               ))}
@@ -297,11 +300,19 @@ export default function Dashboard() {
           categories={allCategories ?? []}
           subcategories={subcategories ?? []}
           onClose={() => setSelectedTxn(null)}
-          onEdit={(t) => navigate(`/transactions?edit=${t.id}`)}
+          onEdit={(t) => { setSelectedTxn(null); setEditTxn(t) }}
         />
       )}
 
       {showStatementModal && <StatementModal onClose={() => setShowStatementModal(false)} />}
+
+      {(addTxnType || editTxn) && (
+        <TxnDialog
+          txn={editTxn || undefined}
+          initialType={addTxnType ?? undefined}
+          onClose={() => { setAddTxnType(null); setEditTxn(null) }}
+        />
+      )}
     </div>
   )
 }

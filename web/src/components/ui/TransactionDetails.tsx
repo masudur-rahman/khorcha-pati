@@ -3,6 +3,7 @@ import { Transaction, Wallet, Contact, TxnCategory, TxnSubcategory } from '../..
 import { fmt } from '../../lib/formatter'
 import { ICONS } from './Icons'
 import Badge from './Badge'
+import CategoryIcon, { categoryAccent } from './CategoryIcon'
 
 interface TransactionDetailsProps {
   txn: Transaction
@@ -38,7 +39,7 @@ export default function TransactionDetails({
   const accentColor = txn.type === 'Income' ? 'var(--color-success)' : txn.type === 'Transfer' ? 'var(--color-primary)' : 'var(--color-danger)'
   const heroBg = txn.type === 'Income' ? 'var(--color-success-subtle)' : txn.type === 'Transfer' ? 'var(--color-primary-subtle)' : 'var(--color-danger-subtle)'
 
-  const TypeIcon = txn.type === 'Income' ? ICONS.arrowUp : txn.type === 'Transfer' ? ICONS.transfer : ICONS.arrowDown
+  const TypeIcon = txn.type === 'Income' ? ICONS.trendingUp : txn.type === 'Transfer' ? ICONS.swapHoriz : ICONS.trendingDown
   const sign = txn.type === 'Income' ? '+' : txn.type === 'Transfer' ? '' : '-'
 
   const catMap = new Map(categories.map(c => [c.id, c.name]))
@@ -47,19 +48,23 @@ export default function TransactionDetails({
   const contactMap = new Map(contacts.map(c => [c.nickName, c.fullName]))
 
   const catId = txn.subcategoryId?.split('-')[0] ?? ''
-  type PartyKind = 'wallet' | 'contact' | 'unknown'
-  const resolveParty = (id: string): { label: string; kind: PartyKind } | null => {
+  type PartyKind = 'wallet' | 'contact'
+  type Party = { label: string; kind: PartyKind }
+  const resolveParty = (id: string): Party | null => {
     if (!id) return null
     const w = walletMap.get(id)
     if (w) return { label: w, kind: 'wallet' }
     const c = contactMap.get(id)
-    if (c) return { label: c || id, kind: 'contact' }
-    return { label: id, kind: 'unknown' }
+    return { label: c || id, kind: 'contact' }
   }
-  const from = resolveParty(txn.srcId)
-  const to = resolveParty(txn.dstId)
-  const personLabel = contactMap.get(txn.contactName) || txn.contactName
-  const personIsDuplicate = !!personLabel && (personLabel === from?.label || personLabel === to?.label)
+  let from = resolveParty(txn.srcId)
+  let to = resolveParty(txn.dstId)
+  // Use contactName as the missing-side contact when it aligns with the txn direction.
+  if (txn.contactName) {
+    const personParty: Party = { label: contactMap.get(txn.contactName) || txn.contactName, kind: 'contact' }
+    if (!to && txn.type === 'Expense') to = personParty
+    else if (!from && txn.type === 'Income') from = personParty
+  }
   const categoryName = catMap.get(catId) || catId
   const subcategoryName = subcatMap.get(txn.subcategoryId) || txn.subcategoryId
 
@@ -161,40 +166,45 @@ export default function TransactionDetails({
               border: '1px solid var(--color-border)',
             }}>
               <SectionLabel icon={ICONS.dashboard(13)} text="Classification" />
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 10 }}>
-                <Field label="Category" value={categoryName} />
-                <Field label="Subcategory" value={subcategoryName} />
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 12 }}>
+                <div style={{
+                  width: 40, height: 40, borderRadius: 10,
+                  background: categoryAccent(catId) + '1A', color: categoryAccent(catId),
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                }}>
+                  <CategoryIcon catId={catId} size={20} />
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, flex: 1, minWidth: 0 }}>
+                  <Field label="Category" value={categoryName} />
+                  <Field label="Subcategory" value={subcategoryName} />
+                </div>
               </div>
             </div>
 
             {/* Movement card */}
-            {(from || to || (personLabel && !personIsDuplicate)) && (
+            {(from || to) && (
               <div style={{
                 background: 'var(--color-surface)',
                 borderRadius: 14,
-                padding: 14,
+                padding: 16,
                 border: '1px solid var(--color-border)',
                 borderLeft: `3px solid ${accentColor}`,
               }}>
-                <SectionLabel icon={ICONS.transfer(13)} text="Movement" />
-                {(from || to) && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 12 }}>
-                    {from && <PartyField label="From" party={from} />}
-                    {from && to && (
-                      <div style={{ color: 'var(--color-text-tertiary)', fontWeight: 700, fontSize: 16, flexShrink: 0 }}>→</div>
-                    )}
-                    {to && <PartyField label="To" party={to} />}
-                  </div>
-                )}
-                {personLabel && !personIsDuplicate && (
-                  <div style={{
-                    marginTop: from || to ? 12 : 0,
-                    paddingTop: from || to ? 12 : 0,
-                    borderTop: from || to ? '1px dashed var(--color-border)' : 'none',
-                  }}>
-                    <Field label="Person" value={personLabel} icon={ICONS.user(13)} />
-                  </div>
-                )}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: accentColor }}>
+                  <span style={{ display: 'flex' }}>{ICONS.swapHoriz(13)}</span>
+                  <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Movement</span>
+                </div>
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: from && to ? '1fr auto 1fr' : '1fr',
+                  gap: 12, alignItems: 'center', marginTop: 14,
+                }}>
+                  {from && <MovementCell role="Source" party={from} />}
+                  {from && to && (
+                    <div style={{ color: 'var(--color-text-tertiary)', fontWeight: 700, fontSize: 18, lineHeight: 1 }}>→</div>
+                  )}
+                  {to && <MovementCell role="Destination" party={to} />}
+                </div>
               </div>
             )}
 
@@ -262,34 +272,43 @@ function SectionLabel({ icon, text }: { icon: React.ReactNode; text: string }) {
   )
 }
 
-function PartyField({ label, party }: { label: string; party: { label: string; kind: 'wallet' | 'contact' | 'unknown' } }) {
+function MovementCell({ role, party }: {
+  role: 'Source' | 'Destination'
+  party: { label: string; kind: 'wallet' | 'contact' }
+}) {
   const isContact = party.kind === 'contact'
   const tone = isContact ? 'var(--color-primary)' : 'var(--color-text-tertiary)'
-  const icon = isContact ? ICONS.user(13) : ICONS.wallet(13)
+  const icon = isContact ? ICONS.user(14) : ICONS.wallet(14)
+
   return (
-    <div style={{ flex: 1, minWidth: 0 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 5, color: 'var(--color-text-tertiary)' }}>
-        <span style={{ display: 'flex' }}>{icon}</span>
-        <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{label}</span>
-      </div>
-      <div style={{
-        fontSize: 13, fontWeight: 600,
-        color: 'var(--color-text-primary)',
-        marginTop: 4,
-        display: 'flex', alignItems: 'center', gap: 6,
-        minWidth: 0,
-      }}>
-        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{party.label}</span>
+    <div style={{ minWidth: 0, display: 'flex', flexDirection: 'column', gap: 8 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--color-text-tertiary)' }}>
+        <span style={{
+          width: 22, height: 22, borderRadius: 6,
+          background: isContact ? 'var(--color-primary-subtle)' : 'var(--color-bg)',
+          color: tone,
+          display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+        }}>
+          {icon}
+        </span>
+        <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+          {role}
+        </span>
         {isContact && (
           <span style={{
-            flexShrink: 0,
             fontSize: 9, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase',
-            padding: '2px 7px', borderRadius: 999,
-            background: 'var(--color-primary-subtle)', color: tone,
+            padding: '1px 6px', borderRadius: 999,
+            background: 'var(--color-primary-subtle)', color: 'var(--color-primary)',
           }}>
             Contact
           </span>
         )}
+      </div>
+      <div style={{
+        fontSize: 15, fontWeight: 700, color: 'var(--color-text-primary)',
+        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+      }}>
+        {party.label}
       </div>
     </div>
   )
