@@ -1,7 +1,7 @@
 import { apiFetch, getRefreshToken } from './client'
 import type {
   Transaction, Wallet, Contact, BudgetStatus, BudgetAlert,
-  ChartData, TxnCategory, Profile, StatementReport,
+  ChartData, TxnCategory, TxnSubcategory, Profile, StatementReport,
 } from '../types'
 
 const API = '/api/v1'
@@ -88,11 +88,17 @@ export const fetchReportData = (duration: string) =>
   apiFetch<StatementReport>(`${API}/summary/report-data?duration=${duration}`)
 
 // Categories
-export const listCategories = () => apiFetch<TxnCategory[]>(`${API}/categories`)
+export const listCategories = (type?: string) => {
+  const qs = type ? `?type=${encodeURIComponent(type)}` : ''
+  return apiFetch<TxnCategory[]>(`${API}/categories${qs}`)
+}
 
-export const listSubcategories = (catId?: string) => {
-  const qs = catId ? `?catId=${catId}` : ''
-  return apiFetch<{ id: string; name: string; catId: string }[]>(`${API}/subcategories${qs}`)
+export const listSubcategories = (catId?: string, type?: string) => {
+  const params = new URLSearchParams()
+  if (catId) params.set('catId', catId)
+  if (type) params.set('type', type)
+  const qs = params.toString() ? `?${params.toString()}` : ''
+  return apiFetch<TxnSubcategory[]>(`${API}/subcategories${qs}`)
 }
 
 // Admin

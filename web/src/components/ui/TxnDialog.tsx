@@ -1,17 +1,17 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { listCategories, listSubcategories } from '../../api/endpoints'
 import { useCreateTransaction, useUpdateTransaction } from '../../hooks/useTransactions'
 import { useWallets } from '../../hooks/useWallets'
 import { useContacts } from '../../hooks/useContacts'
-import type { Transaction } from '../../types'
+import type { Transaction, TxnType } from '../../types'
 
 import Modal from './Modal'
 import Button from './Button'
 import Input from './Input'
 import Select from './Select'
 
-export type TxnType = 'Expense' | 'Income' | 'Transfer'
+export type { TxnType }
 export const TXN_TYPE_OPTIONS: TxnType[] = ['Expense', 'Income', 'Transfer']
 
 interface Props {
@@ -28,59 +28,53 @@ export default function TxnDialog({ txn, initialType, initialContact, onClose }:
 
   const { data: wallets = [] } = useWallets()
   const { data: contacts = [] } = useContacts()
-  const { data: categories = [] } = useQuery({ queryKey: ['categories'], queryFn: listCategories })
-  const { data: subcategories = [] } = useQuery({ queryKey: ['subcategories'], queryFn: () => listSubcategories() })
 
   const [type, setType] = useState<TxnType>(txn?.type as any ?? initialType ?? 'Expense')
   const [amount, setAmount] = useState(txn?.amount?.toString() ?? '')
-  const [catId, setCatId] = useState(() => {
-    if (txn?.subcategoryId) return subcategories.find(s => s.id === txn.subcategoryId)?.catId || ''
-    return ''
-  })
+  const [catId, setCatId] = useState('')
   const [subcategoryId, setSubcategoryId] = useState(txn?.subcategoryId ?? '')
   const [srcId, setSrcId] = useState(txn?.srcId ?? '')
   const [dstId, setDstId] = useState(txn?.dstId ?? initialContact ?? '')
   const [contactName, setContactName] = useState(txn?.contactName ?? initialContact ?? '')
   const [remarks, setRemarks] = useState(txn?.remarks ?? '')
 
-  // Restore catId once subcategories load (handles edit-mode race).
+  const { data: categories = [] } = useQuery({
+    queryKey: ['categories', type],
+    queryFn: () => listCategories(type),
+  })
+  const { data: subcategories = [] } = useQuery({
+    queryKey: ['subcategories', catId, type],
+    queryFn: () => listSubcategories(catId || undefined, type),
+    enabled: !!catId,
+  })
+
+  // Edit-mode: restore catId by looking up the subcategory in the full list.
+  const { data: allSubs = [] } = useQuery({
+    queryKey: ['subcategories', 'all'],
+    queryFn: () => listSubcategories(),
+    enabled: isEdit && !catId && !!txn?.subcategoryId,
+  })
   useEffect(() => {
-    if (txn?.subcategoryId && !catId) {
-      const cat = subcategories.find(s => s.id === txn.subcategoryId)?.catId
-      if (cat) setCatId(cat)
+    if (!isEdit || catId || !txn?.subcategoryId) return
+    const cat = allSubs.find(s => s.id === txn.subcategoryId)?.catId
+    if (cat) setCatId(cat)
+  }, [allSubs, isEdit, txn?.subcategoryId, catId])
+
+  // When type changes, reset cat/subcat if current selection no longer fits.
+  useEffect(() => {
+    if (isEdit) return
+    if (catId && !categories.find(c => c.id === catId)) {
+      setCatId('')
+      setSubcategoryId('')
     }
-  }, [subcategories, txn?.subcategoryId, catId])
+  }, [categories, catId, isEdit])
 
   useEffect(() => {
     if (isEdit) return
-    if (type === 'Transfer') {
-      const finCat = categories.find(c => c.name.toLowerCase() === 'financial')
-      if (finCat) {
-        setCatId(finCat.id)
-        const transSub = subcategories.find(s => s.catId === finCat.id && s.name.toLowerCase().includes('transfer'))
-        if (transSub) setSubcategoryId(transSub.id)
-      }
-    } else {
-      const finCat = categories.find(c => c.name.toLowerCase() === 'financial')
-      if (catId === finCat?.id) { setCatId(''); setSubcategoryId('') }
+    if (subcategoryId && !subcategories.find(s => s.id === subcategoryId)) {
+      setSubcategoryId('')
     }
-  }, [type, categories, subcategories, isEdit])
-
-  const filteredSubs = useMemo(() => {
-    let subs = subcategories
-    if (catId) subs = subs.filter(s => s.catId === catId)
-    if (type === 'Transfer') subs = subs.filter(s => s.name.toLowerCase().includes('transfer') || s.name.toLowerCase().includes('withdraw') || s.name.toLowerCase().includes('deposit'))
-    return subs
-  }, [subcategories, catId, type])
-
-  useEffect(() => {
-    if (isEdit) return
-    const sub = subcategories.find(s => s.id === subcategoryId)
-    if (sub?.name.toLowerCase() === 'withdraw') {
-      const cashWallet = wallets.find(w => w.type === 'Cash' || w.shortName.toLowerCase() === 'cash')
-      if (cashWallet) setDstId(cashWallet.shortName)
-    }
-  }, [subcategoryId, subcategories, wallets, isEdit])
+  }, [subcategories, subcategoryId, isEdit])
 
   const handleSubmit = () => {
     const payload: Partial<Transaction> = { type, amount: parseFloat(amount), subcategoryId, srcId, dstId, contactName, remarks }
@@ -97,7 +91,7 @@ export default function TxnDialog({ txn, initialType, initialContact, onClose }:
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
           <Select label="Category" value={catId} onChange={e => { setCatId(e.target.value); setSubcategoryId('') }} options={categories.map(c => ({ value: c.id, label: c.name }))} />
-          <Select label="Sub Category" value={subcategoryId} onChange={e => setSubcategoryId(e.target.value)} options={filteredSubs.map(s => ({ value: s.id, label: s.name }))} />
+          <Select label="Sub Category" value={subcategoryId} onChange={e => setSubcategoryId(e.target.value)} options={subcategories.map(s => ({ value: s.id, label: s.name }))} />
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
           <Select label="From (Wallet)" value={srcId} onChange={e => setSrcId(e.target.value)} options={wallets.map(w => ({ value: w.shortName, label: w.name }))} />

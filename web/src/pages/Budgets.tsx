@@ -21,7 +21,7 @@ export default function Budgets() {
   const { searchTerm } = useSearch()
   const { data: budgets, isLoading } = useBudgets()
   const { data: alerts } = useBudgetAlerts()
-  const { data: categories } = useQuery({ queryKey: ['categories'], queryFn: listCategories })
+  const { data: categories } = useQuery({ queryKey: ['categories'], queryFn: () => listCategories() })
   const [showAdd, setShowAdd] = useState(false)
 
   const filteredBudgets = useMemo(() =>

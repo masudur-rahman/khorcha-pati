@@ -72,15 +72,19 @@ export interface MonthlyOverview {
   budgetUsage: number
 }
 
+export type TxnType = 'Expense' | 'Income' | 'Transfer'
+
 export interface TxnCategory {
   id: string
   name: string
+  types: TxnType[]
 }
 
 export interface TxnSubcategory {
   id: string
   catId: string
   name: string
+  types: TxnType[]
 }
 
 export interface Profile {

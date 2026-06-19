@@ -30,7 +30,7 @@ export default function Transactions() {
   const txns = resp?.data ?? []
   const { data: wallets } = useWallets()
   const { data: contacts } = useContacts()
-  const { data: categories } = useQuery({ queryKey: ['categories'], queryFn: listCategories })
+  const { data: categories } = useQuery({ queryKey: ['categories'], queryFn: () => listCategories() })
   const { data: subcategories } = useQuery({ queryKey: ['subcategories'], queryFn: () => listSubcategories() })
 
   const [filterType, setFilterType] = useState<string>('')
