@@ -116,14 +116,22 @@ export interface AdminUser {
   firstName: string
   lastName: string
   isAdmin: boolean
+  isActive: boolean
   walletCount: number
   txnCount: number
   contactCount: number
+  createdAt: number
+  lastTxnAt: number
 }
 
 export const getAdminStats = () => apiFetch<AdminStats>(`${API}/admin/stats`)
 export const getAdminUsers = () => apiFetch<AdminUser[]>(`${API}/admin/users`)
 export const getAdminUserDetail = (id: number) => apiFetch<AdminUser>(`${API}/admin/users/${id}`)
+export const setAdminUserActive = (id: number, isActive: boolean) =>
+  apiFetch<{ id: number; isActive: boolean }>(`${API}/admin/users/${id}/activate`, {
+    method: 'PATCH',
+    body: JSON.stringify({ isActive }),
+  })
 
 // Profile
 export const getProfile = () => apiFetch<Profile>(`${API}/profile`)

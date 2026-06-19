@@ -25,6 +25,7 @@ type Profile struct {
 	Timezone     string `db:"timezone" json:"timezone"`
 	MobileNumber string `db:"mobile_number" json:"mobileNumber"`
 	IsAdmin      bool   `db:"is_admin" json:"isAdmin"`
+	IsActive     bool   `db:"is_active,req" json:"isActive"`
 	CreatedAt    int64  `db:"created_at" json:"createdAt"`
 }
 

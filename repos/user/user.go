@@ -93,6 +93,11 @@ func (u *SQLUserRepository) UpdateUser(id int64, us *models.Profile) error {
 	return u.db.ID(id).UpdateOne(ctx, user)
 }
 
+func (u *SQLUserRepository) SetActive(id int64, active bool) error {
+	ctx := context.Background()
+	return u.db.ID(id).MustCols("is_active").UpdateOne(ctx, &models.Profile{IsActive: active})
+}
+
 func (u *SQLUserRepository) DeleteUser(id int64) error {
 	u.logger.Infow("deleting user", "id", id)
 	ctx := context.Background()

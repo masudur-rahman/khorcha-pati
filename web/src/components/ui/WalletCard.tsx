@@ -114,7 +114,7 @@ export default function WalletCard({ variant, name, shortName, balance, paletteI
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'clamp(3px, 1cqi, 5px)', minWidth: 0, overflow: 'hidden' }}>
           <span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 'clamp(12px, 3.6cqi, 15px)', letterSpacing: '0.04em', lineHeight: 1.05, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Khorcha-Pati</span>
           <span style={{ fontSize: 'clamp(8px, 2.2cqi, 10px)', fontWeight: 500, fontStyle: 'italic', letterSpacing: '0.01em', opacity: 0.85, lineHeight: 1.2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-            Keep your khorcha on track
+            Keep your khorcha on track.
           </span>
         </div>
         <span style={{

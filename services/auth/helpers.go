@@ -36,6 +36,9 @@ func (s *authService) lookupUser(identifier string) (*models.Profile, error) {
 }
 
 func (s *authService) issueTokenPair(user *models.Profile) (*authmod.TokenPair, error) {
+	if !user.IsActive {
+		return nil, models.StatusError{Status: 403, Message: "account disabled"}
+	}
 	accessToken, err := authmod.GenerateAccessToken(user.ID, user.Username, s.jwtSecret, user.IsAdmin)
 	if err != nil {
 		return nil, fmt.Errorf("generate access token: %w", err)

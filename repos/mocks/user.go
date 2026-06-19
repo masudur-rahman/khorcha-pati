@@ -45,6 +45,10 @@ func (m *UserRepo) UpdateUser(id int64, user *models.Profile) error {
 	return m.Called(id, user).Error(0)
 }
 
+func (m *UserRepo) SetActive(id int64, active bool) error {
+	return m.Called(id, active).Error(0)
+}
+
 func (m *UserRepo) DeleteUser(id int64) error {
 	return m.Called(id).Error(0)
 }

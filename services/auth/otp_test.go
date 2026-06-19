@@ -35,6 +35,7 @@ var testUser = &models.Profile{
 	ID:         1,
 	TelegramID: 100,
 	Username:   "alice",
+	IsActive:   true,
 }
 
 func TestRequestOTP_success(t *testing.T) {

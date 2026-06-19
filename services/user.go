@@ -22,5 +22,6 @@ type ProfileService interface {
 	SignUp(user *models.Profile) error
 	UpdateUser(id int64, user *models.Profile) error
 	UpdateMobileNumber(userID int64, mobile string) error
+	SetActive(userID int64, active bool) error
 	DeleteUser(id int64) error
 }

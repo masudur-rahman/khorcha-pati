@@ -22,5 +22,6 @@ type UserRepository interface {
 	ListUsers() ([]models.Profile, error)
 	AddNewUser(user *models.Profile) error
 	UpdateUser(id int64, user *models.Profile) error
+	SetActive(id int64, active bool) error
 	DeleteUser(id int64) error
 }

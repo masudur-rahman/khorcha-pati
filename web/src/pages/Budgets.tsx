@@ -23,6 +23,7 @@ export default function Budgets() {
   const { data: alerts } = useBudgetAlerts()
   const { data: categories } = useQuery({ queryKey: ['categories'], queryFn: () => listCategories() })
   const [showAdd, setShowAdd] = useState(false)
+  const [editing, setEditing] = useState<import('../types').BudgetStatus | null>(null)
 
   const filteredBudgets = useMemo(() =>
     (budgets ?? []).filter(b => !searchTerm || b.categoryName.toLowerCase().includes(searchTerm.toLowerCase())),
@@ -53,7 +54,7 @@ export default function Budgets() {
       {/* Monthly Overview band */}
       {(budgets?.length ?? 0) > 0 && (
         <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 2fr) minmax(0, 1fr)', gap: 18 }} className="budget-overview">
-          <Card style={{ display: 'flex', flexDirection: 'column', gap: 10, padding: 22 }}>
+          <Card style={{ display: 'flex', flexDirection: 'column', gap: 10, padding: 22, borderLeft: '3px solid var(--color-primary)' }}>
             <Eyebrow color="var(--color-primary)">{monthLabel}</Eyebrow>
             <h3 style={{ fontSize: 22, fontWeight: 700, color: 'var(--color-text-primary)', margin: 0, fontFamily: 'var(--font-display)', letterSpacing: '-0.02em' }}>
               Monthly Overview
@@ -143,29 +144,34 @@ export default function Budgets() {
         </Card>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 18 }}>
-          {filteredBudgets.map(b => <BudgetCard key={b.categoryId} budget={b} />)}
+          {filteredBudgets.map(b => <BudgetCard key={b.categoryId} budget={b} onEdit={() => setEditing(b)} />)}
           <CreateBudgetCard onClick={() => setShowAdd(true)} />
         </div>
       )}
 
       {showAdd && <SetBudgetDialog categories={categories ?? []} onClose={() => setShowAdd(false)} />}
+      {editing && <SetBudgetDialog categories={categories ?? []} existing={editing} onClose={() => setEditing(null)} />}
     </div>
   )
 }
 
-function BudgetCard({ budget }: { budget: import('../types').BudgetStatus }) {
+function BudgetCard({ budget, onEdit }: { budget: import('../types').BudgetStatus; onEdit: () => void }) {
   const del = useDeleteBudget()
   const catAccent = categoryAccent(budget.categoryId)
-  const status = budget.percent > 100
-    ? { label: 'Critical limit', color: 'var(--color-danger)' }
+  const status = budget.percent >= 100
+    ? { label: budget.percent > 100 ? 'Over limit' : 'Limit reached', color: 'var(--color-danger)' }
     : budget.percent > 80
       ? { label: 'Approaching limit', color: 'var(--color-warning)' }
       : budget.percent > 50
         ? { label: 'On track', color: 'var(--color-success)' }
-        : { label: 'Below average', color: 'var(--color-success)' }
+        : { label: 'Plenty left', color: 'var(--color-success)' }
 
   return (
-    <Card padding={0} style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+    <Card padding={0} style={{
+      display: 'flex', flexDirection: 'column', overflow: 'hidden',
+      background: `linear-gradient(135deg, ${catAccent}14 0%, ${catAccent}05 45%, var(--color-surface) 100%)`,
+      borderColor: `${catAccent}33`,
+    }}>
       <div style={{ padding: 18, flex: 1, display: 'flex', flexDirection: 'column', gap: 16 }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
@@ -181,17 +187,26 @@ function BudgetCard({ budget }: { budget: import('../types').BudgetStatus }) {
               overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
             }}>{budget.categoryName}</h3>
           </div>
-          <button
-            onClick={() => del.mutate(budget.categoryId)}
-            aria-label="Delete budget"
-            style={{ width: 28, height: 28, borderRadius: 'var(--radius-sm)', background: 'transparent', cursor: 'pointer', color: 'var(--color-text-tertiary)', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all var(--transition-fast)', border: 'none', flexShrink: 0 }}
-            onMouseEnter={e => { e.currentTarget.style.background = 'var(--color-danger-subtle)'; e.currentTarget.style.color = 'var(--color-danger)' }}
-            onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--color-text-tertiary)' }}
-          >{ICONS.trash(14)}</button>
+          <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
+            <button
+              onClick={onEdit}
+              aria-label="Edit budget"
+              style={{ width: 28, height: 28, borderRadius: 'var(--radius-sm)', background: 'transparent', cursor: 'pointer', color: 'var(--color-text-tertiary)', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all var(--transition-fast)', border: 'none' }}
+              onMouseEnter={e => { e.currentTarget.style.background = 'var(--color-primary-subtle)'; e.currentTarget.style.color = 'var(--color-primary)' }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--color-text-tertiary)' }}
+            >{ICONS.edit(14)}</button>
+            <button
+              onClick={() => del.mutate(budget.categoryId)}
+              aria-label="Delete budget"
+              style={{ width: 28, height: 28, borderRadius: 'var(--radius-sm)', background: 'transparent', cursor: 'pointer', color: 'var(--color-text-tertiary)', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all var(--transition-fast)', border: 'none' }}
+              onMouseEnter={e => { e.currentTarget.style.background = 'var(--color-danger-subtle)'; e.currentTarget.style.color = 'var(--color-danger)' }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--color-text-tertiary)' }}
+            >{ICONS.trash(14)}</button>
+          </div>
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-          <BudgetGauge percent={budget.percent} size={72} color={catAccent} />
+          <BudgetGauge percent={budget.percent} size={72} color={catAccent} endColor="#ef4444" />
           <div style={{ flex: 1, minWidth: 0 }}>
             <Eyebrow>Spent</Eyebrow>
             <p style={{
@@ -208,9 +223,17 @@ function BudgetCard({ budget }: { budget: import('../types').BudgetStatus }) {
 
       <div style={{
         padding: '12px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        borderTop: '1px solid var(--color-border)', background: 'var(--color-bg)',
+        borderTop: `1px solid ${catAccent}1f`,
+        background: `color-mix(in srgb, var(--color-surface) 75%, ${catAccent} 25%)`,
       }}>
-        <span style={{ fontSize: 11, fontWeight: 700, color: status.color, display: 'flex', alignItems: 'center', gap: 6 }}>
+        <span style={{
+          display: 'inline-flex', alignItems: 'center', gap: 6,
+          padding: '3px 9px', borderRadius: 999,
+          fontSize: 11, fontWeight: 700, letterSpacing: '0.03em',
+          color: status.color,
+          background: `color-mix(in srgb, ${status.color} 14%, transparent)`,
+          border: `1px solid color-mix(in srgb, ${status.color} 28%, transparent)`,
+        }}>
           <span style={{ width: 6, height: 6, borderRadius: 999, background: status.color }} />
           {status.label}
         </span>
@@ -313,22 +336,25 @@ function CreateBudgetCard({ onClick }: { onClick: () => void }) {
   )
 }
 
-function SetBudgetDialog({ categories, onClose }: { categories: import('../types').TxnCategory[], onClose: () => void }) {
+function SetBudgetDialog({ categories, existing, onClose }: { categories: import('../types').TxnCategory[], existing?: import('../types').BudgetStatus, onClose: () => void }) {
   const setBudget = useSetBudget()
-  const [categoryId, setCategoryId] = useState('')
-  const [amount, setAmount] = useState('')
-  const [alertAt, setAlertAt] = useState('80')
+  const isEdit = !!existing
+  const [categoryId, setCategoryId] = useState(existing?.categoryId ?? '')
+  const [amount, setAmount] = useState(existing ? String(existing.amount) : '')
+  const [alertAt, setAlertAt] = useState(existing ? String(existing.alertAt) : '80')
 
   return (
-    <Modal title="Set Budget" onClose={onClose} width={460}>
+    <Modal title={isEdit ? 'Edit Budget' : 'Set Budget'} onClose={onClose} width={460}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-        <Select label="Category" value={categoryId} onChange={e => setCategoryId(e.target.value)}
+        <Select label="Category" value={categoryId} onChange={e => setCategoryId(e.target.value)} disabled={isEdit}
           options={[{ value: '', label: 'Overall Budget' }, ...categories.map(c => ({ value: c.id, label: c.name }))]} />
         <Input label="Monthly Limit" type="number" placeholder="0.00" value={amount} onChange={e => setAmount(e.target.value)} />
         <Input label="Alert Threshold (%)" type="number" placeholder="80" value={alertAt} onChange={e => setAlertAt(e.target.value)} />
         <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', marginTop: 12 }}>
           <Button variant="secondary" onClick={onClose}>Cancel</Button>
-          <Button onClick={() => setBudget.mutate({ categoryId, amount: parseFloat(amount), alertAt: parseInt(alertAt) }, { onSuccess: onClose })} disabled={!amount} style={{ padding: '12px 32px' }}>Save Budget</Button>
+          <Button onClick={() => setBudget.mutate({ categoryId, amount: parseFloat(amount), alertAt: parseInt(alertAt) }, { onSuccess: onClose })} disabled={!amount} style={{ padding: '12px 32px' }}>
+            {isEdit ? 'Update Budget' : 'Save Budget'}
+          </Button>
         </div>
       </div>
     </Modal>
