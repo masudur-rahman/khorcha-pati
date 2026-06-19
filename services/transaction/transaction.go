@@ -39,6 +39,11 @@ func (ts *txnService) AddTransaction(txn models.Transaction) (err error) {
 	if txn.Amount <= 0 {
 		return models.ErrInvalidTransaction{Reason: "amount must be greater than zero"}
 	}
+	if types, ok := models.SubcategoryTypes[txn.SubcategoryID]; ok {
+		if !models.ContainsType(types, txn.Type) {
+			return models.ErrInvalidTransaction{Reason: fmt.Sprintf("subcategory %q is not allowed for transaction type %q", txn.SubcategoryID, txn.Type)}
+		}
+	}
 	if txn.CreatedAt == 0 {
 		txn.CreatedAt = time.Now().Unix()
 	}
@@ -62,8 +67,6 @@ func (ts *txnService) AddTransaction(txn models.Transaction) (err error) {
 			if err = ts.updateContactBalance(uow, txn, txn.Amount); err != nil {
 				return err
 			}
-		case models.BorrowSubID, models.LendRecoverySubID, models.LoanReceivedSubID:
-			return models.ErrInvalidTransaction{Reason: "borrow, lend recovery or loan received type transaction should be under Income type"}
 		}
 		if err = ts.walletRepo.WithUnitOfWork(uow).UpdateWalletBalance(txn.UserID, txn.SrcID, -txn.Amount); err != nil {
 			return err
@@ -74,8 +77,6 @@ func (ts *txnService) AddTransaction(txn models.Transaction) (err error) {
 			if err = ts.updateContactBalance(uow, txn, -txn.Amount); err != nil {
 				return err
 			}
-		case models.LoanRepaymentSubID, models.BorrowReturnSubID, models.LendSubID:
-			return models.ErrInvalidTransaction{Reason: "loan, borrow return or lend type transaction should be under Expense type"}
 		}
 		if err = ts.walletRepo.WithUnitOfWork(uow).UpdateWalletBalance(txn.UserID, txn.DstID, txn.Amount); err != nil {
 			return err
