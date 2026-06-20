@@ -15,7 +15,7 @@ require (
 	github.com/jedib0t/go-pretty/v6 v6.4.6
 	github.com/lib/pq v1.10.9
 	github.com/masudur-rahman/go-oneliners v1.0.0
-	github.com/masudur-rahman/styx v1.4.0
+	github.com/masudur-rahman/styx v1.4.1
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/redis/go-redis/v9 v9.17.2
 	github.com/rs/xid v1.5.0
