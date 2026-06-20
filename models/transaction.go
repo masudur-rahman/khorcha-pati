@@ -69,7 +69,7 @@ func (t Transaction) Summary() string {
 	sb.WriteString(fmt.Sprintf("%s *%s*\n", emoji, action))
 	sb.WriteString(Separator + "\n")
 
-	sb.WriteString(fmt.Sprintf("💵 *Amount:* %.2f\n", t.Amount))
+	sb.WriteString(fmt.Sprintf("💵 *Amount:* %s\n", FormatMoneySigned(t.Amount, t.Type)))
 
 	catName := "Unknown"
 	subName := t.SubcategoryID

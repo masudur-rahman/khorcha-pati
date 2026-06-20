@@ -1,0 +1,20 @@
+<svg viewBox="0 0 360 88" xmlns="http://www.w3.org/2000/svg" width="360" height="88" role="img" aria-label="Khorcha-Pati">
+  <defs>
+    <linearGradient id="kpTrendHD" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#FF7452"></stop>
+      <stop offset="52%" stop-color="#4C9AFF"></stop>
+      <stop offset="100%" stop-color="#57D9A3"></stop>
+    </linearGradient>
+  </defs>
+  <g transform="translate(8,12) scale(0.64)">
+    <rect width="100" height="100" rx="24" fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.14)" stroke-width="2"></rect>
+    <polygon points="50,18 78,34 78,66 50,82 22,66 22,34" fill="none" stroke="rgba(255,255,255,0.22)" stroke-width="5.5" stroke-linejoin="round"></polygon>
+    <path d="M 18 52 L 40 68 L 58 45 L 86 28" fill="none" stroke="url(#kpTrendHD)" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"></path>
+    <circle cx="18" cy="52" r="4.6" fill="#FF7452"></circle>
+    <circle cx="40" cy="68" r="4.2" fill="#FFFFFF"></circle>
+    <circle cx="58" cy="45" r="4.2" fill="#FFFFFF"></circle>
+    <circle cx="86" cy="28" r="5.2" fill="#57D9A3"></circle>
+  </g>
+  <text x="84" y="46" font-family="Geist, Inter, system-ui, sans-serif" font-size="30" font-weight="800" letter-spacing="-0.8" fill="#F4F7FF">Khorcha<tspan fill="#4C9AFF">-Pati</tspan></text>
+  <text x="85" y="68" font-family="Inter, system-ui, sans-serif" font-size="12.5" font-weight="500" letter-spacing="0.1" fill="#A0AEC0">Keep your <tspan fill="#4C9AFF" font-weight="600">khorcha</tspan> on track.</text>
+</svg>

@@ -2,8 +2,9 @@
 package telegram
 
 import (
-	"fmt"
 	"strings"
+
+	"github.com/masudur-rahman/expense-tracker-bot/models"
 )
 
 const MaxMessageLen = 4000 // safe margin below Telegram's hard 4096-byte limit
@@ -41,7 +42,8 @@ func SplitMessage(text string) []string {
 	return chunks
 }
 
-// FormatAmount formats a float64 as a currency string with 2 decimal places.
+// FormatAmount formats a float64 as a Taka currency string (৳, grouped, no
+// decimals) via the central money formatter.
 func FormatAmount(amount float64) string {
-	return fmt.Sprintf("%.2f", amount)
+	return models.FormatMoney(amount)
 }

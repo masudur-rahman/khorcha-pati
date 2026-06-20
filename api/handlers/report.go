@@ -459,32 +459,11 @@ func BalanceClass(amount float64) string {
 	return ""
 }
 
-// FormatAmount renders a value as `৳1,234.56` to mirror the React Statement page.
+// FormatAmount renders a value as `৳1,00,000` / `−৳500` to mirror the React
+// Statement page. Delegates to the shared money formatter so the client-side
+// and server-side PDFs render amounts identically.
 func FormatAmount(amount float64) string {
-	neg := amount < 0
-	if neg {
-		amount = -amount
-	}
-	intPart := int64(amount)
-	frac := int64((amount-float64(intPart))*100 + 0.5)
-	if frac >= 100 {
-		intPart++
-		frac -= 100
-	}
-	intStr := strconv.FormatInt(intPart, 10)
-	var b strings.Builder
-	for i, r := range intStr {
-		remaining := len(intStr) - i
-		if i > 0 && remaining%3 == 0 {
-			b.WriteByte(',')
-		}
-		b.WriteRune(r)
-	}
-	out := fmt.Sprintf("৳%s.%02d", b.String(), frac)
-	if neg {
-		out = "-" + out
-	}
-	return out
+	return models.FormatMoneyValue(amount)
 }
 
 // FormatStatementDate renders dd/mm to match the React table's date column.
@@ -561,9 +540,9 @@ var (
 	fontFaceCSSStr  string
 )
 
-// FontFaceCSS returns a <style> block with @font-face declarations for DM Sans
-// and Space Grotesk, with woff2 binaries embedded as base64 data URIs.
-// Cached after first call.
+// FontFaceCSS returns a <style> block with @font-face declarations for Inter
+// and Geist (the UI/dashboard fonts), with woff2 binaries embedded as base64
+// data URIs so the PDF matches the web app. Cached after first call.
 func FontFaceCSS() string {
 	fontFaceCSSOnce.Do(func() {
 		fontFaceCSSStr = buildFontFaceCSS()
@@ -582,10 +561,10 @@ func buildFontFaceCSS() string {
 		path         string
 		unicodeRange string
 	}{
-		{"DM Sans", "100 1000", "fonts/dmsans-latin.woff2", latinRange},
-		{"DM Sans", "100 1000", "fonts/dmsans-latin-ext.woff2", latinExtRange},
-		{"Space Grotesk", "100 1000", "fonts/spacegrotesk-latin.woff2", latinRange},
-		{"Space Grotesk", "100 1000", "fonts/spacegrotesk-latin-ext.woff2", latinExtRange},
+		{"Inter", "100 900", "fonts/inter-latin.woff2", latinRange},
+		{"Inter", "100 900", "fonts/inter-latin-ext.woff2", latinExtRange},
+		{"Geist", "100 900", "fonts/geist-latin.woff2", latinRange},
+		{"Geist", "100 900", "fonts/geist-latin-ext.woff2", latinExtRange},
 	}
 
 	var b strings.Builder

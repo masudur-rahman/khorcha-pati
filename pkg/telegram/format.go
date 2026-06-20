@@ -40,7 +40,7 @@ func FormatSummary(sg gqtypes.SummaryGroups, title string) string {
 			if name == "" {
 				name = k
 			}
-			sb.WriteString(fmt.Sprintf("%s%s: *%.2f*\n", prefix, name, v.Amount))
+			sb.WriteString(fmt.Sprintf("%s%s: *%s*\n", prefix, name, models.FormatMoney(v.Amount)))
 		}
 		sb.WriteString("\n")
 	}
@@ -93,7 +93,7 @@ func FormatTransactionList(txns []models.Transaction, page, pageSize int) string
 
 		dateStr := time.Unix(txn.Timestamp, 0).Format("02 Jan")
 
-		sb.WriteString(fmt.Sprintf("%d. %s *%.2f* | %s\n", start+i+1, emoji, txn.Amount, subName))
+		sb.WriteString(fmt.Sprintf("%d. %s *%s* | %s\n", start+i+1, emoji, models.FormatMoneySigned(txn.Amount, txn.Type), subName))
 		sb.WriteString(fmt.Sprintf("   `[%s]`", dateStr))
 		if txn.Remarks != "" {
 			sb.WriteString(fmt.Sprintf(" — %s", txn.Remarks))

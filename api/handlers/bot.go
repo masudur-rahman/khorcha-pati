@@ -181,9 +181,9 @@ func printContacts(contacts []models.Contacts) string {
 		}
 		sb.WriteString(fmt.Sprintf("👤 *%s* (`%s`)\n", name, c.NickName))
 		if c.NetBalance > 0 {
-			sb.WriteString(fmt.Sprintf("   ➕ `%.2f` _they owe you_\n\n", c.NetBalance))
+			sb.WriteString(fmt.Sprintf("   ➕ `%s` _they owe you_\n\n", models.FormatMoney(c.NetBalance)))
 		} else if c.NetBalance < 0 {
-			sb.WriteString(fmt.Sprintf("   ➖ `%.2f` _you owe them_\n\n", -c.NetBalance))
+			sb.WriteString(fmt.Sprintf("   ➖ `%s` _you owe them_\n\n", models.FormatMoney(c.NetBalance)))
 		} else {
 			sb.WriteString("   ✅ _settled_\n\n")
 		}
@@ -264,11 +264,11 @@ func printWallets(wallets []models.Wallet) string {
 			icon = "🏦"
 		}
 		sb.WriteString(fmt.Sprintf("%s *%s* (`%s`)\n", icon, w.Name, w.ShortName))
-		sb.WriteString(fmt.Sprintf("   Balance: `%.2f`\n\n", w.Balance))
+		sb.WriteString(fmt.Sprintf("   Balance: `%s`\n\n", models.FormatMoneyValue(w.Balance)))
 		total += w.Balance
 	}
 	sb.WriteString(models.Separator + "\n")
-	sb.WriteString(fmt.Sprintf("💰 *Total: `%.2f`*", total))
+	sb.WriteString(fmt.Sprintf("💰 *Total: `%s`*", models.FormatMoneyValue(total)))
 	return sb.String()
 }
 
