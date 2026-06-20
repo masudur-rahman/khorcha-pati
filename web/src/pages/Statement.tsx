@@ -1,13 +1,10 @@
 import { useEffect, useState } from 'react'
 import { fetchReportData } from '../api/endpoints'
 import type { StatementReport, StatementTransaction, FieldCost } from '../types'
+import { fmt } from '../lib/formatter'
 
-const CURRENCY = '৳'
 const ACCENT = '#0052CC'
 
-function fmt(amount: number) {
-  return `${CURRENCY}${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-}
 function fmtDate(dateStr: string) {
   return new Date(dateStr).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit' })
 }

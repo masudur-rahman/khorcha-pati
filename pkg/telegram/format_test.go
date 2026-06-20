@@ -22,9 +22,9 @@ func TestFormatSummary_Connectors(t *testing.T) {
 
 	// Verify hierarchical connectors (alphabetical order: food, shop, trans)
 	assert.Contains(t, formatted, "📊 *Test Summary*")
-	assert.Contains(t, formatted, " ├ Food: *100.00*")
-	assert.Contains(t, formatted, " ├ Shopping: *200.00*")
-	assert.Contains(t, formatted, " └ Transport: *300.00*")
+	assert.Contains(t, formatted, " ├ Food: *৳100*")
+	assert.Contains(t, formatted, " ├ Shopping: *৳200*")
+	assert.Contains(t, formatted, " └ Transport: *৳300*")
 }
 
 func TestFormatTransactionList_PaginationAndSorting(t *testing.T) {
@@ -38,14 +38,14 @@ func TestFormatTransactionList_PaginationAndSorting(t *testing.T) {
 	formatted := FormatTransactionList(txns, 1, 2)
 
 	assert.Contains(t, formatted, "Page 1")
-	assert.Contains(t, formatted, "1. 💸 *30.00*")
-	assert.Contains(t, formatted, "2. 💸 *20.00*")
-	assert.NotContains(t, formatted, "3. 💸 *10.00*")
+	assert.Contains(t, formatted, "1. 💸 *−৳30*")
+	assert.Contains(t, formatted, "2. 💸 *−৳20*")
+	assert.NotContains(t, formatted, "3. 💸 *−৳10*")
 
 	// Page 2, Size 2 (Should show txn with timestamp 1000)
 	formatted2 := FormatTransactionList(txns, 2, 2)
 	assert.Contains(t, formatted2, "Page 2")
-	assert.Contains(t, formatted2, "3. 💸 *10.00*")
+	assert.Contains(t, formatted2, "3. 💸 *−৳10*")
 }
 
 func TestEscapeMarkdownV2(t *testing.T) {

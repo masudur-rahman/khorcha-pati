@@ -10,6 +10,8 @@ import (
 	"sort"
 	"time"
 
+	"github.com/masudur-rahman/expense-tracker-bot/models"
+
 	"github.com/fogleman/gg"
 	"github.com/golang/freetype/truetype"
 	"golang.org/x/image/font/gofont/goregular"
@@ -37,9 +39,9 @@ func (s Summary) String() string {
 	return fmt.Sprintf(`
 Transaction Summary
 
-Income:  %v
-Expense: %v
-`, s.Income, s.Income)
+Income:  %s
+Expense: %s
+`, models.FormatMoney(s.Income), models.FormatMoney(s.Expense))
 }
 
 type FieldCost struct {
@@ -158,7 +160,7 @@ func (s SummaryGroups) MarkdownString() string {
 		fmt.Fprintln(&buf, "| Name | Amount |")
 		fmt.Fprintln(&buf, "| --- | ---: |")
 		for _, item := range items {
-			fmt.Fprintf(&buf, "| %s | %.2f |\n", item.Name, item.Amount)
+			fmt.Fprintf(&buf, "| %s | %s |\n", item.Name, models.FormatMoney(item.Amount))
 		}
 	}
 
@@ -253,7 +255,7 @@ func (s SummaryGroups) PNG() ([]byte, error) {
 		for _, item := range items {
 			dc.DrawStringAnchored(item.Name, margin, currentY, 0, 0.5)
 
-			amtStr := fmt.Sprintf("%.2f", item.Amount)
+			amtStr := models.GroupAmount(item.Amount, models.DefaultGrouping)
 			dc.DrawStringAnchored(amtStr, imgWidth-margin, currentY, 1, 0.5)
 
 			currentY += rowHeight

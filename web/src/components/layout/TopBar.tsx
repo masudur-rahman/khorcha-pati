@@ -214,7 +214,7 @@ export default function TopBar({ title, subtitle }: TopBarProps) {
                       fontSize: 12, fontWeight: 700, whiteSpace: 'nowrap',
                       color: alert.percent >= 100 ? 'var(--color-danger)' : 'var(--color-warning)',
                     }}>
-                      {fmt(alert.spent, 0)} / {fmt(alert.budgetAmount, 0)}
+                      {fmt(alert.spent)} / {fmt(alert.budgetAmount)}
                     </span>
                   </div>
                 )) : (
