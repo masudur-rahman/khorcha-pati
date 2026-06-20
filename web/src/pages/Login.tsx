@@ -83,9 +83,9 @@ export default function Login() {
 
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
           {/* Logo */}
-          <img src="/logo-short.svg" alt="Khorcha-Pati" style={{ width: 48, height: 48, margin: '0 auto 16px', borderRadius: 14 }} />
-          <h1 style={{ fontSize: 28, fontWeight: 700, color: 'var(--color-text-primary)', margin: '0 0 6px', letterSpacing: '-0.02em', fontFamily: "var(--font-display)" }}>Welcome to Khorcha-Pati</h1>
-          <p style={{ fontSize: 14, color: 'var(--color-text-tertiary)', margin: 0, fontWeight: 500, fontStyle: 'italic' }}>Keep your khorcha on track.</p>
+          <img src="/logo-mark.svg" alt="Khorcha-Pati" style={{ width: 48, height: 48, margin: '0 auto 16px', borderRadius: 14 }} />
+          <h1 style={{ fontSize: 28, fontWeight: 700, color: '#172B4D', margin: '0 0 6px', letterSpacing: '-0.02em', fontFamily: "var(--font-display)" }}>Welcome to Khorcha-Pati</h1>
+          <p style={{ fontSize: 14, color: '#6B778C', margin: 0, fontWeight: 500, fontStyle: 'italic' }}>Keep your khorcha on track.</p>
         </div>
 
         {magicError && (

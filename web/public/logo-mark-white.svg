@@ -1,0 +1,8 @@
+<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" width="100" height="100" role="img" aria-label="Khorcha-Pati">
+  <polygon points="50,18 78,34 78,66 50,82 22,66 22,34" fill="none" stroke="rgba(255,255,255,0.32)" stroke-width="5.5" stroke-linejoin="round"></polygon>
+  <path d="M 18 52 L 40 68 L 58 45 L 86 28" fill="none" stroke="#FFFFFF" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"></path>
+  <circle cx="18" cy="52" r="4.6" fill="#FFFFFF"></circle>
+  <circle cx="40" cy="68" r="4.2" fill="#FFFFFF"></circle>
+  <circle cx="58" cy="45" r="4.2" fill="#FFFFFF"></circle>
+  <circle cx="86" cy="28" r="5.2" fill="#FFFFFF"></circle>
+</svg>

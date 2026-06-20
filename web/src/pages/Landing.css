@@ -374,6 +374,8 @@ footer {
   background: #172B4D;
   color: white;
   padding: 48px 24px 24px;
+}
+.footer-inner {
   display: grid;
   grid-template-columns: 2fr 1fr 1fr;
   gap: 32px;
@@ -381,7 +383,7 @@ footer {
   margin: 0 auto;
 }
 @media (max-width: 700px) {
-  footer { grid-template-columns: 1fr; gap: 24px; max-width: 100%; }
+  .footer-inner { grid-template-columns: 1fr; gap: 24px; }
 }
 footer .logo {
   display: flex; align-items: center; gap: 10px;

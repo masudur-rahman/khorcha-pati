@@ -1,0 +1,15 @@
+<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" width="100" height="100" role="img" aria-label="Khorcha-Pati">
+  <defs>
+    <linearGradient id="kpTrendOpen" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#FF5630"></stop>
+      <stop offset="52%" stop-color="#0052CC"></stop>
+      <stop offset="100%" stop-color="#00875A"></stop>
+    </linearGradient>
+  </defs>
+  <polygon points="50,18 78,34 78,66 50,82 22,66 22,34" fill="none" stroke="#C7D6F0" stroke-width="5.5" stroke-linejoin="round"></polygon>
+  <path d="M 18 52 L 40 68 L 58 45 L 86 28" fill="none" stroke="url(#kpTrendOpen)" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"></path>
+  <circle cx="18" cy="52" r="4.6" fill="#FF5630"></circle>
+  <circle cx="40" cy="68" r="4.2" fill="#0052CC"></circle>
+  <circle cx="58" cy="45" r="4.2" fill="#0052CC"></circle>
+  <circle cx="86" cy="28" r="5.2" fill="#00875A"></circle>
+</svg>

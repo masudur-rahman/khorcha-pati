@@ -62,7 +62,7 @@ export default function Landing() {
     <div className="landing-body">
       <nav className="landing-nav">
         <Link to="/" className="logo">
-          <img src="/logo-short.svg" alt="" className="logo-icon" />Khorcha-Pati
+          <img src="/logo-mark.svg" alt="" className="logo-icon" />Khorcha-Pati
         </Link>
         <ul>
           <li><a href="#features">Features</a></li>
@@ -216,7 +216,7 @@ export default function Landing() {
       <section className="dashboard-preview reveal" id="dashboard">
         <div className="dash">
           <div className="dash-side">
-            <img src="/logo-short.svg" alt="" />
+            <img src="/logo-mark.svg" alt="" />
             <span>Khorcha-Pati</span>
           </div>
           <div className="dash-main">
@@ -273,23 +273,25 @@ export default function Landing() {
       </section>
 
       <footer>
-        <div>
-          <Link to="/" className="logo small">
-            <img src="/logo-short.svg" alt="" /> Khorcha-Pati
-          </Link>
-          <p>Keep your khorcha on track.</p>
+        <div className="footer-inner">
+          <div>
+            <Link to="/" className="logo small">
+              <img src="/logo-mark.svg" alt="" /> Khorcha-Pati
+            </Link>
+            <p>Keep your khorcha on track.</p>
+          </div>
+          <div>
+            <h4>Product</h4>
+            <a href={BOT_URL} target="_blank" rel="noreferrer">Telegram Bot</a>
+            <Link to="/login">Dashboard</Link>
+          </div>
+          <div>
+            <h4>Project</h4>
+            <a href={REPO_URL} target="_blank" rel="noreferrer">GitHub</a>
+            <a href={`${REPO_URL}/issues`} target="_blank" rel="noreferrer">Issues</a>
+          </div>
+          <div className="copy">© {new Date().getFullYear()} Khorcha-Pati.</div>
         </div>
-        <div>
-          <h4>Product</h4>
-          <a href={BOT_URL} target="_blank" rel="noreferrer">Telegram Bot</a>
-          <Link to="/login">Dashboard</Link>
-        </div>
-        <div>
-          <h4>Project</h4>
-          <a href={REPO_URL} target="_blank" rel="noreferrer">GitHub</a>
-          <a href={`${REPO_URL}/issues`} target="_blank" rel="noreferrer">Issues</a>
-        </div>
-        <div className="copy">© {new Date().getFullYear()} Khorcha-Pati.</div>
       </footer>
     </div>
   )

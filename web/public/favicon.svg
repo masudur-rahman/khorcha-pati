@@ -1,0 +1,17 @@
+<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" width="100" height="100" role="img" aria-label="Khorcha-Pati">
+  <defs>
+    <linearGradient id="kpFav" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#FF5630"></stop>
+      <stop offset="52%" stop-color="#2684FF"></stop>
+      <stop offset="100%" stop-color="#36B37E"></stop>
+    </linearGradient>
+    <linearGradient id="kpFavBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#172B4D"></stop>
+      <stop offset="100%" stop-color="#0A1A33"></stop>
+    </linearGradient>
+  </defs>
+  <rect width="100" height="100" rx="22" fill="url(#kpFavBg)"></rect>
+  <path d="M 16 54 L 40 72 L 60 44 L 88 24" fill="none" stroke="url(#kpFav)" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"></path>
+  <circle cx="16" cy="54" r="6.5" fill="#FF5630"></circle>
+  <circle cx="88" cy="24" r="7" fill="#36B37E"></circle>
+</svg>

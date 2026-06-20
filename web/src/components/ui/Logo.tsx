@@ -7,7 +7,7 @@ export default function Logo({ size = 32, collapsed = false }: LogoProps) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: collapsed ? 0 : 12 }}>
       <img
-        src="/logo-short.svg"
+        src="/logo-mark.svg"
         alt="Khorcha-Pati"
         style={{ height: size, width: size, borderRadius: size * 0.22 }}
       />
