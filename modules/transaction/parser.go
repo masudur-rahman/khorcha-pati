@@ -378,6 +378,20 @@ func (p *transactionParser) assignValue(key, value string, isAccount AccountVeri
 		p.fromValue = value
 	case "to":
 		p.toValue = value
+	case "in", "into":
+		// "in"/"into" reads as a destination only when it points at a wallet
+		// ("got salary in ebl"). Otherwise it's ordinary text ("lunch in office")
+		// and goes back to the subcategory buffer so it isn't hijacked.
+		if isAccount(strings.ToLower(value)) {
+			p.toValue = value
+			return
+		}
+		val := key + " " + value
+		if p.subcategory != "" {
+			p.subcategory += " " + val
+		} else {
+			p.subcategory = val
+		}
 	case "on":
 		if isDateKeyword(value) {
 			p.date = value
@@ -417,7 +431,7 @@ func (p *transactionParser) cleanSubcategory() {
 
 func isStandardKeyword(w string) bool {
 	switch w {
-	case "from", "to", "on", "at":
+	case "from", "to", "in", "into", "on", "at":
 		return true
 	}
 	return false
