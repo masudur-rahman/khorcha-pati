@@ -85,6 +85,8 @@ export interface TxnSubcategory {
   catId: string
   name: string
   types: TxnType[]
+  hint?: string
+  keywords?: string
 }
 
 export interface Profile {

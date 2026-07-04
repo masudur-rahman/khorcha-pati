@@ -190,7 +190,7 @@ export default function Transactions() {
                   </td>
                   <td style={{
                     padding: '14px 24px', textAlign: 'right', fontWeight: 700, fontSize: 14,
-                    fontFamily: 'var(--font-mono)',
+                    fontFamily: 'var(--font-mono)', whiteSpace: 'nowrap',
                     color: t.type === 'Income' ? 'var(--color-success)' : t.type === 'Transfer' ? 'var(--color-primary)' : 'var(--color-danger)',
                   }}>
                     {t.type === 'Income' ? '+' : t.type === 'Transfer' ? '' : '−'}{fmt(t.amount)}

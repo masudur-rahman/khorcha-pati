@@ -64,7 +64,8 @@ export default function Contacts() {
         />
         <Card style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: 12, padding: 18 }}>
           <Eyebrow>Reminders</Eyebrow>
-          <Button onClick={() => {/* TODO: wire reminder API */ }} style={{ width: '100%' }}>Send Reminders</Button>
+          {/* Reminder API not wired yet — disabled for now. */}
+          <Button disabled onClick={() => { }} style={{ width: '100%' }}>Send Reminders</Button>
         </Card>
       </div>
 
@@ -168,7 +169,7 @@ function ContactRow({ contact, onClick }: { contact: Contact; onClick: () => voi
 }
 
 function ContactDrawer({ contact, onClose }: { contact: Contact; onClose: () => void }) {
-  const [addType, setAddType] = useState<TxnType | null>(null)
+  const [add, setAdd] = useState<{ type: TxnType; sub: string } | null>(null)
   const { data: resp } = useTransactions()
   const nick = contact.nickName.toLowerCase()
   const txns = (resp?.data ?? [])
@@ -184,7 +185,14 @@ function ContactDrawer({ contact, onClose }: { contact: Contact; onClose: () => 
   const settled = contact.netBalance === 0
   const color = settled ? 'var(--color-text-tertiary)' : owesYou ? 'var(--color-success)' : 'var(--color-danger)'
 
-  const goAdd = (type: 'Expense' | 'Income') => setAddType(type)
+  // Prefill the debt subcategory from the relationship: paying settles what you
+  // owe (return) or lends anew; receiving is them repaying you (recover) or you borrowing.
+  const goAdd = (type: 'Expense' | 'Income') => {
+    const sub = type === 'Expense'
+      ? (contact.netBalance < 0 ? 'fin-return' : 'fin-lend')
+      : (contact.netBalance > 0 ? 'fin-recover' : 'fin-borrow')
+    setAdd({ type, sub })
+  }
 
   return (
     <DrawerPanel
@@ -205,7 +213,7 @@ function ContactDrawer({ contact, onClose }: { contact: Contact; onClose: () => 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
           <ActionBtn icon={ICONS.trendingDown(18)} label="Pay them" accent="var(--color-danger)" onClick={() => goAdd('Expense')} />
           <ActionBtn icon={ICONS.trendingUp(18)} label="Got from them" accent="var(--color-success)" onClick={() => goAdd('Income')} />
-          <ActionBtn icon={ICONS.bell(18)} label="Remind" accent="var(--color-primary)" onClick={() => {/* TODO reminder API */ }} />
+          <ActionBtn icon={ICONS.bell(18)} label="Remind" accent="var(--color-primary)" disabled onClick={() => { }} />
         </div>
 
         {contact.email && (
@@ -267,30 +275,33 @@ function ContactDrawer({ contact, onClose }: { contact: Contact; onClose: () => 
           )}
         </div>
       </div>
-      {addType && (
+      {add && (
         <TxnDialog
-          initialType={addType}
+          initialType={add.type}
+          initialSubcategory={add.sub}
           initialContact={contact.nickName}
-          onClose={() => setAddType(null)}
+          onClose={() => setAdd(null)}
         />
       )}
     </DrawerPanel>
   )
 }
 
-function ActionBtn({ icon, label, accent, onClick }: { icon: React.ReactNode; label: string; accent: string; onClick: () => void }) {
+function ActionBtn({ icon, label, accent, onClick, disabled }: { icon: React.ReactNode; label: string; accent: string; onClick: () => void; disabled?: boolean }) {
   return (
     <button
       onClick={onClick}
+      disabled={disabled}
       style={{
         display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
         padding: '12px 8px', borderRadius: 'var(--radius-md)',
         background: 'var(--color-surface)', border: `1px solid var(--color-border)`,
-        color: accent, cursor: 'pointer', fontFamily: 'inherit',
+        color: accent, cursor: disabled ? 'not-allowed' : 'pointer', fontFamily: 'inherit',
         fontSize: 11, fontWeight: 700, transition: 'all var(--transition-fast)',
         textTransform: 'uppercase', letterSpacing: '0.04em',
+        opacity: disabled ? 0.45 : 1,
       }}
-      onMouseEnter={e => { e.currentTarget.style.borderColor = accent; e.currentTarget.style.background = `color-mix(in srgb, ${accent} 8%, var(--color-surface))` }}
+      onMouseEnter={e => { if (disabled) return; e.currentTarget.style.borderColor = accent; e.currentTarget.style.background = `color-mix(in srgb, ${accent} 8%, var(--color-surface))` }}
       onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--color-border)'; e.currentTarget.style.background = 'var(--color-surface)' }}
     >
       <span style={{ display: 'flex' }}>{icon}</span>

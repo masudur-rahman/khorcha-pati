@@ -179,6 +179,12 @@ func HandleListSubcategories(w http.ResponseWriter, r *http.Request) {
 		if hasFilter && !models.ContainsType(types, typ) {
 			continue
 		}
+		// Hint/Keywords are compiled-in (db:"-"), so enrich from the in-memory
+		// taxonomy for the client-side fuzzy search.
+		if s, ok := models.SubcategoryByID[sub.ID]; ok {
+			sub.Hint = s.Hint
+			sub.Keywords = s.Keywords
+		}
 		out = append(out, subcategoryWithTypes{TxnSubcategory: sub, Types: types})
 	}
 	WriteJSON(w, http.StatusOK, out)
