@@ -75,6 +75,12 @@ Constraints:
    - "income": money entering your possession — salary, bonus, interest received, money received from others, loan received.
    - "expense": money leaving for goods/services/bills — food, transport, shopping, utilities, rent, loan repayment, fees.
    When in doubt: if the user is moving money between their own accounts, it is "transfer".
+6. Person-to-person debt has four subcategories — pick by WHO acts and WHICH WAY money flows:
+   - fin-lend (expense): YOU give someone a new loan — "lent/gave/handed to X".
+   - fin-recover (income): someone returns money YOU lent — "X returned/paid me back", "got back from X", "collected from X".
+   - fin-borrow (income): YOU take a new loan — "borrowed/took from X".
+   - fin-return (expense): YOU pay back money you borrowed — "returned/repaid to X", "paid back", "dhar shodh".
+   The SUBJECT decides direction: "I returned" is fin-return, but "John returned" / "friend paid me back" is fin-recover (money comes to you).
 
 Always respond with valid JSON matching this exact schema:
 {
