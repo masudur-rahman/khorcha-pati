@@ -219,7 +219,7 @@ func (p *transactionParser) subcategoryAIParser() error {
 		p.note = p.subcategory + " " + p.note
 	}
 
-	p.subcategory = strings.ToLower(p.subcategory)
+	p.subcategory = normalizePhrase(p.subcategory)
 	if cached, exist := cache.GetCache(p.subcategory); exist {
 		var result ai.ClassificationResult
 		if err := json.Unmarshal([]byte(cached), &result); err == nil {
@@ -232,9 +232,22 @@ func (p *transactionParser) subcategoryAIParser() error {
 		return nil
 	}
 
+	// Keyword-first: resolve common inputs locally so the rate-limited AI endpoint
+	// is only hit for genuinely ambiguous text.
+	if subID, ok := localClassify(p.subcategory); ok {
+		p.subcategory = subID
+		return nil
+	}
+
 	inputText := p.subcategory
 	result, err := ai.TxnCategoryGenerator(context.Background(), inputText)
 	if err != nil {
+		// Degrade gracefully on quota/rate-limit: never drop the user's transaction.
+		if isRateLimitErr(err) {
+			logr.DefaultLogger.Warnw("AI rate-limited, falling back to misc", "input", inputText)
+			p.subcategory = "misc-misc"
+			return nil
+		}
 		return err
 	}
 
