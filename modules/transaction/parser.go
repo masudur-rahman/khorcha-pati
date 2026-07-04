@@ -60,6 +60,7 @@ type transactionParser struct {
 	date        string
 	time        string
 	note        string
+	rawText     string
 	verbFound   bool
 }
 
@@ -92,6 +93,7 @@ func ParseTransaction(text string, isContact ContactVerifier, isAccount AccountV
 		p.amount = numberStr
 	}
 	textWithoutAmount := text[:loc[0]] + " " + text[loc[1]:]
+	p.rawText = strings.ToLower(strings.TrimSpace(textWithoutAmount))
 
 	// --- STEP 2: Tokenize & Scan ---
 	words := strings.Fields(textWithoutAmount)
@@ -138,7 +140,10 @@ func ParseTransaction(text string, isContact ContactVerifier, isAccount AccountV
 	p.flushBuffer(currentKey, currentBuffer, isAccount)
 	p.cleanSubcategory()
 
-	// --- STEP 3: Enrich Context (Pre-AI) ---
+	// --- STEP 3: Resolve debt direction (subject-aware, pre-AI) ---
+	p.resolveDebtDirection(isContact)
+
+	// --- STEP 3.5: Enrich Context (Pre-AI) ---
 	p.enrichContext(isAccount)
 
 	// --- STEP 4: Resolve ID (AI/Cache) ---
