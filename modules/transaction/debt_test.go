@@ -32,6 +32,7 @@ func TestClassifyDebt(t *testing.T) {
 		// Recovering → fin-recover
 		{"got 500 back from john", models.LendRecoverySubID},
 		{"john returned 1000", models.LendRecoverySubID},
+		{"rahim returned 2k", models.LendRecoverySubID}, // rahim not on file — still subject → recover
 		{"received loan repayment 2000", models.LendRecoverySubID},
 		{"friend paid me back 1500", models.LendRecoverySubID},
 		{"cashback from lending 800", models.LendRecoverySubID},
@@ -98,6 +99,7 @@ func TestParseTransaction_debtPerson(t *testing.T) {
 		{"known contact lend", "gave john 500", models.LendSubID, models.ExpenseTransaction, "john", ""},
 		{"unknown person recover", "friend paid me back 1500", models.LendRecoverySubID, models.IncomeTransaction, "", "[Person: friend]"},
 		{"contact subject recover", "john returned 1000", models.LendRecoverySubID, models.IncomeTransaction, "john", ""},
+		{"unknown name subject recover", "rahim returned 2k", models.LendRecoverySubID, models.IncomeTransaction, "", "[Person: rahim]"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

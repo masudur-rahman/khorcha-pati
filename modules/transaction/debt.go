@@ -223,6 +223,24 @@ func hasSettlement(words []string) bool {
 	return false
 }
 
+// isPersonCandidate reports whether a token could be a person's name — an alphabetic word
+// that is not a reserved debt keyword, connector, or amount. This lets an unknown proper
+// noun ("sarah", "rahim") act as the subject even when it is not a listed contact.
+func isPersonCandidate(w string) bool {
+	if w == "" || subjectStopwords[w] || debtFillers[w] || isNumericToken(w) {
+		return false
+	}
+	if debtInVerbs[w] || debtOutVerbs[w] || settlementTokens[w] || strongDebtTokens[w] || objectMarkers[w] {
+		return false
+	}
+	for _, r := range w {
+		if r >= '0' && r <= '9' {
+			return false
+		}
+	}
+	return true
+}
+
 // personActedOnMe reports whether another person is the subject of the verb (so money
 // flows to me): a person token before the verb that is not marked as a recipient, or an
 // explicit "...me back"/"paid me" object.
@@ -232,7 +250,7 @@ func personActedOnMe(words []string, verbIdx int, isContact ContactVerifier) boo
 		if subjectStopwords[w] {
 			continue
 		}
-		if !isContact(w) && !personWords[w] {
+		if !isContact(w) && !personWords[w] && !isPersonCandidate(w) {
 			continue
 		}
 		if i+1 < len(words) && objectMarkers[words[i+1]] {
@@ -291,6 +309,11 @@ func (p *transactionParser) findDebtPerson(isContact ContactVerifier) string {
 	}
 	for _, w := range words {
 		if personWords[w] && !subjectStopwords[w] {
+			return w
+		}
+	}
+	for _, w := range words {
+		if isPersonCandidate(w) {
 			return w
 		}
 	}
