@@ -35,6 +35,13 @@ build: # @HELP compiles the binary
 run: # @HELP builds and runs locally using native Go (no Docker)
 	go run . serve
 
+.PHONY: dev
+dev: # @HELP runs backend + web dev server together with prefixed logs (ctrl+c stops both)
+	@trap 'kill 0' INT TERM; \
+	( go run . serve 2>&1 | sed -u 's/^/[api] /' ) & \
+	( cd web && npm run dev 2>&1 | sed -u 's/^/[web] /' ) & \
+	wait
+
 # ── Format ───────────────────────────────────────────────────────────────────
 
 .PHONY: fmt
