@@ -24,7 +24,8 @@ export default function Button({
       fontSize: 13,
       fontWeight: 600,
       border: 'none',
-      cursor: 'pointer',
+      cursor: props.disabled ? 'not-allowed' : 'pointer',
+      opacity: props.disabled ? 0.45 : 1,
       transition: 'all 0.15s',
       ...sx,
     }
@@ -63,7 +64,7 @@ export default function Button({
     <button 
       onClick={onClick} 
       style={getStyles()}
-      onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-1px)'}
+      onMouseEnter={e => { if (props.disabled) return; e.currentTarget.style.transform = 'translateY(-1px)' }}
       onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}
       {...props}
     >

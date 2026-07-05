@@ -2,6 +2,7 @@ package transaction
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/masudur-rahman/expense-tracker-bot/models"
@@ -407,6 +408,31 @@ func TestUserJourney_IncomeExpenseUndo(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, expense.Amount, undone.Amount)
 
+	walletRepo.AssertExpectations(t)
+	txnRepo.AssertExpectations(t)
+}
+
+func TestAddTransaction_unknownContactGoesToRemarks(t *testing.T) {
+	t.Parallel()
+	svc, walletRepo, contactRepo, txnRepo := newTestService()
+
+	// Lending to "meem" who is not a saved contact.
+	txn := models.Transaction{
+		UserID: testUserID, Amount: 300, Type: models.ExpenseTransaction,
+		SrcID: "cash", SubcategoryID: models.LendSubID, ContactName: "meem",
+	}
+	contactRepo.On("GetContactByName", testUserID, "meem").
+		Return((*models.Contacts)(nil), models.ErrContactNotFound{UserID: testUserID, NickName: "meem"})
+	walletRepo.On("UpdateWalletBalance", testUserID, "cash", -300.0).Return(nil)
+	// The person is noted in remarks and ContactName is cleared, so no balance update.
+	txnRepo.On("AddTransaction", mock.MatchedBy(func(tx models.Transaction) bool {
+		return tx.ContactName == "" && strings.Contains(tx.Remarks, "[Person: meem]")
+	})).Return(nil)
+
+	err := svc.AddTransaction(txn)
+
+	assert.NoError(t, err)
+	contactRepo.AssertNotCalled(t, "UpdateContactBalance", mock.Anything, mock.Anything)
 	walletRepo.AssertExpectations(t)
 	txnRepo.AssertExpectations(t)
 }

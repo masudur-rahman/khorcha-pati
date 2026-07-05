@@ -62,13 +62,13 @@ func NewClient(apiKey string) *Client {
 func (c *Client) buildPrompt(taxonomyJSON, userInput string) []map[string]any {
 	return []map[string]any{
 		{"role": "system", "content": `You are a personal expense classification system for a Bangladeshi user.
-Each subcategory has a "Hint" field with keywords and examples — use it to match the input.
-Pick the subcategory whose Hint best matches the input. Only fall back to misc-misc if nothing else fits.
+Each subcategory has a "Hint" field (detailed examples) and a "Keywords" field (short common terms) — use both to match the input.
+Pick the subcategory whose Hint/Keywords best match the input. Only fall back to misc-misc if nothing else fits.
 
 Constraints:
 1. Output must be valid JSON matching the Schema.
 2. The selected SubcategoryID must exist under the selected CategoryID in the Taxonomy.
-3. Match against Hint keywords first, then Name, then general reasoning.
+3. Match against Hint and Keywords first, then Name, then general reasoning.
 4. Use ONLY the exact subcategory IDs from the Taxonomy. Never invent new IDs.
 5. Identify the "intent" of the transaction using these rules:
    - "transfer": money moving between YOUR OWN accounts/wallets — ATM withdrawal (bank→cash), bank deposit (cash→bank), mobile banking transfer (bkash/nagad/rocket), send money between own accounts, cash out, cash in.
@@ -84,7 +84,7 @@ Always respond with valid JSON matching this exact schema:
 	"confidence": number
 }
 Only return the JSON object, no other text.`},
-		{"role": "user", "content": fmt.Sprintf("Taxonomy:\n%s\n\nUser Input: \"%s\"\n\nClassify this into the best matching subcategory using the Hint keywords and determine the intent.", taxonomyJSON, userInput)},
+		{"role": "user", "content": fmt.Sprintf("Taxonomy:\n%s\n\nUser Input: \"%s\"\n\nClassify this into the best matching subcategory using the Hint and Keywords, and determine the intent.", taxonomyJSON, userInput)},
 	}
 }
 

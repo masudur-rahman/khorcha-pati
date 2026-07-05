@@ -52,9 +52,8 @@ func (u *SQLContactRepository) GetContactByName(userID int64, name string) (*mod
 		return nil, models.ErrContactNotFound{UserID: userID}
 	}
 	ctx := context.Background()
-	filter := models.Contacts{UserID: userID, NickName: name}
 	var c models.Contacts
-	found, err := u.db.MustFilterCols("nick_name").FindOne(ctx, &c, filter)
+	found, err := u.db.MustFilterCols("nick_name").FindOne(ctx, &c, models.Contacts{UserID: userID, NickName: name})
 	if err != nil {
 		return nil, err
 	}
