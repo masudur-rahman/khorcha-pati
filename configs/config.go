@@ -55,10 +55,14 @@ const (
 )
 
 type SystemConfig struct {
-	PDFGenerator  PDFGenerator `json:"pdfGenerator" yaml:"pdfGenerator"`
-	AIGenerator   string       `json:"aiGenerator" yaml:"aiGenerator"`
-	GeminiKey     string       `json:"geminiKey" yaml:"geminiKey"`
-	OpenRouterKey string       `json:"openRouterKey" yaml:"openRouterKey"`
+	PDFGenerator PDFGenerator `json:"pdfGenerator" yaml:"pdfGenerator"`
+	// AIGenerator selects the classification provider: "gemini", "open-router", or "pool"
+	// (sticky rotation + failover across all configured providers).
+	AIGenerator string `json:"aiGenerator" yaml:"aiGenerator"`
+	// AIStickyWindow is how many requests a provider serves before the pool rotates (0 = default).
+	AIStickyWindow int    `json:"aiStickyWindow" yaml:"aiStickyWindow"`
+	GeminiKey      string `json:"geminiKey" yaml:"geminiKey"`
+	OpenRouterKey  string `json:"openRouterKey" yaml:"openRouterKey"`
 }
 
 type DatabaseType string
@@ -129,7 +133,7 @@ func (c *ExpenseConfiguration) OverrideWithEnv() {
 	switch {
 	case hasGemini && hasOpenRouter:
 		if c.System.AIGenerator == "" {
-			c.System.AIGenerator = "gemini"
+			c.System.AIGenerator = "pool" // rotate + failover across both providers
 		}
 	case hasGemini:
 		c.System.AIGenerator = "gemini"
@@ -137,6 +141,12 @@ func (c *ExpenseConfiguration) OverrideWithEnv() {
 		c.System.AIGenerator = "open-router"
 	default:
 		c.System.AIGenerator = ""
+	}
+
+	if w := os.Getenv("AI_STICKY_WINDOW"); w != "" {
+		if n, err := strconv.Atoi(w); err == nil && n > 0 {
+			c.System.AIStickyWindow = n
+		}
 	}
 
 	// Server Overrides

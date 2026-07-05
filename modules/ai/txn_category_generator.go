@@ -23,6 +23,9 @@ type GeneratorAI string
 const (
 	GeneratorGemini     GeneratorAI = "gemini"
 	GeneratorOpenRouter GeneratorAI = "open-router"
+	// GeneratorPool spreads requests across all configured providers with sticky rotation
+	// and rate-limit failover. See provider_pool.go.
+	GeneratorPool GeneratorAI = "pool"
 )
 
 type ClassificationResult struct {
@@ -64,28 +67,18 @@ func TxnCategoryGeneratorForType(ctx context.Context, userInput string, txnType 
 		return nil, err
 	}
 
-	switch generator {
-	case GeneratorGemini:
-		apiKey := configs.TrackerConfig.System.GeminiKey
-		if apiKey == "" {
-			return &ClassificationResult{Subcategory: userInput}, nil
-		}
-		result, err = TxnSubcategoryClassifier(ctx, apiKey, userInput, string(taxonomyJSON))
-		if err != nil {
-			return nil, err
-		}
-	case GeneratorOpenRouter:
-		apiKey := configs.TrackerConfig.System.OpenRouterKey
-		if apiKey == "" {
-			return &ClassificationResult{Subcategory: userInput}, nil
-		}
-		client := NewClient(apiKey)
-		result, err = client.TxnSubcategoryClassifier(ctx, userInput, string(taxonomyJSON))
-		if err != nil {
-			return nil, err
-		}
-	default:
-		return &ClassificationResult{Subcategory: userInput}, nil
+	var aiUsed bool
+	if generator == GeneratorPool {
+		result, aiUsed, err = classifyWithPool(ctx, userInput, string(taxonomyJSON))
+	} else {
+		result, aiUsed, err = runGenerator(ctx, generator, userInput, string(taxonomyJSON))
+	}
+	if err != nil {
+		return nil, err
+	}
+	if !aiUsed {
+		// No AI provider configured — return the raw input untouched, as before.
+		return result, nil
 	}
 
 	fmt.Printf("Matched: %s > %s (Intent: %s, Confidence: %v)\n", result.Category, result.Subcategory, result.Intent, result.Confidence)
@@ -97,4 +90,58 @@ func TxnCategoryGeneratorForType(ctx context.Context, userInput string, txnType 
 		return nil, errors.New("transaction category can't be determined")
 	}
 	return result, nil
+}
+
+// runGenerator calls a single AI provider. The bool reports whether an AI actually ran; it is
+// false when the provider has no configured key (raw input is returned as a fallback).
+func runGenerator(ctx context.Context, generator GeneratorAI, userInput, taxonomyJSON string) (*ClassificationResult, bool, error) {
+	switch generator {
+	case GeneratorGemini:
+		apiKey := configs.TrackerConfig.System.GeminiKey
+		if apiKey == "" {
+			return &ClassificationResult{Subcategory: userInput}, false, nil
+		}
+		result, err := TxnSubcategoryClassifier(ctx, apiKey, userInput, taxonomyJSON)
+		return result, true, err
+	case GeneratorOpenRouter:
+		apiKey := configs.TrackerConfig.System.OpenRouterKey
+		if apiKey == "" {
+			return &ClassificationResult{Subcategory: userInput}, false, nil
+		}
+		result, err := NewClient(apiKey).TxnSubcategoryClassifier(ctx, userInput, taxonomyJSON)
+		return result, true, err
+	default:
+		return &ClassificationResult{Subcategory: userInput}, false, nil
+	}
+}
+
+// classifyWithPool runs the request through the provider pool: it tries the active provider and,
+// on a rate-limit error, fails over to the next provider in the sequence.
+func classifyWithPool(ctx context.Context, userInput, taxonomyJSON string) (*ClassificationResult, bool, error) {
+	pool := getPool()
+	seq := pool.sequence()
+	if len(seq) == 0 {
+		return &ClassificationResult{Subcategory: userInput}, false, nil
+	}
+
+	var (
+		result *ClassificationResult
+		used   bool
+		err    error
+	)
+	for i, gen := range seq {
+		result, used, err = runGenerator(ctx, gen, userInput, taxonomyJSON)
+		if err == nil {
+			return result, used, nil
+		}
+		if isRateLimited(err) {
+			fmt.Printf("AI provider %q rate-limited, failing over\n", gen)
+			pool.markRateLimited()
+			if i < len(seq)-1 {
+				continue
+			}
+		}
+		return nil, used, err
+	}
+	return nil, used, err
 }
