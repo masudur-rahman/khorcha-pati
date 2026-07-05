@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/masudur-rahman/expense-tracker-bot/configs"
+
 	"google.golang.org/genai"
 )
 
@@ -19,6 +21,9 @@ const (
 
 func TxnSubcategoryClassifier(ctx context.Context, apiKey, userInput, taxonomyJSON string, model ...string) (*ClassificationResult, error) {
 	classifier := Gemini31FlashLite
+	if configured := configs.TrackerConfig.System.GeminiModel; configured != "" {
+		classifier = configured
+	}
 	if len(model) > 0 {
 		classifier = model[0]
 	}

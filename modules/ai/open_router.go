@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/masudur-rahman/expense-tracker-bot/configs"
 )
 
 // Client for OpenRouter API
@@ -167,7 +169,12 @@ func (c *Client) query(ctx context.Context, model OpenRouterModel, messages []ma
 func (c *Client) TxnSubcategoryClassifier(ctx context.Context, userInput string, taxonomyJSON string) (*ClassificationResult, error) {
 	messages := c.buildPrompt(taxonomyJSON, userInput)
 
-	result, err := c.query(ctx, NVDIANLLamaNemotronRerankFree, messages)
+	model := NVDIANemotron30bFree
+	if configured := configs.TrackerConfig.System.OpenRouterModel; configured != "" {
+		model = OpenRouterModel(configured)
+	}
+
+	result, err := c.query(ctx, model, messages)
 	if err != nil {
 		return nil, err
 	}

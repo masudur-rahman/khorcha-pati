@@ -24,7 +24,7 @@ system:
 
     # AI classifier: "gemini", "open-router", or "pool"
     # "pool" rotates across all configured providers (Gemini first) and fails over on rate-limit.
-    aiGenerator: "pool"
+    aiClassifier: "pool"
 
     # Requests one provider serves before the pool rotates to the next (0 = default 15).
     aiStickyWindow: 15
@@ -32,6 +32,10 @@ system:
     # API keys for the AI intent engine (env GEMINI_API_KEY / OPENROUTER_API_KEY override these)
 #    geminiKey: "your_gemini_api_key"
 #    openRouterKey: "your_open_router_api_key"
+
+    # Per-provider model override (env GEMINI_MODEL / OPENROUTER_MODEL win). Defaults shown.
+#    geminiModel: "gemini-3.1-flash-lite"
+#    openRouterModel: "nvidia/nemotron-3-nano-30b-a3b:free"
 server:
     dashboardEnabled: true
 

@@ -9,14 +9,14 @@ import (
 	"time"
 )
 
-func TestTxnCategoryGenerator(t *testing.T) {
+func TestTxnCategoryClassifier(t *testing.T) {
 	if os.Getenv("GEMINI_API_KEY") == "" && os.Getenv("OPENROUTER_API_KEY") == "" {
 		t.Skip("no AI API key set, skipping")
 	}
 	type args struct {
 		ctx       context.Context
 		userInput string
-		ai        []GeneratorAI
+		ai        []Classifier
 	}
 	tests := []struct {
 		name         string
@@ -29,7 +29,7 @@ func TestTxnCategoryGenerator(t *testing.T) {
 			args: args{
 				ctx:       context.Background(),
 				userInput: "apple",
-				ai:        []GeneratorAI{GeneratorGemini},
+				ai:        []Classifier{ClassifierGemini},
 			},
 			wantSubCatID: "food-fruit",
 			wantErr:      false,
@@ -39,7 +39,7 @@ func TestTxnCategoryGenerator(t *testing.T) {
 			args: args{
 				ctx:       context.Background(),
 				userInput: "apple",
-				//ai:        []GeneratorAI{GeneratorGemini},
+				//ai:        []Classifier{ClassifierGemini},
 			},
 			wantSubCatID: "food-fruit",
 			wantErr:      false,
@@ -48,13 +48,13 @@ func TestTxnCategoryGenerator(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			start := time.Now()
-			result, err := TxnCategoryGenerator(tt.args.ctx, tt.args.userInput, tt.args.ai...)
+			result, err := TxnCategoryClassifier(tt.args.ctx, tt.args.userInput, tt.args.ai...)
 			if (err != nil) != tt.wantErr {
 				if strings.Contains(err.Error(), "API error") || strings.Contains(err.Error(), "rate limit") {
-					t.Logf("TxnCategoryGenerator() failed due to AI API issue: %v", err)
+					t.Logf("TxnCategoryClassifier() failed due to AI API issue: %v", err)
 					return
 				}
-				t.Errorf("TxnCategoryGenerator() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("TxnCategoryClassifier() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			// If API key is missing, it returns the input text in subcategory
@@ -63,7 +63,7 @@ func TestTxnCategoryGenerator(t *testing.T) {
 				return
 			}
 			if result != nil && result.Subcategory != tt.wantSubCatID {
-				t.Errorf("TxnCategoryGenerator() gotSubCatID = %v, want %v", result.Subcategory, tt.wantSubCatID)
+				t.Errorf("TxnCategoryClassifier() gotSubCatID = %v, want %v", result.Subcategory, tt.wantSubCatID)
 			}
 
 			fmt.Println("Time Taken: ", time.Since(start).String())

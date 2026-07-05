@@ -245,7 +245,7 @@ func (p *transactionParser) subcategoryAIParser() error {
 	}
 
 	inputText := p.subcategory
-	result, err := ai.TxnCategoryGenerator(context.Background(), inputText)
+	result, err := ai.TxnCategoryClassifier(context.Background(), inputText)
 	if err != nil {
 		// Degrade gracefully on quota/rate-limit: never drop the user's transaction.
 		if isRateLimitErr(err) {

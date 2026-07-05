@@ -18,14 +18,14 @@ var (
 	limiter = rate.NewLimiter(rate.Limit(aiRateLimit), aiRateLimit)
 )
 
-type GeneratorAI string
+type Classifier string
 
 const (
-	GeneratorGemini     GeneratorAI = "gemini"
-	GeneratorOpenRouter GeneratorAI = "open-router"
-	// GeneratorPool spreads requests across all configured providers with sticky rotation
+	ClassifierGemini     Classifier = "gemini"
+	ClassifierOpenRouter Classifier = "open-router"
+	// ClassifierPool spreads requests across all configured providers with sticky rotation
 	// and rate-limit failover. See provider_pool.go.
-	GeneratorPool GeneratorAI = "pool"
+	ClassifierPool Classifier = "pool"
 )
 
 type ClassificationResult struct {
@@ -35,16 +35,16 @@ type ClassificationResult struct {
 	Confidence  float64 `json:"confidence"`
 }
 
-func TxnCategoryGenerator(ctx context.Context, userInput string, ai ...GeneratorAI) (result *ClassificationResult, err error) {
-	return TxnCategoryGeneratorForType(ctx, userInput, "", ai...)
+func TxnCategoryClassifier(ctx context.Context, userInput string, ai ...Classifier) (result *ClassificationResult, err error) {
+	return TxnCategoryClassifierForType(ctx, userInput, "", ai...)
 }
 
-// TxnCategoryGeneratorForType narrows the taxonomy passed to the AI to subcategories matching txnType.
+// TxnCategoryClassifierForType narrows the taxonomy passed to the AI to subcategories matching txnType.
 // Pass an empty txnType to use the full taxonomy.
-func TxnCategoryGeneratorForType(ctx context.Context, userInput string, txnType models.TransactionType, ai ...GeneratorAI) (result *ClassificationResult, err error) {
-	generator := GeneratorAI(configs.TrackerConfig.System.AIGenerator)
+func TxnCategoryClassifierForType(ctx context.Context, userInput string, txnType models.TransactionType, ai ...Classifier) (result *ClassificationResult, err error) {
+	classifier := Classifier(configs.TrackerConfig.System.AIClassifier)
 	if len(ai) > 0 {
-		generator = ai[0]
+		classifier = ai[0]
 	}
 
 	if err = limiter.Wait(ctx); err != nil {
@@ -68,10 +68,10 @@ func TxnCategoryGeneratorForType(ctx context.Context, userInput string, txnType 
 	}
 
 	var aiUsed bool
-	if generator == GeneratorPool {
+	if classifier == ClassifierPool {
 		result, aiUsed, err = classifyWithPool(ctx, userInput, string(taxonomyJSON))
 	} else {
-		result, aiUsed, err = runGenerator(ctx, generator, userInput, string(taxonomyJSON))
+		result, aiUsed, err = runClassifier(ctx, classifier, userInput, string(taxonomyJSON))
 	}
 	if err != nil {
 		return nil, err
@@ -92,18 +92,18 @@ func TxnCategoryGeneratorForType(ctx context.Context, userInput string, txnType 
 	return result, nil
 }
 
-// runGenerator calls a single AI provider. The bool reports whether an AI actually ran; it is
+// runClassifier calls a single AI provider. The bool reports whether an AI actually ran; it is
 // false when the provider has no configured key (raw input is returned as a fallback).
-func runGenerator(ctx context.Context, generator GeneratorAI, userInput, taxonomyJSON string) (*ClassificationResult, bool, error) {
-	switch generator {
-	case GeneratorGemini:
+func runClassifier(ctx context.Context, classifier Classifier, userInput, taxonomyJSON string) (*ClassificationResult, bool, error) {
+	switch classifier {
+	case ClassifierGemini:
 		apiKey := configs.TrackerConfig.System.GeminiKey
 		if apiKey == "" {
 			return &ClassificationResult{Subcategory: userInput}, false, nil
 		}
 		result, err := TxnSubcategoryClassifier(ctx, apiKey, userInput, taxonomyJSON)
 		return result, true, err
-	case GeneratorOpenRouter:
+	case ClassifierOpenRouter:
 		apiKey := configs.TrackerConfig.System.OpenRouterKey
 		if apiKey == "" {
 			return &ClassificationResult{Subcategory: userInput}, false, nil
@@ -130,7 +130,7 @@ func classifyWithPool(ctx context.Context, userInput, taxonomyJSON string) (*Cla
 		err    error
 	)
 	for i, gen := range seq {
-		result, used, err = runGenerator(ctx, gen, userInput, taxonomyJSON)
+		result, used, err = runClassifier(ctx, gen, userInput, taxonomyJSON)
 		if err == nil {
 			return result, used, nil
 		}

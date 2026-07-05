@@ -6,50 +6,50 @@ import (
 )
 
 // newTestPool builds a pool with a fixed order and window, bypassing config.
-func newTestPool(window int, order ...GeneratorAI) *providerPool {
+func newTestPool(window int, order ...Classifier) *providerPool {
 	return &providerPool{order: order, window: window, state: &memStore{}}
 }
 
 // TestProviderPool_sticky asserts the pool serves one provider for a full window, then rotates.
 func TestProviderPool_sticky(t *testing.T) {
-	p := newTestPool(3, GeneratorGemini, GeneratorOpenRouter)
+	p := newTestPool(3, ClassifierGemini, ClassifierOpenRouter)
 
 	for i := 0; i < 3; i++ {
-		if got := p.sequence()[0]; got != GeneratorGemini {
+		if got := p.sequence()[0]; got != ClassifierGemini {
 			t.Fatalf("request %d: primary = %q, want gemini", i, got)
 		}
 	}
 	// window exhausted → rotate to OpenRouter
-	if got := p.sequence()[0]; got != GeneratorOpenRouter {
+	if got := p.sequence()[0]; got != ClassifierOpenRouter {
 		t.Fatalf("after window: primary = %q, want open-router", got)
 	}
 }
 
 // TestProviderPool_sequenceOrder asserts sequence lists all providers for failover, active first.
 func TestProviderPool_sequenceOrder(t *testing.T) {
-	p := newTestPool(10, GeneratorGemini, GeneratorOpenRouter)
+	p := newTestPool(10, ClassifierGemini, ClassifierOpenRouter)
 	seq := p.sequence()
-	if len(seq) != 2 || seq[0] != GeneratorGemini || seq[1] != GeneratorOpenRouter {
+	if len(seq) != 2 || seq[0] != ClassifierGemini || seq[1] != ClassifierOpenRouter {
 		t.Fatalf("sequence = %v, want [gemini open-router]", seq)
 	}
 }
 
 // TestProviderPool_markRateLimited asserts a rate-limit advances the active provider.
 func TestProviderPool_markRateLimited(t *testing.T) {
-	p := newTestPool(10, GeneratorGemini, GeneratorOpenRouter)
+	p := newTestPool(10, ClassifierGemini, ClassifierOpenRouter)
 	_ = p.sequence() // active = gemini
 	p.markRateLimited()
-	if got := p.sequence()[0]; got != GeneratorOpenRouter {
+	if got := p.sequence()[0]; got != ClassifierOpenRouter {
 		t.Fatalf("after rate-limit: primary = %q, want open-router", got)
 	}
 }
 
 // TestProviderPool_singleProvider asserts a one-provider pool never rotates and has no failover.
 func TestProviderPool_singleProvider(t *testing.T) {
-	p := newTestPool(2, GeneratorGemini)
+	p := newTestPool(2, ClassifierGemini)
 	for i := 0; i < 5; i++ {
 		seq := p.sequence()
-		if len(seq) != 1 || seq[0] != GeneratorGemini {
+		if len(seq) != 1 || seq[0] != ClassifierGemini {
 			t.Fatalf("request %d: seq = %v, want [gemini]", i, seq)
 		}
 	}

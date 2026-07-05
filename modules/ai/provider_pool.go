@@ -44,7 +44,7 @@ func (m *memStore) store(idx, used int) {
 // request fails over to the next provider immediately via the ordered sequence().
 type providerPool struct {
 	mu     sync.Mutex
-	order  []GeneratorAI
+	order  []Classifier
 	window int
 	state  rotationStore
 }
@@ -72,20 +72,20 @@ func getPool() *providerPool {
 
 // buildPoolOrder lists the available providers in priority order: Gemini first, OpenRouter
 // second, skipping any whose API key is not configured.
-func buildPoolOrder() []GeneratorAI {
-	var order []GeneratorAI
+func buildPoolOrder() []Classifier {
+	var order []Classifier
 	if configs.TrackerConfig.System.GeminiKey != "" {
-		order = append(order, GeneratorGemini)
+		order = append(order, ClassifierGemini)
 	}
 	if configs.TrackerConfig.System.OpenRouterKey != "" {
-		order = append(order, GeneratorOpenRouter)
+		order = append(order, ClassifierOpenRouter)
 	}
 	return order
 }
 
 // sequence advances the sticky window and returns the providers to try for one request,
 // ordered from the currently active provider so callers can fail over to the rest on error.
-func (p *providerPool) sequence() []GeneratorAI {
+func (p *providerPool) sequence() []Classifier {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
@@ -102,7 +102,7 @@ func (p *providerPool) sequence() []GeneratorAI {
 	used++
 	p.state.store(idx, used)
 
-	seq := make([]GeneratorAI, 0, n)
+	seq := make([]Classifier, 0, n)
 	for i := 0; i < n; i++ {
 		seq = append(seq, p.order[(idx+i)%n])
 	}
