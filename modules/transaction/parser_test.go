@@ -78,6 +78,56 @@ func initCache() {
 	cache.Init(cfg)
 }
 
+// TestParseTransaction_destinationPreposition verifies that "in"/"into" read as a
+// destination when they point at a wallet, but stay as plain text otherwise.
+func TestParseTransaction_destinationPreposition(t *testing.T) {
+	initCache()
+	// Seed the cache so free-text phrases resolve deterministically without the AI.
+	_ = cache.SetCache("got salary", `{"intent":"income","subcategory_id":"fin-sal"}`, -1)
+	_ = cache.SetCache("lunch in office", `{"intent":"expense","subcategory_id":"food-rest"}`, -1)
+
+	contacts := func(string) bool { return false }
+	accounts := func(name string) bool {
+		switch strings.ToLower(name) {
+		case "cash", "ebl", "dbbl":
+			return true
+		}
+		return false
+	}
+
+	tests := []struct {
+		name    string
+		text    string
+		wantTyp models.TransactionType
+		wantSrc string
+		wantDst string
+	}{
+		{"income in wallet", "got salary 65k in ebl", models.IncomeTransaction, "", "ebl"},
+		{"transfer into wallet", "transfer 500 from cash into dbbl", models.TransferTransaction, "cash", "dbbl"},
+		{"in non-wallet stays text", "lunch 250 in office", models.ExpenseTransaction, "cash", ""},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := ParseTransaction(tt.text, contacts, accounts)
+			if err != nil {
+				if strings.Contains(err.Error(), "API error") || strings.Contains(err.Error(), "rate limit") {
+					t.Skipf("ParseTransaction(%q) hit AI: %v", tt.text, err)
+				}
+				t.Fatalf("ParseTransaction(%q) error = %v", tt.text, err)
+			}
+			if got.Type != tt.wantTyp {
+				t.Errorf("Type = %v, want %v", got.Type, tt.wantTyp)
+			}
+			if got.SrcID != tt.wantSrc {
+				t.Errorf("SrcID = %q, want %q", got.SrcID, tt.wantSrc)
+			}
+			if got.DstID != tt.wantDst {
+				t.Errorf("DstID = %q, want %q", got.DstID, tt.wantDst)
+			}
+		})
+	}
+}
+
 func TestParseTransaction(t *testing.T) {
 	initCache()
 	mockContacts := func(name string) bool {

@@ -55,10 +55,18 @@ const (
 )
 
 type SystemConfig struct {
-	PDFGenerator  PDFGenerator `json:"pdfGenerator" yaml:"pdfGenerator"`
-	AIGenerator   string       `json:"aiGenerator" yaml:"aiGenerator"`
-	GeminiKey     string       `json:"geminiKey" yaml:"geminiKey"`
-	OpenRouterKey string       `json:"openRouterKey" yaml:"openRouterKey"`
+	PDFGenerator PDFGenerator `json:"pdfGenerator" yaml:"pdfGenerator"`
+	// AIClassifier selects the classification provider: "gemini", "open-router", or "pool"
+	// (sticky rotation + failover across all configured providers).
+	AIClassifier string `json:"aiClassifier" yaml:"aiClassifier"`
+	// AIStickyWindow is how many requests a provider serves before the pool rotates (0 = default).
+	AIStickyWindow int    `json:"aiStickyWindow" yaml:"aiStickyWindow"`
+	GeminiKey      string `json:"geminiKey" yaml:"geminiKey"`
+	OpenRouterKey  string `json:"openRouterKey" yaml:"openRouterKey"`
+	// GeminiModel / OpenRouterModel override the per-provider model. Empty falls back to the
+	// package default (Gemini31FlashLite / NVDIANemotron30bFree).
+	GeminiModel     string `json:"geminiModel" yaml:"geminiModel"`
+	OpenRouterModel string `json:"openRouterModel" yaml:"openRouterModel"`
 }
 
 type DatabaseType string
@@ -128,15 +136,28 @@ func (c *ExpenseConfiguration) OverrideWithEnv() {
 
 	switch {
 	case hasGemini && hasOpenRouter:
-		if c.System.AIGenerator == "" {
-			c.System.AIGenerator = "gemini"
+		if c.System.AIClassifier == "" {
+			c.System.AIClassifier = "pool" // rotate + failover across both providers
 		}
 	case hasGemini:
-		c.System.AIGenerator = "gemini"
+		c.System.AIClassifier = "gemini"
 	case hasOpenRouter:
-		c.System.AIGenerator = "open-router"
+		c.System.AIClassifier = "open-router"
 	default:
-		c.System.AIGenerator = ""
+		c.System.AIClassifier = ""
+	}
+
+	if w := os.Getenv("AI_STICKY_WINDOW"); w != "" {
+		if n, err := strconv.Atoi(w); err == nil && n > 0 {
+			c.System.AIStickyWindow = n
+		}
+	}
+
+	if model := os.Getenv("GEMINI_MODEL"); model != "" {
+		c.System.GeminiModel = model
+	}
+	if model := os.Getenv("OPENROUTER_MODEL"); model != "" {
+		c.System.OpenRouterModel = model
 	}
 
 	// Server Overrides

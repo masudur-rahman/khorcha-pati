@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/masudur-rahman/expense-tracker-bot/configs"
 )
 
 // Client for OpenRouter API
@@ -35,16 +37,23 @@ type ChatRequest struct {
 type OpenRouterModel string
 
 const (
-	DeepSeekChatFree     OpenRouterModel = "deepseek/deepseek-chat:free"
-	DeepSeekR1Free       OpenRouterModel = "deepseek/deepseek-r1-distill-qwen-1.5b:free"
-	DeepSeekR10525Free   OpenRouterModel = "deepseek/deepseek-r1-0528:free"
-	Gemini20FlashFree    OpenRouterModel = "google/gemini-2.0-flash-exp:free"
-	Gemma34bITFree       OpenRouterModel = "google/gemma-3-4b-it:free"
-	NVDIANemotron30bFree OpenRouterModel = "nvidia/nemotron-3-nano-30b-a3b:free" // Working model
-	NVDIANemotron9bFree  OpenRouterModel = "nvidia/nemotron-nano-9b-v2:free"
-	NVDIANemotron12bFree OpenRouterModel = "nvidia/nemotron-nano-12b-v2-vl:free"
-	DeepSeekV31NexN1Free OpenRouterModel = "nex-agi/deepseek-v3.1-nex-n1:free"
-	StepFun35FlashFree   OpenRouterModel = "stepfun/step-3.5-flash:free"
+	DeepSeekChatFree              OpenRouterModel = "deepseek/deepseek-chat:free"
+	DeepSeekR1Free                OpenRouterModel = "deepseek/deepseek-r1-distill-qwen-1.5b:free"
+	DeepSeekR10525Free            OpenRouterModel = "deepseek/deepseek-r1-0528:free"
+	Gemini20FlashFree             OpenRouterModel = "google/gemini-2.0-flash-exp:free"
+	Gemma34bITFree                OpenRouterModel = "google/gemma-3-4b-it:free"
+	NVDIANemotron30bFree          OpenRouterModel = "nvidia/nemotron-3-nano-30b-a3b:free" // Working model
+	NVDIANemotron9bFree           OpenRouterModel = "nvidia/nemotron-nano-9b-v2:free"
+	NVDIANemotron12bFree          OpenRouterModel = "nvidia/nemotron-nano-12b-v2-vl:free"
+	DeepSeekV31NexN1Free          OpenRouterModel = "nex-agi/deepseek-v3.1-nex-n1:free"
+	StepFun35FlashFree            OpenRouterModel = "stepfun/step-3.5-flash:free"
+	NVDIANemotronUltra55bFree     OpenRouterModel = "nvidia/nemotron-3-ultra-550b-a55b:free"
+	NVDIANLLamaNemotronRerankFree OpenRouterModel = "nvidia/llama-nemotron-rerank-vl-1b-v2:free"
+	NVIDIANemotronSuper120bFree   OpenRouterModel = "nvidia/nemotron-3-super-120b-a12b:free"
+	PoolsideLagunaM1Free          OpenRouterModel = "poolside/laguna-m.1:free"
+	OpenAIGPTOSS120bFree          OpenRouterModel = "openai/gpt-oss-120b:free"
+	CohereNorthMiniCodeFree       OpenRouterModel = "cohere/north-mini-code:free"
+	//ByteDanceSeedream             OpenRouterModel = "bytedance-seed/seedream-4.5"
 )
 
 // NewClient creates an OpenRouter client
@@ -62,19 +71,25 @@ func NewClient(apiKey string) *Client {
 func (c *Client) buildPrompt(taxonomyJSON, userInput string) []map[string]any {
 	return []map[string]any{
 		{"role": "system", "content": `You are a personal expense classification system for a Bangladeshi user.
-Each subcategory has a "Hint" field with keywords and examples — use it to match the input.
-Pick the subcategory whose Hint best matches the input. Only fall back to misc-misc if nothing else fits.
+Each subcategory has a "Hint" field (detailed examples) and a "Keywords" field (short common terms) — use both to match the input.
+Pick the subcategory whose Hint/Keywords best match the input. Only fall back to misc-misc if nothing else fits.
 
 Constraints:
 1. Output must be valid JSON matching the Schema.
 2. The selected SubcategoryID must exist under the selected CategoryID in the Taxonomy.
-3. Match against Hint keywords first, then Name, then general reasoning.
+3. Match against Hint and Keywords first, then Name, then general reasoning.
 4. Use ONLY the exact subcategory IDs from the Taxonomy. Never invent new IDs.
 5. Identify the "intent" of the transaction using these rules:
    - "transfer": money moving between YOUR OWN accounts/wallets — ATM withdrawal (bank→cash), bank deposit (cash→bank), mobile banking transfer (bkash/nagad/rocket), send money between own accounts, cash out, cash in.
    - "income": money entering your possession — salary, bonus, interest received, money received from others, loan received.
    - "expense": money leaving for goods/services/bills — food, transport, shopping, utilities, rent, loan repayment, fees.
    When in doubt: if the user is moving money between their own accounts, it is "transfer".
+6. Person-to-person debt has four subcategories — pick by WHO acts and WHICH WAY money flows:
+   - fin-lend (expense): YOU give someone a new loan — "lent/gave/handed to X".
+   - fin-recover (income): someone returns money YOU lent — "X returned/paid me back", "got back from X", "collected from X".
+   - fin-borrow (income): YOU take a new loan — "borrowed/took from X".
+   - fin-return (expense): YOU pay back money you borrowed — "returned/repaid to X", "paid back", "dhar shodh".
+   The SUBJECT decides direction: "I returned" is fin-return, but "John returned" / "friend paid me back" is fin-recover (money comes to you).
 
 Always respond with valid JSON matching this exact schema:
 {
@@ -84,7 +99,7 @@ Always respond with valid JSON matching this exact schema:
 	"confidence": number
 }
 Only return the JSON object, no other text.`},
-		{"role": "user", "content": fmt.Sprintf("Taxonomy:\n%s\n\nUser Input: \"%s\"\n\nClassify this into the best matching subcategory using the Hint keywords and determine the intent.", taxonomyJSON, userInput)},
+		{"role": "user", "content": fmt.Sprintf("Taxonomy:\n%s\n\nUser Input: \"%s\"\n\nClassify this into the best matching subcategory using the Hint and Keywords, and determine the intent.", taxonomyJSON, userInput)},
 	}
 }
 
@@ -154,7 +169,12 @@ func (c *Client) query(ctx context.Context, model OpenRouterModel, messages []ma
 func (c *Client) TxnSubcategoryClassifier(ctx context.Context, userInput string, taxonomyJSON string) (*ClassificationResult, error) {
 	messages := c.buildPrompt(taxonomyJSON, userInput)
 
-	result, err := c.query(ctx, NVDIANemotron30bFree, messages)
+	model := NVDIANemotron30bFree
+	if configured := configs.TrackerConfig.System.OpenRouterModel; configured != "" {
+		model = OpenRouterModel(configured)
+	}
+
+	result, err := c.query(ctx, model, messages)
 	if err != nil {
 		return nil, err
 	}

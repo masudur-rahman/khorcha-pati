@@ -60,6 +60,7 @@ type transactionParser struct {
 	date        string
 	time        string
 	note        string
+	rawText     string
 	verbFound   bool
 }
 
@@ -92,6 +93,7 @@ func ParseTransaction(text string, isContact ContactVerifier, isAccount AccountV
 		p.amount = numberStr
 	}
 	textWithoutAmount := text[:loc[0]] + " " + text[loc[1]:]
+	p.rawText = strings.ToLower(strings.TrimSpace(textWithoutAmount))
 
 	// --- STEP 2: Tokenize & Scan ---
 	words := strings.Fields(textWithoutAmount)
@@ -138,7 +140,10 @@ func ParseTransaction(text string, isContact ContactVerifier, isAccount AccountV
 	p.flushBuffer(currentKey, currentBuffer, isAccount)
 	p.cleanSubcategory()
 
-	// --- STEP 3: Enrich Context (Pre-AI) ---
+	// --- STEP 3: Resolve debt direction (subject-aware, pre-AI) ---
+	p.resolveDebtDirection(isContact)
+
+	// --- STEP 3.5: Enrich Context (Pre-AI) ---
 	p.enrichContext(isAccount)
 
 	// --- STEP 4: Resolve ID (AI/Cache) ---
@@ -219,7 +224,7 @@ func (p *transactionParser) subcategoryAIParser() error {
 		p.note = p.subcategory + " " + p.note
 	}
 
-	p.subcategory = strings.ToLower(p.subcategory)
+	p.subcategory = normalizePhrase(p.subcategory)
 	if cached, exist := cache.GetCache(p.subcategory); exist {
 		var result ai.ClassificationResult
 		if err := json.Unmarshal([]byte(cached), &result); err == nil {
@@ -232,9 +237,22 @@ func (p *transactionParser) subcategoryAIParser() error {
 		return nil
 	}
 
+	// Keyword-first: resolve common inputs locally so the rate-limited AI endpoint
+	// is only hit for genuinely ambiguous text.
+	if subID, ok := localClassify(p.subcategory); ok {
+		p.subcategory = subID
+		return nil
+	}
+
 	inputText := p.subcategory
-	result, err := ai.TxnCategoryGenerator(context.Background(), inputText)
+	result, err := ai.TxnCategoryClassifier(context.Background(), inputText)
 	if err != nil {
+		// Degrade gracefully on quota/rate-limit: never drop the user's transaction.
+		if isRateLimitErr(err) {
+			logr.DefaultLogger.Warnw("AI rate-limited, falling back to misc", "input", inputText)
+			p.subcategory = "misc-misc"
+			return nil
+		}
 		return err
 	}
 
@@ -378,6 +396,20 @@ func (p *transactionParser) assignValue(key, value string, isAccount AccountVeri
 		p.fromValue = value
 	case "to":
 		p.toValue = value
+	case "in", "into":
+		// "in"/"into" reads as a destination only when it points at a wallet
+		// ("got salary in ebl"). Otherwise it's ordinary text ("lunch in office")
+		// and goes back to the subcategory buffer so it isn't hijacked.
+		if isAccount(strings.ToLower(value)) {
+			p.toValue = value
+			return
+		}
+		val := key + " " + value
+		if p.subcategory != "" {
+			p.subcategory += " " + val
+		} else {
+			p.subcategory = val
+		}
 	case "on":
 		if isDateKeyword(value) {
 			p.date = value
@@ -417,7 +449,7 @@ func (p *transactionParser) cleanSubcategory() {
 
 func isStandardKeyword(w string) bool {
 	switch w {
-	case "from", "to", "on", "at":
+	case "from", "to", "in", "into", "on", "at":
 		return true
 	}
 	return false

@@ -4,6 +4,8 @@ import (
 	"os"
 	"testing"
 
+	"github.com/masudur-rahman/go-oneliners"
+
 	"github.com/stretchr/testify/assert"
 )
 
@@ -26,11 +28,12 @@ func TestOverrideWithEnv(t *testing.T) {
 
 	// Act
 	cfg.OverrideWithEnv()
+	oneliners.PrettyJson(cfg, "Config")
 
 	// Assert
 	assert.Equal(t, "test-token", cfg.Telegram.Secret)
 	assert.Equal(t, "test-user", cfg.Telegram.User)
 	assert.Equal(t, "test-db-pass", cfg.Database.Postgres.Password)
 	assert.Equal(t, "test-gemini-key", cfg.System.GeminiKey)
-	assert.Equal(t, "gemini", cfg.System.AIGenerator)
+	assert.Equal(t, "gemini", cfg.System.AIClassifier)
 }

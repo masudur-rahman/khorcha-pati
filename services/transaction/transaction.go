@@ -3,6 +3,7 @@ package transaction
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/masudur-rahman/expense-tracker-bot/models"
@@ -46,6 +47,9 @@ func (ts *txnService) AddTransaction(txn models.Transaction) (err error) {
 	}
 	if txn.CreatedAt == 0 {
 		txn.CreatedAt = time.Now().Unix()
+	}
+	if err = ts.resolveContact(&txn); err != nil {
+		return err
 	}
 
 	uow, err := ts.uow.Begin(context.Background())
@@ -253,6 +257,58 @@ func (ts *txnService) applyBalances(uow styx.UnitOfWork, txn models.Transaction)
 		return walletRepo.UpdateWalletBalance(txn.UserID, txn.DstID, txn.Amount)
 	}
 	return nil
+}
+
+// resolveContact normalizes ContactName to a known contact's nickname. When no
+// such contact exists the person is recorded in remarks and ContactName is
+// cleared — mirroring the bot parser, where unknown people are notes, not
+// contacts (so debt balance updates only touch real contacts).
+func (ts *txnService) resolveContact(txn *models.Transaction) error {
+	if txn.ContactName == "" || txn.Type == models.TransferTransaction {
+		return nil
+	}
+	contact, err := ts.contactRepo.GetContactByName(txn.UserID, txn.ContactName)
+	if err == nil {
+		if contact.NickName != "" {
+			txn.ContactName = contact.NickName
+		}
+		return nil
+	}
+	if !models.IsErrNotFound(err) {
+		return err
+	}
+	txn.Remarks = appendPersonNote(txn.Remarks, *txn)
+	txn.ContactName = ""
+	return nil
+}
+
+// appendPersonNote records an unknown person in remarks, e.g. "to meem" or,
+// for a debt transaction, "to meem [Person: meem]".
+func appendPersonNote(remarks string, txn models.Transaction) string {
+	prefix := "to"
+	if txn.Type == models.IncomeTransaction {
+		prefix = "from"
+	}
+	note := fmt.Sprintf("%s %s", prefix, txn.ContactName)
+	if isDebtSubcategory(txn.SubcategoryID) {
+		note = fmt.Sprintf("%s [Person: %s]", note, txn.ContactName)
+	}
+	if remarks == "" {
+		return note
+	}
+	if strings.Contains(strings.ToLower(remarks), strings.ToLower(note)) {
+		return remarks
+	}
+	return remarks + " " + note
+}
+
+// isDebtSubcategory reports whether a subcategory settles a debt with a person.
+func isDebtSubcategory(subID string) bool {
+	switch subID {
+	case models.BorrowSubID, models.BorrowReturnSubID, models.LendSubID, models.LendRecoverySubID:
+		return true
+	}
+	return false
 }
 
 func (ts *txnService) updateContactBalance(uow styx.UnitOfWork, txn models.Transaction, amount float64) error {

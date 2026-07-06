@@ -18,3 +18,38 @@ cache:
         host: localhost
         port: "6379"
         password: redis
+system:
+    # PDF strategy: "chromedp" (headless browser) or "wkhtmltopdf"
+    pdfGenerator: "chromedp"
+
+    # AI classifier: "gemini", "open-router", or "pool"
+    # "pool" rotates across all configured providers (Gemini first) and fails over on rate-limit.
+    aiClassifier: "pool"
+
+    # Requests one provider serves before the pool rotates to the next (0 = default 15).
+    aiStickyWindow: 15
+
+    # API keys for the AI intent engine (env GEMINI_API_KEY / OPENROUTER_API_KEY override these)
+#    geminiKey: "your_gemini_api_key"
+#    openRouterKey: "your_open_router_api_key"
+
+    # Per-provider model override (env GEMINI_MODEL / OPENROUTER_MODEL win). Defaults shown.
+#    geminiModel: "gemini-3.1-flash-lite"
+#    openRouterModel: "nvidia/nemotron-3-nano-30b-a3b:free"
+server:
+    dashboardEnabled: true
+
+    # Strongly secure 32+ byte strings for signing JWTs
+    jwtSecret: "super_secret_jwt_signature_key_here"
+    refreshSecret: "super_secret_refresh_signature_key_here"
+
+    # Bot username (used to validate the Telegram Web App initData hash)
+    botUsername: "XpTrkBot"
+
+    # Allowed CORS origins (e.g. your Vite dev server or production frontend URL)
+    corsOrigin: "*"
+
+    # REST API port (distinct from the healthz port)
+    port: 6336
+    baseURL: "http://localhost:6336"
+    dashboardURL: "http://localhost:5173"

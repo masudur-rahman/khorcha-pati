@@ -131,7 +131,11 @@ type TxnSubcategory struct {
 	ID    string `db:",pk" json:"id"`
 	Name  string `json:"name"`
 	CatID string `json:"catId"`
-	Hint  string `db:"-" json:"-"` // AI-only context, not persisted
+	// Hint (rich AI context) and Keywords (short UI search terms) get real columns:
+	// styx has no skip tag (db:"-" collides on a shared "_" column). Values served
+	// to clients are always sourced from the in-memory taxonomy via handler enrichment.
+	Hint     string `json:"hint,omitempty"`
+	Keywords string `json:"keywords,omitempty"`
 }
 
 // ContainsType reports whether typ is present in the given slice.
@@ -224,17 +228,17 @@ var finSubs = []TxnSubcategory{
 	{ID: "fin-prof", Name: "Profit/Bonus", CatID: "fin", Hint: "bonus, profit share, freelance income, cashback"},
 	{ID: "fin-interest", Name: "Interest", CatID: "fin", Hint: "bank interest, savings interest, FDR interest"},
 	{ID: "fin-deposit", Name: "Deposit", CatID: "fin", Hint: "bank deposit, FDR, savings deposit"},
-	{ID: "fin-with", Name: "Withdraw", CatID: "fin", Hint: "ATM withdrawal, bank withdrawal, cash out, cashed out, withdrew cash"},
+	{ID: "fin-with", Name: "Withdraw", CatID: "fin", Hint: "ATM withdrawal, bank withdrawal, cashout, cash out, cashed out, withdrew cash"},
 	{ID: "fin-transfer", Name: "Acc Transfer", CatID: "fin", Hint: "bkash, nagad, rocket, bank-to-bank, send money"},
 	{ID: "fin-flexi", Name: "Mobile Recharge", CatID: "fin", Hint: "flexiload, mobile top-up, airtime, data pack"},
 	{ID: "fin-ccpay", Name: "Credit Card Payment", CatID: "fin", Hint: "credit card bill, CC payment"},
 	{ID: "fin-dps", Name: "DPS", CatID: "fin", Hint: "deposit pension scheme, monthly savings plan"},
-	{ID: "fin-loan", Name: "Bank Loan", CatID: "fin", Hint: "loan received from bank or institution"},
-	{ID: "fin-repay", Name: "Bank Repayment", CatID: "fin", Hint: "loan EMI, bank installment payment"},
-	{ID: "fin-lend", Name: "Lending", CatID: "fin", Hint: "money given to someone, personal lending"},
-	{ID: "fin-recover", Name: "Lend Recovery", CatID: "fin", Hint: "money recovered from someone you lent to"},
-	{ID: "fin-borrow", Name: "Borrowing", CatID: "fin", Hint: "money taken from someone, personal borrowing"},
-	{ID: "fin-return", Name: "Borrow Return", CatID: "fin", Hint: "returning borrowed money to someone"},
+	{ID: "fin-loan", Name: "Bank Loan", CatID: "fin", Hint: "bank loan received, took a loan from bank, institutional loan, loan disbursed, got a loan"},
+	{ID: "fin-repay", Name: "Bank Repayment", CatID: "fin", Hint: "loan EMI, bank installment payment, monthly installment, paid loan installment, mortgage payment, repaid bank loan"},
+	{ID: "fin-lend", Name: "Lending", CatID: "fin", Hint: "lend money, lent to friend, gave a loan, loaned money to someone, gave money to, advance to someone, dhar dilam"},
+	{ID: "fin-recover", Name: "Lend Recovery", CatID: "fin", Hint: "recovered money i lent, got my money back, they paid me back, collected the debt, loan returned to me, dhar ferot pelam"},
+	{ID: "fin-borrow", Name: "Borrowing", CatID: "fin", Hint: "borrowed money, took a loan from a friend, got money from someone, personal borrowing, dhar nilam, ধার নিলাম"},
+	{ID: "fin-return", Name: "Borrow Return", CatID: "fin", Hint: "returned borrowed money, paid back, gave back the money, settled my debt, repaid a friend, returned the loan, paying back what i owe, dhar shodh, ধার শোধ"},
 	{ID: "fin-tax", Name: "VAT/Tax", CatID: "fin", Hint: "income tax, VAT, govt fees, stamp duty"},
 	{ID: "fin-charge", Name: "Charges", CatID: "fin", Hint: "bank charges, service fee, transaction fee, penalty"},
 	{ID: "fin-ins", Name: "Insurance", CatID: "fin", Hint: "life insurance, health insurance, vehicle insurance premium"},
@@ -326,6 +330,80 @@ var miscSubs = []TxnSubcategory{
 	{ID: "misc-misc", Name: "General", CatID: "misc", Hint: "LAST RESORT only — use when no other subcategory fits at all"},
 }
 
+// subKeywords maps a subcategory ID to short, realistic search terms a user would
+// actually type in the UI. Kept separate from Hint (which stays verbose for the AI).
+var subKeywords = map[string]string{
+	// Food
+	"food-groc": "grocery, bazar, bajar, monihari, rice, oil", "food-veg": "veggies, shobji, torkari, potato, onion",
+	"food-fruit": "fruit, fol, banana, mango, apple", "food-fish": "fish, mach, maach, ilish",
+	"food-meat": "meat, mangsho, gosht, chicken, beef, mutton", "food-dairy": "milk, egg, yogurt, cheese",
+	"food-bakery": "bread, cake, biscuit", "food-rest": "restaurant, dining, biryani, lunch out",
+	"food-street": "street food, fuchka, chotpoti", "food-take": "takeout, foodpanda, delivery",
+	"food-snack": "snacks, nasta, tiffin, chips, chanachur", "food-bev": "tea, coffee, juice, drinks",
+	"food-misc": "food, khabar",
+	// Transport
+	"trans-pub": "bus, train, metro, leguna, tempo", "trans-taxi": "uber, pathao, rickshaw, cng",
+	"trans-fuel": "fuel, petrol, octane, gas", "trans-toll": "toll, parking",
+	"trans-maint": "servicing, repair, mechanic", "trans-other": "transport, fare",
+	// Shopping
+	"shop-supply": "detergent, cleaning, broom", "shop-cloth": "clothes, jama, kapor, panjabi, shirt, pant, saree",
+	"shop-foot": "shoes, juta, sandal, slipper", "shop-elec": "phone, charger, laptop, gadget",
+	"shop-jewelry": "jewelry, gold, ring, chain", "shop-beauty": "makeup, perfume, cosmetics",
+	"shop-acc": "watch, bag, belt, sunglasses", "shop-stat": "pen, notebook, stationery",
+	"shop-other": "shopping, purchase",
+	// Financial
+	"fin-sal": "salary, wages, paycheck", "fin-prof": "bonus, profit, freelance, cashback",
+	"fin-interest": "interest, fdr", "fin-deposit": "deposit, savings",
+	"fin-with": "withdraw, cashout, atm", "fin-transfer": "transfer, bkash, nagad, send money",
+	"fin-flexi": "recharge, flexiload, topup, data", "fin-ccpay": "credit card, cc bill",
+	"fin-dps": "dps, savings scheme", "fin-loan": "bank loan, took loan",
+	"fin-repay": "emi, installment, loan payment", "fin-lend": "lend, lent, gave loan, handed, covering, paid for, dhar dilam",
+	"fin-recover": "recover, recovered, collected, got back, paid me back, they returned, loan repayment, ferot pelam", "fin-borrow": "borrow, borrowed, took, took loan, dhar nilam, theke nilam",
+	"fin-return": "return, returned, payback, paid back, gave back, repaid, dhar shodh, ferot dilam", "fin-tax": "tax, vat, income tax",
+	"fin-charge": "charge, fee, penalty", "fin-ins": "insurance, premium",
+	"fin-gold": "gold", "fin-invest": "stocks, shares, crypto, mutual fund",
+	"fin-misc": "financial, misc",
+	// Housing
+	"house-rent": "rent, house rent, basha bhara", "house-util": "electricity, gas, water bill",
+	"house-net": "internet, wifi, broadband", "house-serv": "maid, bua, buya, cleaner, driver",
+	"house-maint": "repair, plumbing, electrician", "house-furn": "furniture, table, bed",
+	"house-real": "flat, land, plot", "house-misc": "household, home",
+	// Health
+	"health-doc": "doctor, consultation, clinic", "health-test": "test, xray, ultrasound, lab",
+	"health-med": "medicine, pharmacy, drugs", "health-other": "surgery, dental, therapy",
+	// Personal Care
+	"pc-salon": "salon, haircut, chuler kat, chul kata, barber, parlor", "pc-skin": "skincare, cream, facewash",
+	"pc-spa": "spa, massage", "pc-toilet": "soap, shampoo, toothpaste",
+	"pc-fit": "gym, yoga, fitness", "pc-smoke": "cigarette, vape, paan",
+	"pc-misc": "personal care, wellness",
+	// Family
+	"fam-allow": "wife, husband, spouse, pocket money", "fam-par": "parents, baba, ma, support",
+	"fam-baby": "baby, diaper, formula", "fam-child": "kids, school fee, tuition, toys",
+	"fam-care": "family, elder care", "fam-other": "family",
+	// Education
+	"edu-course": "course, coaching, training, tuition", "edu-book": "books, study materials",
+	"edu-exam": "exam fee, admission", "edu-other": "education",
+	// Entertainment
+	"ent-movie": "movie, cinema", "ent-sub": "netflix, spotify, subscription",
+	"ent-rec": "park, outing, picnic, hangout", "ent-game": "games, gaming",
+	"ent-event": "concert, event, ticket", "ent-misc": "hobby, entertainment",
+	// Travel
+	"trv-ticket": "flight, ticket, travel", "trv-hotel": "hotel, resort, airbnb",
+	"trv-dine": "travel food, dining", "trv-sight": "sightseeing, tour, attraction",
+	"trv-trans": "travel transport, rental", "trv-gift": "souvenir, travel gift",
+	"trv-misc": "trip, journey, travel",
+	// Festival
+	"fest-eid": "eid, eidi, salami", "fest-wed": "wedding, biye, gift",
+	"fest-others": "puja, christmas, boishakh", "fest-gift": "festival gift, birthday gift",
+	"fest-decor": "decoration, lights, flowers", "fest-charity": "zakat, donation, sadaqah",
+	"fest-food": "feast, dawat, iftar",
+	// Miscellaneous
+	"misc-init": "opening balance, initial", "misc-gift": "gift",
+	"misc-charity": "charity, tip, help", "misc-office": "office, work expense",
+	"misc-loss": "lost, stolen, theft", "misc-adj": "adjustment, correction",
+	"misc-misc": "other, misc",
+}
+
 func init() {
 	TxnSubcategories = append(TxnSubcategories, foodSubs...)
 	TxnSubcategories = append(TxnSubcategories, transSubs...)
@@ -349,7 +427,11 @@ func init() {
 	}
 
 	catTypeSet := make(map[string]map[TransactionType]bool)
-	for _, sub := range TxnSubcategories {
+	for i := range TxnSubcategories {
+		// Mutate in place so Keywords is carried into the taxonomy served to the
+		// UI, the AI classifier (marshaled from this slice), and SubcategoryByID.
+		TxnSubcategories[i].Keywords = subKeywords[TxnSubcategories[i].ID]
+		sub := TxnSubcategories[i]
 		SubCatNameMap[sub.ID] = sub.Name
 		SubcategoryByID[sub.ID] = sub
 
