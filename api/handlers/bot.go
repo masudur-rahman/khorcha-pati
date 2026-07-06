@@ -6,13 +6,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/masudur-rahman/expense-tracker-bot/configs"
-	"github.com/masudur-rahman/expense-tracker-bot/infra/logr"
-	"github.com/masudur-rahman/expense-tracker-bot/models"
-	"github.com/masudur-rahman/expense-tracker-bot/modules/google"
-	"github.com/masudur-rahman/expense-tracker-bot/pkg"
-	pkgtg "github.com/masudur-rahman/expense-tracker-bot/pkg/telegram"
-	"github.com/masudur-rahman/expense-tracker-bot/services/all"
+	"github.com/masudur-rahman/khorcha-pati/configs"
+	"github.com/masudur-rahman/khorcha-pati/infra/logr"
+	"github.com/masudur-rahman/khorcha-pati/models"
+	"github.com/masudur-rahman/khorcha-pati/modules/google"
+	"github.com/masudur-rahman/khorcha-pati/pkg"
+	pkgtg "github.com/masudur-rahman/khorcha-pati/pkg/telegram"
+	"github.com/masudur-rahman/khorcha-pati/services/all"
 
 	"github.com/spf13/pflag"
 	"gopkg.in/telebot.v3"
@@ -77,7 +77,7 @@ func sendStartText(ctx telebot.Context) error {
 	msg := fmt.Sprintf(`
 <b>👋 Hi %s %s!!</b>
 
-Welcome to <b>Expense Tracker Bot</b> 👛
+Welcome to <b>Khorcha-Pati</b> 👛
 Track <i>expenses, income, transfers, and loans</i> — right from chat.
 
 ✅ A <b>Cash</b> wallet is already created for you
@@ -131,7 +131,7 @@ Examples:
 func Help(ctx telebot.Context) error {
 	return ctx.Send(fmt.Sprintf(`Click the following link to open the Usage documentation.
 %s
-`, "https://github.com/masudur-rahman/expense-tracker-bot/blob/main/README.md"))
+`, "https://github.com/masudur-rahman/khorcha-pati/blob/main/README.md"))
 }
 
 func New(ctx telebot.Context) error {

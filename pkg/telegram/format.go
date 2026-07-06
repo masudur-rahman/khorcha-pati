@@ -6,8 +6,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/masudur-rahman/expense-tracker-bot/models"
-	"github.com/masudur-rahman/expense-tracker-bot/models/gqtypes"
+	"github.com/masudur-rahman/khorcha-pati/models"
+	"github.com/masudur-rahman/khorcha-pati/models/gqtypes"
 )
 
 // FormatSummary converts a SummaryGroups object into a hierarchical Markdown text.

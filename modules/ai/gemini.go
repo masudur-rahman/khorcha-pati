@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/masudur-rahman/expense-tracker-bot/configs"
+	"github.com/masudur-rahman/khorcha-pati/configs"
 
 	"google.golang.org/genai"
 )

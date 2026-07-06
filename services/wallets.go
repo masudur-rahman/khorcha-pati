@@ -1,6 +1,6 @@
 package services
 
-import "github.com/masudur-rahman/expense-tracker-bot/models"
+import "github.com/masudur-rahman/khorcha-pati/models"
 
 type WalletService interface {
 	GetWalletByShortName(userID int64, shortName string) (*models.Wallet, error)

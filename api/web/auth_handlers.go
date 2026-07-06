@@ -6,8 +6,8 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/masudur-rahman/expense-tracker-bot/configs"
-	"github.com/masudur-rahman/expense-tracker-bot/services/all"
+	"github.com/masudur-rahman/khorcha-pati/configs"
+	"github.com/masudur-rahman/khorcha-pati/services/all"
 )
 
 // sessionIDPattern matches UUID-like session identifiers (alphanumeric + hyphens).

@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/masudur-rahman/expense-tracker-bot/infra/logr"
+	"github.com/masudur-rahman/khorcha-pati/infra/logr"
 )
 
 const refreshCookieName = "refresh_token"

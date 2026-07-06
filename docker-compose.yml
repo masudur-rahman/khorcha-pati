@@ -8,7 +8,7 @@ services:
       - "8081:8081"
     env_file: .env
     volumes:
-      - ./.configs/.expense-tracker-docker.yaml:/app/.configs/.expense-tracker.yaml
+      - ./.configs/.khorcha-pati-docker.yaml:/app/.configs/.khorcha-pati.yaml
       - sqlite-data:/app/.sqlite
     restart: unless-stopped
 

@@ -3,7 +3,7 @@ package transaction
 import (
 	"strings"
 
-	"github.com/masudur-rahman/expense-tracker-bot/models"
+	"github.com/masudur-rahman/khorcha-pati/models"
 )
 
 // fillerWords are dropped when normalizing a phrase for cache lookup so that

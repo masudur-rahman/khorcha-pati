@@ -7,9 +7,9 @@ import (
 	"os/exec"
 	"testing"
 
-	"github.com/masudur-rahman/expense-tracker-bot/configs"
-	"github.com/masudur-rahman/expense-tracker-bot/models/gqtypes"
-	"github.com/masudur-rahman/expense-tracker-bot/pkg"
+	"github.com/masudur-rahman/khorcha-pati/configs"
+	"github.com/masudur-rahman/khorcha-pati/models/gqtypes"
+	"github.com/masudur-rahman/khorcha-pati/pkg"
 
 	"github.com/stretchr/testify/assert"
 )

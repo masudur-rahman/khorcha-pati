@@ -5,8 +5,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/masudur-rahman/expense-tracker-bot/models"
-	"github.com/masudur-rahman/expense-tracker-bot/repos/mocks"
+	"github.com/masudur-rahman/khorcha-pati/models"
+	"github.com/masudur-rahman/khorcha-pati/repos/mocks"
 
 	"github.com/masudur-rahman/styx"
 

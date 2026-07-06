@@ -15,7 +15,7 @@ limitations under the License.
 */
 package main
 
-import "github.com/masudur-rahman/expense-tracker-bot/cmd"
+import "github.com/masudur-rahman/khorcha-pati/cmd"
 
 func main() {
 	cmd.Execute()

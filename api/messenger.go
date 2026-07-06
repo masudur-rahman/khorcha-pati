@@ -1,7 +1,7 @@
 package api
 
 import (
-	"github.com/masudur-rahman/expense-tracker-bot/modules/auth"
+	"github.com/masudur-rahman/khorcha-pati/modules/auth"
 
 	"gopkg.in/telebot.v3"
 )

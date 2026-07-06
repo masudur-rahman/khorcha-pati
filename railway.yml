@@ -1,6 +1,6 @@
 version: 1
 services:
-    - name: expense-tracker-bot
+    - name: khorcha-pati
       type: web
       buildCommand: go build
-      startCommand: ./expense-tracker-bot serve
+      startCommand: ./khorcha-pati serve

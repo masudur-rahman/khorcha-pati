@@ -1,7 +1,7 @@
 package repos
 
 import (
-	"github.com/masudur-rahman/expense-tracker-bot/models"
+	"github.com/masudur-rahman/khorcha-pati/models"
 
 	"github.com/masudur-rahman/styx"
 )

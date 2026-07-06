@@ -1,7 +1,7 @@
 package services
 
 import (
-	"github.com/masudur-rahman/expense-tracker-bot/models"
+	"github.com/masudur-rahman/khorcha-pati/models"
 )
 
 type ContactService interface {

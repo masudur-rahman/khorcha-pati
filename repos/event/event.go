@@ -1,8 +1,8 @@
 package event
 
 import (
-	"github.com/masudur-rahman/expense-tracker-bot/infra/logr"
-	"github.com/masudur-rahman/expense-tracker-bot/models"
+	"github.com/masudur-rahman/khorcha-pati/infra/logr"
+	"github.com/masudur-rahman/khorcha-pati/models"
 
 	isql "github.com/masudur-rahman/styx/sql"
 )

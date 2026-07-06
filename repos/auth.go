@@ -1,6 +1,6 @@
 package repos
 
-import "github.com/masudur-rahman/expense-tracker-bot/models"
+import "github.com/masudur-rahman/khorcha-pati/models"
 
 // AuthRepository defines data access for refresh tokens.
 type AuthRepository interface {

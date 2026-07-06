@@ -17,7 +17,7 @@ RUN npm run build
 # ══════════════════════════════════════════════════════════════════════════════
 FROM nginx:alpine
 
-LABEL org.opencontainers.image.source="https://github.com/masudur-rahman/expense-tracker-bot"
+LABEL org.opencontainers.image.source="https://github.com/masudur-rahman/khorcha-pati"
 
 RUN apk add --no-cache jq
 

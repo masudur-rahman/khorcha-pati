@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/masudur-rahman/expense-tracker-bot/models"
+	"github.com/masudur-rahman/khorcha-pati/models"
 
 	"github.com/masudur-rahman/styx/sql/sqlite"
 	"github.com/masudur-rahman/styx/sql/sqlite/lib"

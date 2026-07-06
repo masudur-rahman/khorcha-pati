@@ -5,8 +5,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/masudur-rahman/expense-tracker-bot/configs"
-	"github.com/masudur-rahman/expense-tracker-bot/pkg"
+	"github.com/masudur-rahman/khorcha-pati/configs"
+	"github.com/masudur-rahman/khorcha-pati/pkg"
 
 	"gopkg.in/yaml.v3"
 )
@@ -16,7 +16,7 @@ var cfgFile string
 // initConfig reads in config file and ENV variables if set.
 func initConfig() {
 	if cfgFile == "" {
-		cfgFile = filepath.Join(pkg.ProjectDirectory, ".configs", ".expense-tracker.yaml")
+		cfgFile = filepath.Join(pkg.ProjectDirectory, ".configs", ".khorcha-pati.yaml")
 	}
 
 	data, err := os.ReadFile(cfgFile)

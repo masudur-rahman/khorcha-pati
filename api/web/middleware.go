@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/masudur-rahman/expense-tracker-bot/infra/logr"
-	authmod "github.com/masudur-rahman/expense-tracker-bot/modules/auth"
+	"github.com/masudur-rahman/khorcha-pati/infra/logr"
+	authmod "github.com/masudur-rahman/khorcha-pati/modules/auth"
 )
 
 type contextKey string

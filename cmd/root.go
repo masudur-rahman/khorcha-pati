@@ -21,14 +21,14 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/masudur-rahman/expense-tracker-bot/pkg"
+	"github.com/masudur-rahman/khorcha-pati/pkg"
 
 	"github.com/spf13/cobra"
 )
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
-	Use:   "expense-tracker-bot",
+	Use:   "khorcha-pati",
 	Short: "A brief description of your application",
 	Long: `A longer description that spans multiple lines and likely contains
 examples and usage of using your application. For example:
@@ -55,7 +55,7 @@ func init() {
 	// Here you will define your flags and configuration settings.
 	// Cobra supports persistent flags, which, if defined here,
 	// will be global for your application.
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", fmt.Sprintf("config file (default is %v)", filepath.Join(pkg.ProjectDirectory, ".configs", ".expense-tracker.yaml")))
+	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", fmt.Sprintf("config file (default is %v)", filepath.Join(pkg.ProjectDirectory, ".configs", ".khorcha-pati.yaml")))
 
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.

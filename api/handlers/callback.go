@@ -6,12 +6,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/masudur-rahman/expense-tracker-bot/models"
-	"github.com/masudur-rahman/expense-tracker-bot/modules/cache"
-	"github.com/masudur-rahman/expense-tracker-bot/modules/transaction"
-	"github.com/masudur-rahman/expense-tracker-bot/pkg"
-	pkgtg "github.com/masudur-rahman/expense-tracker-bot/pkg/telegram"
-	"github.com/masudur-rahman/expense-tracker-bot/services/all"
+	"github.com/masudur-rahman/khorcha-pati/models"
+	"github.com/masudur-rahman/khorcha-pati/modules/cache"
+	"github.com/masudur-rahman/khorcha-pati/modules/transaction"
+	"github.com/masudur-rahman/khorcha-pati/pkg"
+	pkgtg "github.com/masudur-rahman/khorcha-pati/pkg/telegram"
+	"github.com/masudur-rahman/khorcha-pati/services/all"
 
 	"github.com/masudur-rahman/go-oneliners"
 

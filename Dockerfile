@@ -22,10 +22,10 @@ RUN --mount=type=cache,target=/go/pkg/mod \
     CGO_ENABLED=0 GOOS=linux \
     go build \
       -ldflags "-s -w \
-        -X github.com/masudur-rahman/expense-tracker-bot/cmd.Version=${VERSION} \
-        -X github.com/masudur-rahman/expense-tracker-bot/cmd.BuildDate=${BUILD_DATE} \
-        -X github.com/masudur-rahman/expense-tracker-bot/cmd.GitCommit=${GIT_COMMIT}" \
-      -o /bin/expense-tracker .
+        -X github.com/masudur-rahman/khorcha-pati/cmd.Version=${VERSION} \
+        -X github.com/masudur-rahman/khorcha-pati/cmd.BuildDate=${BUILD_DATE} \
+        -X github.com/masudur-rahman/khorcha-pati/cmd.GitCommit=${GIT_COMMIT}" \
+      -o /bin/khorcha-pati .
 
 # ══════════════════════════════════════════════════════════════════════════════
 # Stage 2 · Runtime base
@@ -57,14 +57,14 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     fc-cache -f
 
 WORKDIR /app
-COPY --from=builder /bin/expense-tracker /app/expense-tracker
+COPY --from=builder /bin/khorcha-pati /app/khorcha-pati
 
 EXPOSE 8080
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
   CMD ["wget", "-q", "--spider", "http://localhost:8080/healthz"]
 
-ENTRYPOINT ["/app/expense-tracker"]
+ENTRYPOINT ["/app/khorcha-pati"]
 CMD ["serve"]
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -72,7 +72,7 @@ CMD ["serve"]
 # ══════════════════════════════════════════════════════════════════════════════
 FROM runtime-base AS wkhtmltopdf
 
-LABEL org.opencontainers.image.source="https://github.com/masudur-rahman/expense-tracker-bot"
+LABEL org.opencontainers.image.source="https://github.com/masudur-rahman/khorcha-pati"
 
 ARG TARGETARCH
 ARG WKHTMLTOPDF_VERSION=0.12.6.1-3
@@ -124,7 +124,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
 # ══════════════════════════════════════════════════════════════════════════════
 FROM chromium-base AS chromedp
 
-LABEL org.opencontainers.image.source="https://github.com/masudur-rahman/expense-tracker-bot"
+LABEL org.opencontainers.image.source="https://github.com/masudur-rahman/khorcha-pati"
 
 ENV CHROME_PATH=/usr/bin/chromium
 ENV HOME=/tmp

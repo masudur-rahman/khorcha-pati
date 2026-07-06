@@ -4,9 +4,9 @@ import (
 	"context"
 	"time"
 
-	"github.com/masudur-rahman/expense-tracker-bot/infra/logr"
-	"github.com/masudur-rahman/expense-tracker-bot/models"
-	"github.com/masudur-rahman/expense-tracker-bot/repos"
+	"github.com/masudur-rahman/khorcha-pati/infra/logr"
+	"github.com/masudur-rahman/khorcha-pati/models"
+	"github.com/masudur-rahman/khorcha-pati/repos"
 
 	isql "github.com/masudur-rahman/styx/sql"
 )

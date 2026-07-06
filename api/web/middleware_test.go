@@ -5,7 +5,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	authmod "github.com/masudur-rahman/expense-tracker-bot/modules/auth"
+	authmod "github.com/masudur-rahman/khorcha-pati/modules/auth"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

@@ -7,12 +7,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/masudur-rahman/expense-tracker-bot/infra/logr"
-	"github.com/masudur-rahman/expense-tracker-bot/models"
-	authmod "github.com/masudur-rahman/expense-tracker-bot/modules/auth"
-	"github.com/masudur-rahman/expense-tracker-bot/modules/cache"
-	"github.com/masudur-rahman/expense-tracker-bot/repos"
-	"github.com/masudur-rahman/expense-tracker-bot/services"
+	"github.com/masudur-rahman/khorcha-pati/infra/logr"
+	"github.com/masudur-rahman/khorcha-pati/models"
+	authmod "github.com/masudur-rahman/khorcha-pati/modules/auth"
+	"github.com/masudur-rahman/khorcha-pati/modules/cache"
+	"github.com/masudur-rahman/khorcha-pati/repos"
+	"github.com/masudur-rahman/khorcha-pati/services"
 
 	"github.com/google/uuid"
 )

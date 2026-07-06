@@ -1,4 +1,4 @@
-module github.com/masudur-rahman/expense-tracker-bot
+module github.com/masudur-rahman/khorcha-pati
 
 go 1.26.4
 

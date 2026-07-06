@@ -4,7 +4,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/masudur-rahman/expense-tracker-bot/configs"
+	"github.com/masudur-rahman/khorcha-pati/configs"
 )
 
 // defaultStickyWindow is how many requests a provider serves before the pool rotates to the

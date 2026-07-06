@@ -1,4 +1,4 @@
-# Expense Tracker Bot — Self-Hosting Guide
+# Khorcha-Pati — Self-Hosting Guide
 
 A Telegram Bot to track your expenses. This guide covers everything you need to self-host the bot using Docker or native Go.
 
@@ -32,7 +32,7 @@ A Telegram Bot to track your expenses. This guide covers everything you need to 
     - Use `/token` command to get the bot token.
 
 #### Telegram Bot Creation Demo
-https://github.com/masudur-rahman/expense-tracker-bot/assets/13915755/bc74ec7a-b243-4faa-a07b-31ebe2260264
+https://github.com/masudur-rahman/khorcha-pati/assets/13915755/bc74ec7a-b243-4faa-a07b-31ebe2260264
 
 ### Database Setup
 
@@ -69,12 +69,12 @@ If you want to back up your SQLite database to Google Drive regularly, follow th
 
 1. [Create a Google Project](https://console.cloud.google.com/projectcreate) (if not already created).
 
-2. [Create a Service account](https://console.cloud.google.com/iam-admin/serviceaccounts/create) named `expense-tracker` and download a service account JSON key.
+2. [Create a Service account](https://console.cloud.google.com/iam-admin/serviceaccounts/create) named `khorcha-pati` and download a service account JSON key.
 
 3. [Enable the Google Drive API](https://console.cloud.google.com/apis/library/drive.googleapis.com) for your project.
 4. On Google Drive:
-    - Create a folder named `.expense-tracker`.
-    - Share this folder with the service account (`expense-tracker@<project-id>.iam.gserviceaccount.com`) and grant it "Editor" permission.
+    - Create a folder named `.khorcha-pati`.
+    - Share this folder with the service account (`khorcha-pati@<project-id>.iam.gserviceaccount.com`) and grant it "Editor" permission.
 
 ## Environment Variables
 
@@ -115,7 +115,7 @@ These override the corresponding values in the YAML config file for production/D
 
 ## Configuration File
 
-The bot reads its configuration from `.configs/.expense-tracker.yaml` (relative to the project root).
+The bot reads its configuration from `.configs/.khorcha-pati.yaml` (relative to the project root).
 
 ```yaml
 telegram:
@@ -150,11 +150,11 @@ system:
 1. Clone the repository:
 
    ```bash
-   git clone git@github.com:masudur-rahman/expense-tracker-bot.git
-   cd expense-tracker-bot
+   git clone git@github.com:masudur-rahman/khorcha-pati.git
+   cd khorcha-pati
    ```
 
-2. Update the configuration file `.configs/.expense-tracker.yaml`.
+2. Update the configuration file `.configs/.khorcha-pati.yaml`.
 
 3. Export required environment variables:
 
@@ -175,7 +175,7 @@ The Docker image supports both `wkhtmltopdf` and `chromedp` engines and is built
 
 - Write configuration file
     ```shell
-    mkdir -p $HOME/.expense-tracker/configs
+    mkdir -p $HOME/.khorcha-pati/configs
 
     echo '
     telegram:
@@ -184,24 +184,24 @@ The Docker image supports both `wkhtmltopdf` and `chromedp` engines and is built
       type: sqlite
     cache:
       type: map
-    ' > $HOME/.expense-tracker/configs/.expense-tracker.yaml
+    ' > $HOME/.khorcha-pati/configs/.khorcha-pati.yaml
     ```
 
-- Run Expense Tracker Bot
+- Run Khorcha-Pati
     ```shell
     docker run -d \
-      --name expense-tracker \
-      -v $HOME/.expense-tracker/configs:/app/.configs \
-      -v $HOME/.expense-tracker:/.expense-tracker \
+      --name khorcha-pati \
+      -v $HOME/.khorcha-pati/configs:/app/.configs \
+      -v $HOME/.khorcha-pati:/.khorcha-pati \
       -e TELEGRAM_BOT_TOKEN=<TELEGRAM_BOT_TOKEN> \
       -e GEMINI_API_KEY=<GEMINI_API_KEY> \
       -e ENV=production \
-      ghcr.io/masudur-rahman/expense-tracker-bot:latest serve
+      ghcr.io/masudur-rahman/khorcha-pati:latest serve
     ```
 
 ### Production Environment (Kubernetes)
 
-To deploy `Expense Tracker Bot` application in production environment, the preferred way is through Helm Chart. Checkout more [here](https://github.com/masudur-rahman/helm-charts/tree/main/charts/expense-tracker-bot).
+To deploy `Khorcha-Pati` application in production environment, the preferred way is through Helm Chart. Checkout more [here](https://github.com/masudur-rahman/helm-charts/tree/main/charts/khorcha-pati).
 
 
 - First you need to add the repo for the helm chart.
@@ -209,19 +209,19 @@ To deploy `Expense Tracker Bot` application in production environment, the prefe
     helm repo add masud https://masudur-rahman.github.io/helm-charts/stable
     helm repo update
 
-    helm search repo masud/expense-tracker-bot
+    helm search repo masud/khorcha-pati
     ```
     - Install the chart
         - For installing just with SQLite database (without Google Drive backup)
           ```bash
-          helm upgrade --install expense-tracker-bot masud/expense-tracker-bot -n demo \
+          helm upgrade --install khorcha-pati masud/khorcha-pati -n demo \
               --create-namespace \
               --set telegram.token=<TELEGRAM_BOT_TOKEN> \
               --set telegram.user=<TELEGRAM_USERNAME>
           ```
         - SQLite with Google Drive backup
           ```bash
-          helm upgrade --install expense-tracker-bot masud/expense-tracker-bot -n demo \
+          helm upgrade --install khorcha-pati masud/khorcha-pati -n demo \
               --create-namespace \
               --set telegram.token=<TELEGRAM_BOT_TOKEN> \
               --set telegram.user=<TELEGRAM_USERNAME> \
@@ -230,7 +230,7 @@ To deploy `Expense Tracker Bot` application in production environment, the prefe
           ```
         - Postgres database
           ```bash
-          helm upgrade --install expense-tracker-bot masud/expense-tracker-bot -n demo \
+          helm upgrade --install khorcha-pati masud/khorcha-pati -n demo \
               --create-namespace \
               --set telegram.token=<TELEGRAM_BOT_TOKEN> \
               --set telegram.user=<TELEGRAM_USERNAME> \
@@ -244,13 +244,13 @@ To deploy `Expense Tracker Bot` application in production environment, the prefe
               # --set database.postgres.sslmode=<POSTGRES_SSL_MODE>
           ```
 - Verify Installation
-  To check if `Expense Tracker Bot` is installed, run the following command:
+  To check if `Khorcha-Pati` is installed, run the following command:
     ```bash
-    $ kubectl get pods -n demo -l "app.kubernetes.io/instance=expense-tracker-bot"
+    $ kubectl get pods -n demo -l "app.kubernetes.io/instance=khorcha-pati"
 
     NAME                                            READY   STATUS    RESTARTS      AGE
-    expense-tracker-bot-7989d96fcc-b4smq            1/1     Running   2 (30s ago)   31s
-    expense-tracker-bot-postgres-55dcb67965-95r7g   1/1     Running   0             31s
+    khorcha-pati-7989d96fcc-b4smq            1/1     Running   2 (30s ago)   31s
+    khorcha-pati-postgres-55dcb67965-95r7g   1/1     Running   0             31s
     ```
 
 ## Health Check

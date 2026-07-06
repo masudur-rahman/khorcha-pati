@@ -1,7 +1,7 @@
 package mocks
 
 import (
-	"github.com/masudur-rahman/expense-tracker-bot/modules/auth"
+	"github.com/masudur-rahman/khorcha-pati/modules/auth"
 
 	"github.com/stretchr/testify/mock"
 )

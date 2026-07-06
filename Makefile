@@ -1,8 +1,8 @@
-# Expense Tracker Bot — Makefile
+# Khorcha-Pati — Makefile
 
 # The binary to build.
-APP_NAME = Expense Tracker
-BIN := expense-tracker-bot
+APP_NAME = Khorcha-Pati
+BIN := khorcha-pati
 
 # Where to push the docker image.
 REGISTRY ?= masudjuly02
@@ -120,7 +120,7 @@ docker-run: # @HELP run container built from latest changes
 	docker run \
 	  --rm \
 	  --env-file .env \
-	  --volume $(CURDIR)/.configs/.expense-tracker-docker.yaml:/app/.configs/.expense-tracker.yaml \
+	  --volume $(CURDIR)/.configs/.khorcha-pati-docker.yaml:/app/.configs/.khorcha-pati.yaml \
 	  $(DOCKER_IMAGE):$(VERSION)$(DOCKER_TAG_SUFFIX)
 
 .PHONY: docker-build-web

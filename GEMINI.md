@@ -1,4 +1,4 @@
-# Project: expense-tracker-bot
+# Project: khorcha-pati
 
 ## Global Rules & Mandates
 - **Response Style**: Code only. No explanations unless asked. No filler phrases. No preamble. When asked to explain, max 3 sentences per point.

@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/masudur-rahman/expense-tracker-bot/models"
+	"github.com/masudur-rahman/khorcha-pati/models"
 )
 
 // knownContacts for debt tests: John/Sarah/Karim/Rifat are on file; Friend/Ali are not,

@@ -3,7 +3,7 @@ package web
 import (
 	"net/http"
 
-	"github.com/masudur-rahman/expense-tracker-bot/services/all"
+	"github.com/masudur-rahman/khorcha-pati/services/all"
 
 	"github.com/go-chi/chi/v5"
 )

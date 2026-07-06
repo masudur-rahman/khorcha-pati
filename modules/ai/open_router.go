@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/masudur-rahman/expense-tracker-bot/configs"
+	"github.com/masudur-rahman/khorcha-pati/configs"
 )
 
 // Client for OpenRouter API

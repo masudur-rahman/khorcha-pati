@@ -9,11 +9,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/masudur-rahman/expense-tracker-bot/infra/logr"
-	"github.com/masudur-rahman/expense-tracker-bot/models"
-	"github.com/masudur-rahman/expense-tracker-bot/modules/cache"
-	"github.com/masudur-rahman/expense-tracker-bot/modules/google"
-	"github.com/masudur-rahman/expense-tracker-bot/services/all"
+	"github.com/masudur-rahman/khorcha-pati/infra/logr"
+	"github.com/masudur-rahman/khorcha-pati/models"
+	"github.com/masudur-rahman/khorcha-pati/modules/cache"
+	"github.com/masudur-rahman/khorcha-pati/modules/google"
+	"github.com/masudur-rahman/khorcha-pati/services/all"
 
 	"github.com/masudur-rahman/styx"
 	isql "github.com/masudur-rahman/styx/sql"

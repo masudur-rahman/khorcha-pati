@@ -24,7 +24,7 @@ func TestGenerateAccessToken_roundtrip(t *testing.T) {
 	assert.Equal(t, int64(42), claims.UserID)
 	assert.Equal(t, "masud", claims.Username)
 	assert.Equal(t, "42", claims.Subject)
-	assert.Equal(t, "expense-tracker", claims.Issuer)
+	assert.Equal(t, "khorcha-pati", claims.Issuer)
 }
 
 func TestGenerateRefreshToken_roundtrip(t *testing.T) {
@@ -75,7 +75,7 @@ func TestParseAccessToken_expired(t *testing.T) {
 			Subject:   "1",
 			IssuedAt:  jwt.NewNumericDate(now),
 			ExpiresAt: jwt.NewNumericDate(now.Add(1 * time.Minute)),
-			Issuer:    "expense-tracker",
+			Issuer:    "khorcha-pati",
 		},
 		UserID:   1,
 		Username: "user",

@@ -7,11 +7,11 @@ import (
 	"os"
 	"time"
 
-	"github.com/masudur-rahman/expense-tracker-bot/api/handlers"
-	"github.com/masudur-rahman/expense-tracker-bot/models"
-	"github.com/masudur-rahman/expense-tracker-bot/models/gqtypes"
-	"github.com/masudur-rahman/expense-tracker-bot/modules/convert"
-	"github.com/masudur-rahman/expense-tracker-bot/services/all"
+	"github.com/masudur-rahman/khorcha-pati/api/handlers"
+	"github.com/masudur-rahman/khorcha-pati/models"
+	"github.com/masudur-rahman/khorcha-pati/models/gqtypes"
+	"github.com/masudur-rahman/khorcha-pati/modules/convert"
+	"github.com/masudur-rahman/khorcha-pati/services/all"
 )
 
 // clampStartTime returns the effective start date for a report period.

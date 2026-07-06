@@ -29,11 +29,11 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/masudur-rahman/expense-tracker-bot/api"
-	"github.com/masudur-rahman/expense-tracker-bot/api/web"
-	"github.com/masudur-rahman/expense-tracker-bot/configs"
-	"github.com/masudur-rahman/expense-tracker-bot/infra/logr"
-	"github.com/masudur-rahman/expense-tracker-bot/services/all"
+	"github.com/masudur-rahman/khorcha-pati/api"
+	"github.com/masudur-rahman/khorcha-pati/api/web"
+	"github.com/masudur-rahman/khorcha-pati/configs"
+	"github.com/masudur-rahman/khorcha-pati/infra/logr"
+	"github.com/masudur-rahman/khorcha-pati/services/all"
 
 	"github.com/spf13/cobra"
 )
@@ -88,7 +88,7 @@ to quickly create a Cobra application.`,
 		}()
 
 		go pingHealthzAPIPeriodically(addr)
-		log.Println("Expense Tracker Bot started")
+		log.Println("Khorcha-Pati started")
 
 		go bot.Start()
 

@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/masudur-rahman/expense-tracker-bot/configs"
+	"github.com/masudur-rahman/khorcha-pati/configs"
 )
 
 func HandleHealthz(w http.ResponseWriter, _ *http.Request) {

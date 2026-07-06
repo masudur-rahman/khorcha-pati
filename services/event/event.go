@@ -1,8 +1,8 @@
 package event
 
 import (
-	"github.com/masudur-rahman/expense-tracker-bot/models"
-	"github.com/masudur-rahman/expense-tracker-bot/repos"
+	"github.com/masudur-rahman/khorcha-pati/models"
+	"github.com/masudur-rahman/khorcha-pati/repos"
 )
 
 type eventService struct {

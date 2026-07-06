@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/masudur-rahman/expense-tracker-bot/infra/logr"
+	"github.com/masudur-rahman/khorcha-pati/infra/logr"
 
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/drive/v3"
@@ -18,7 +18,7 @@ import (
 )
 
 const (
-	dbFileName   = "expense-tracker.db"
+	dbFileName   = "khorcha-pati.db"
 	dbFolderName = ".sqlite"
 )
 

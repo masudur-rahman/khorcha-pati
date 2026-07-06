@@ -1,6 +1,6 @@
 package repos
 
-import "github.com/masudur-rahman/expense-tracker-bot/models"
+import "github.com/masudur-rahman/khorcha-pati/models"
 
 type ExpenseRepository interface {
 	GetLastExpense() (*models.Expense, error)

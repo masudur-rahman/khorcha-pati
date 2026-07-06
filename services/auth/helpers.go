@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/masudur-rahman/expense-tracker-bot/models"
-	authmod "github.com/masudur-rahman/expense-tracker-bot/modules/auth"
+	"github.com/masudur-rahman/khorcha-pati/models"
+	authmod "github.com/masudur-rahman/khorcha-pati/modules/auth"
 )
 
 type otpSession struct {

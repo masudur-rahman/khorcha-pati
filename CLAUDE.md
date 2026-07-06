@@ -1,4 +1,4 @@
-# Project: expense-tracker-bot
+# Project: khorcha-pati
 
 ## Overview
 Telegram bot for personal finance tracking. Supports natural language transaction input, interactive menus, PDF reports, category classification via Gemini AI, and multiple database backends (SQLite + PostgreSQL).

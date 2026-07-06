@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/masudur-rahman/expense-tracker-bot/infra/logr"
+	"github.com/masudur-rahman/khorcha-pati/infra/logr"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"

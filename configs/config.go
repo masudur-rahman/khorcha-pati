@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/masudur-rahman/expense-tracker-bot/modules/cache"
+	"github.com/masudur-rahman/khorcha-pati/modules/cache"
 
 	"github.com/masudur-rahman/styx/sql/postgres/lib"
 )

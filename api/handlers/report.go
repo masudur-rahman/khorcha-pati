@@ -13,13 +13,13 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/masudur-rahman/expense-tracker-bot/configs"
-	"github.com/masudur-rahman/expense-tracker-bot/models"
-	"github.com/masudur-rahman/expense-tracker-bot/models/gqtypes"
-	"github.com/masudur-rahman/expense-tracker-bot/modules/convert"
-	"github.com/masudur-rahman/expense-tracker-bot/pkg"
-	"github.com/masudur-rahman/expense-tracker-bot/services/all"
-	"github.com/masudur-rahman/expense-tracker-bot/templates"
+	"github.com/masudur-rahman/khorcha-pati/configs"
+	"github.com/masudur-rahman/khorcha-pati/models"
+	"github.com/masudur-rahman/khorcha-pati/models/gqtypes"
+	"github.com/masudur-rahman/khorcha-pati/modules/convert"
+	"github.com/masudur-rahman/khorcha-pati/pkg"
+	"github.com/masudur-rahman/khorcha-pati/services/all"
+	"github.com/masudur-rahman/khorcha-pati/templates"
 
 	"gopkg.in/telebot.v3"
 )

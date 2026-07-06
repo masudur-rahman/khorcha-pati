@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/masudur-rahman/expense-tracker-bot/configs"
-	"github.com/masudur-rahman/expense-tracker-bot/models"
+	"github.com/masudur-rahman/khorcha-pati/configs"
+	"github.com/masudur-rahman/khorcha-pati/models"
 
 	"golang.org/x/time/rate"
 )

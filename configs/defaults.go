@@ -3,7 +3,7 @@ package configs
 import (
 	"sync"
 
-	"github.com/masudur-rahman/expense-tracker-bot/pkg"
+	"github.com/masudur-rahman/khorcha-pati/pkg"
 
 	"github.com/jedib0t/go-pretty/v6/table"
 )

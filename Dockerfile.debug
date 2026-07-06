@@ -30,17 +30,17 @@ RUN --mount=type=cache,target=/go/pkg/mod \
     go build \
       -gcflags="all=-N -l" \
       -ldflags "\
-        -X github.com/masudur-rahman/expense-tracker-bot/cmd.Version=${VERSION} \
-        -X github.com/masudur-rahman/expense-tracker-bot/cmd.BuildDate=${BUILD_DATE} \
-        -X github.com/masudur-rahman/expense-tracker-bot/cmd.GitCommit=${GIT_COMMIT}" \
-      -o /bin/expense-tracker .
+        -X github.com/masudur-rahman/khorcha-pati/cmd.Version=${VERSION} \
+        -X github.com/masudur-rahman/khorcha-pati/cmd.BuildDate=${BUILD_DATE} \
+        -X github.com/masudur-rahman/khorcha-pati/cmd.GitCommit=${GIT_COMMIT}" \
+      -o /bin/khorcha-pati .
 
 # ══════════════════════════════════════════════════════════════════════════════
 # Stage 2 · Debug runtime
 # ══════════════════════════════════════════════════════════════════════════════
 FROM debian:bookworm-slim AS debug-runtime
 
-LABEL org.opencontainers.image.source="https://github.com/masudur-rahman/expense-tracker-bot"
+LABEL org.opencontainers.image.source="https://github.com/masudur-rahman/khorcha-pati"
 
 RUN rm -f /etc/apt/apt.conf.d/docker-clean; echo 'Binary::apt::APT::Keep-Downloaded-Packages "true";' > /etc/apt/apt.conf.d/keep-cache
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
@@ -52,7 +52,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
 WORKDIR /app
 
 COPY --from=debug-builder /go/bin/dlv /usr/local/bin/dlv
-COPY --from=debug-builder /bin/expense-tracker /app/expense-tracker
+COPY --from=debug-builder /bin/khorcha-pati /app/khorcha-pati
 
 RUN mkdir -p /app/configs /app/.sqlite
 
@@ -69,6 +69,6 @@ ENTRYPOINT ["dlv", \
   "--api-version=2", \
   "--accept-multiclient", \
   "--log", \
-  "exec", "/app/expense-tracker", \
+  "exec", "/app/khorcha-pati", \
   "--"]
 CMD ["serve"]

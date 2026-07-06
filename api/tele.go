@@ -5,9 +5,9 @@ import (
 	"os"
 	"time"
 
-	"github.com/masudur-rahman/expense-tracker-bot/api/handlers"
-	"github.com/masudur-rahman/expense-tracker-bot/models"
-	"github.com/masudur-rahman/expense-tracker-bot/services/all"
+	"github.com/masudur-rahman/khorcha-pati/api/handlers"
+	"github.com/masudur-rahman/khorcha-pati/models"
+	"github.com/masudur-rahman/khorcha-pati/services/all"
 
 	"gopkg.in/telebot.v3"
 )
@@ -119,7 +119,7 @@ func rejectBots() telebot.MiddlewareFunc {
 	return func(next telebot.HandlerFunc) telebot.HandlerFunc {
 		return func(ctx telebot.Context) error {
 			//if ctx.Sender().Username != configs.TrackerConfig.Telegram.User {
-			//	return ctx.Send(fmt.Sprintf("Ohho!!! Looks like you're not the admin of this bot.\n\nIf you wish to know how to use this bot, go to https://github.com/masudur-rahman/expense-tracker-bot ."))
+			//	return ctx.Send(fmt.Sprintf("Ohho!!! Looks like you're not the admin of this bot.\n\nIf you wish to know how to use this bot, go to https://github.com/masudur-rahman/khorcha-pati ."))
 			//}
 			if ctx.Sender().IsBot {
 				return ctx.Send("Bot not allowed")

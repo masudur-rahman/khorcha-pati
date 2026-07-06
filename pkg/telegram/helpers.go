@@ -4,7 +4,7 @@ package telegram
 import (
 	"strings"
 
-	"github.com/masudur-rahman/expense-tracker-bot/models"
+	"github.com/masudur-rahman/khorcha-pati/models"
 )
 
 const MaxMessageLen = 4000 // safe margin below Telegram's hard 4096-byte limit

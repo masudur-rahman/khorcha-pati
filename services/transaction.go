@@ -1,6 +1,6 @@
 package services
 
-import "github.com/masudur-rahman/expense-tracker-bot/models"
+import "github.com/masudur-rahman/khorcha-pati/models"
 
 type TransactionService interface {
 	AddTransaction(txn models.Transaction) error

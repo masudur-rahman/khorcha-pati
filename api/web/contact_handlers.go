@@ -3,8 +3,8 @@ package web
 import (
 	"net/http"
 
-	"github.com/masudur-rahman/expense-tracker-bot/models"
-	"github.com/masudur-rahman/expense-tracker-bot/services/all"
+	"github.com/masudur-rahman/khorcha-pati/models"
+	"github.com/masudur-rahman/khorcha-pati/services/all"
 )
 
 // HandleListContacts handles GET /contacts.

@@ -1,6 +1,6 @@
 package services
 
-import "github.com/masudur-rahman/expense-tracker-bot/modules/auth"
+import "github.com/masudur-rahman/khorcha-pati/modules/auth"
 
 // AuthService handles OTP, QR, and JWT-based authentication.
 type AuthService interface {

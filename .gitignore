@@ -17,7 +17,7 @@
 .go/
 .bin/
 bin/
-!.configs/.expense-tracker.yaml.example
+!.configs/.khorcha-pati.yaml.example
 .configs
 .sqlite
 
@@ -25,7 +25,7 @@ bin/
 .dockerfile-*
 .env
 
-.sqlite/expense-tracker.db
+.sqlite/khorcha-pati.db
 .DS_Store
 .refactor*
 .claude/settings.local.json

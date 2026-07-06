@@ -3,10 +3,10 @@ package expense
 import (
 	"time"
 
-	"github.com/masudur-rahman/expense-tracker-bot/models"
-	"github.com/masudur-rahman/expense-tracker-bot/models/gqtypes"
-	"github.com/masudur-rahman/expense-tracker-bot/repos"
-	"github.com/masudur-rahman/expense-tracker-bot/services"
+	"github.com/masudur-rahman/khorcha-pati/models"
+	"github.com/masudur-rahman/khorcha-pati/models/gqtypes"
+	"github.com/masudur-rahman/khorcha-pati/repos"
+	"github.com/masudur-rahman/khorcha-pati/services"
 )
 
 type expenseService struct {
