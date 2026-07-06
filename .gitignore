@@ -50,4 +50,5 @@ docker-compose.debug.yml
 vendor/
 .vscode/
 *.env.*
+*/*.env.*
 !.env.example
