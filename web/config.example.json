@@ -1,6 +1,6 @@
 {
   "listenHost": "0.0.0.0",
   "listenPort": 65262,
-  "serverName": "xpense.mrahman.xyz",
-  "apiBase": "https://xpense-api.mrahman.xyz"
+  "serverName": "khorcha-pati.mrahman.xyz",
+  "apiBase": "https://khorcha-pati-api.mrahman.xyz"
 }

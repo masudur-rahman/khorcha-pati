@@ -21,7 +21,7 @@ API_BASE="${API_BASE:-$(cfg apiBase)}"
 LISTEN_HOST="${LISTEN_HOST:-0.0.0.0}"
 LISTEN_PORT="${LISTEN_PORT:-65262}"
 SERVER_NAME="${SERVER_NAME:-_}"
-API_BASE="${API_BASE:-https://expense-api.mrahman.xyz}"
+API_BASE="${API_BASE:-https://khorcha-pati-api.mrahman.xyz}"
 
 # Generate runtime config for the frontend JS app
 cat >/usr/share/nginx/html/config.js <<EOF
