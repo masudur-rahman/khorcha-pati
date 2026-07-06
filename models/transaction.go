@@ -334,20 +334,20 @@ var miscSubs = []TxnSubcategory{
 // actually type in the UI. Kept separate from Hint (which stays verbose for the AI).
 var subKeywords = map[string]string{
 	// Food
-	"food-groc": "grocery, bazar, rice, oil", "food-veg": "veggies, shobji, potato, onion",
-	"food-fruit": "fruit, banana, mango, apple", "food-fish": "fish, mach, ilish",
-	"food-meat": "meat, chicken, beef, mutton", "food-dairy": "milk, egg, yogurt, cheese",
+	"food-groc": "grocery, bazar, bajar, monihari, rice, oil", "food-veg": "veggies, shobji, torkari, potato, onion",
+	"food-fruit": "fruit, fol, banana, mango, apple", "food-fish": "fish, mach, maach, ilish",
+	"food-meat": "meat, mangsho, gosht, chicken, beef, mutton", "food-dairy": "milk, egg, yogurt, cheese",
 	"food-bakery": "bread, cake, biscuit", "food-rest": "restaurant, dining, biryani, lunch out",
 	"food-street": "street food, fuchka, chotpoti", "food-take": "takeout, foodpanda, delivery",
-	"food-snack": "snacks, chips, chanachur", "food-bev": "tea, coffee, juice, drinks",
+	"food-snack": "snacks, nasta, tiffin, chips, chanachur", "food-bev": "tea, coffee, juice, drinks",
 	"food-misc": "food, khabar",
 	// Transport
-	"trans-pub": "bus, train, metro", "trans-taxi": "uber, pathao, rickshaw, cng",
+	"trans-pub": "bus, train, metro, leguna, tempo", "trans-taxi": "uber, pathao, rickshaw, cng",
 	"trans-fuel": "fuel, petrol, octane, gas", "trans-toll": "toll, parking",
 	"trans-maint": "servicing, repair, mechanic", "trans-other": "transport, fare",
 	// Shopping
-	"shop-supply": "detergent, cleaning, broom", "shop-cloth": "clothes, shirt, pant, saree",
-	"shop-foot": "shoes, sandal, slipper", "shop-elec": "phone, charger, laptop, gadget",
+	"shop-supply": "detergent, cleaning, broom", "shop-cloth": "clothes, jama, kapor, panjabi, shirt, pant, saree",
+	"shop-foot": "shoes, juta, sandal, slipper", "shop-elec": "phone, charger, laptop, gadget",
 	"shop-jewelry": "jewelry, gold, ring, chain", "shop-beauty": "makeup, perfume, cosmetics",
 	"shop-acc": "watch, bag, belt, sunglasses", "shop-stat": "pen, notebook, stationery",
 	"shop-other": "shopping, purchase",
@@ -365,14 +365,14 @@ var subKeywords = map[string]string{
 	"fin-misc": "financial, misc",
 	// Housing
 	"house-rent": "rent, house rent, basha bhara", "house-util": "electricity, gas, water bill",
-	"house-net": "internet, wifi, broadband", "house-serv": "maid, cleaner, driver",
+	"house-net": "internet, wifi, broadband", "house-serv": "maid, bua, buya, cleaner, driver",
 	"house-maint": "repair, plumbing, electrician", "house-furn": "furniture, table, bed",
 	"house-real": "flat, land, plot", "house-misc": "household, home",
 	// Health
 	"health-doc": "doctor, consultation, clinic", "health-test": "test, xray, ultrasound, lab",
 	"health-med": "medicine, pharmacy, drugs", "health-other": "surgery, dental, therapy",
 	// Personal Care
-	"pc-salon": "salon, haircut, barber, parlor", "pc-skin": "skincare, cream, facewash",
+	"pc-salon": "salon, haircut, chuler kat, chul kata, barber, parlor", "pc-skin": "skincare, cream, facewash",
 	"pc-spa": "spa, massage", "pc-toilet": "soap, shampoo, toothpaste",
 	"pc-fit": "gym, yoga, fitness", "pc-smoke": "cigarette, vape, paan",
 	"pc-misc": "personal care, wellness",
