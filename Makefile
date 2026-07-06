@@ -23,6 +23,10 @@ endif
 DOCKER_IMAGE := $(REGISTRY)/$(BIN)
 GO_VERSION   ?= 1.24
 
+# Local dev: allowed host + direct API base for the web dev server (override per run if needed).
+DEV_WEB_HOST ?= khorchapati.mrahman.xyz
+DEV_API      ?= https://khorchapati-api.mrahman.xyz
+
 # ── Build ─────────────────────────────────────────────────────────────────────
 
 all: # @HELP builds the binary
@@ -39,7 +43,7 @@ run: # @HELP builds and runs locally using native Go (no Docker)
 dev: # @HELP runs backend + web dev server together with prefixed logs (ctrl+c stops both)
 	@trap 'kill 0' INT TERM; \
 	( go run . serve 2>&1 | sed -u 's/^/[api] /' ) & \
-	( cd web && npm run dev 2>&1 | sed -u 's/^/[web] /' ) & \
+	( cd web && VITE_ALLOWED_HOSTS=$(DEV_WEB_HOST) VITE_API_BASE=$(DEV_API) npm run dev 2>&1 | sed -u 's/^/[web] /' ) & \
 	wait
 
 # ── Format ───────────────────────────────────────────────────────────────────
