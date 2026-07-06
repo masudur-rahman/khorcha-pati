@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/masudur-rahman/expense-tracker-bot/configs"
 	"github.com/masudur-rahman/expense-tracker-bot/models"
@@ -89,7 +90,39 @@ func TxnCategoryClassifierForType(ctx context.Context, userInput string, txnType
 	if result.Subcategory == "" {
 		return nil, errors.New("transaction category can't be determined")
 	}
+	result.Intent = normalizeIntent(result.Intent, result.Subcategory)
 	return result, nil
+}
+
+// validIntents are the only intent values the parser and cache understand.
+var validIntents = map[string]bool{"income": true, "expense": true, "transfer": true}
+
+// normalizeIntent coerces an AI-provided intent into the {income, expense, transfer} set.
+// Free-form (non-Gemini) providers can return arbitrary text in the intent field; when it is
+// not a valid intent, derive one from the subcategory's allowed types (a single allowed type
+// wins) and fall back to expense, so a malformed intent never reaches the cache or the parser.
+func normalizeIntent(intent, subID string) string {
+	got := strings.ToLower(strings.TrimSpace(intent))
+	if validIntents[got] {
+		return got
+	}
+	fmt.Printf("AI returned invalid intent %q, deriving from subcategory %q\n", intent, subID)
+	if types := models.SubcategoryTypes[subID]; len(types) == 1 {
+		return intentForType(types[0])
+	}
+	return "expense"
+}
+
+// intentForType maps a transaction type to its intent string.
+func intentForType(t models.TransactionType) string {
+	switch t {
+	case models.IncomeTransaction:
+		return "income"
+	case models.TransferTransaction:
+		return "transfer"
+	default:
+		return "expense"
+	}
 }
 
 // runClassifier calls a single AI provider. The bool reports whether an AI actually ran; it is

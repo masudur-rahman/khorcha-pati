@@ -9,6 +9,33 @@ import (
 	"time"
 )
 
+func TestNormalizeIntent(t *testing.T) {
+	tests := []struct {
+		name   string
+		intent string
+		subID  string
+		want   string
+	}{
+		{"valid income", "income", "fin-sal", "income"},
+		{"valid expense", "expense", "food-rest", "expense"},
+		{"valid transfer", "transfer", "fin-transfer", "transfer"},
+		{"case and space normalized", "  Income ", "fin-sal", "income"},
+		{"garbage derives income from single-type sub", "Record a birthday gift income", "fin-sal", "income"},
+		{"garbage derives transfer from single-type sub", "moving money around", "fin-transfer", "transfer"},
+		{"garbage derives expense from single-type sub", "Record a gift expense for a niece", "food-rest", "expense"},
+		{"garbage on multi-type sub defaults to expense", "Record a birthday gift expense", "misc-gift", "expense"},
+		{"garbage on unknown sub defaults to expense", "some reasoning text", "no-such-sub", "expense"},
+		{"empty intent defaults to expense", "", "misc-gift", "expense"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := normalizeIntent(tt.intent, tt.subID); got != tt.want {
+				t.Errorf("normalizeIntent(%q, %q) = %q, want %q", tt.intent, tt.subID, got, tt.want)
+			}
+		})
+	}
+}
+
 func TestTxnCategoryClassifier(t *testing.T) {
 	if os.Getenv("GEMINI_API_KEY") == "" && os.Getenv("OPENROUTER_API_KEY") == "" {
 		t.Skip("no AI API key set, skipping")
