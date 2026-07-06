@@ -13,10 +13,12 @@ const (
 	Gemini20FlashLite   = "gemini-2.0-flash-lite"
 	Gemini25Flash       = "gemini-2.5-flash"
 	Gemini3FlashPreview = "gemini-3-flash-preview"
+	Gemini35Flash       = "gemini-3.5-flash"
+	Gemini31FlashLite   = "gemini-3.1-flash-lite"
 )
 
 func TxnSubcategoryClassifier(ctx context.Context, apiKey, userInput, taxonomyJSON string, model ...string) (*ClassificationResult, error) {
-	classifier := Gemini25FlashLite
+	classifier := Gemini31FlashLite
 	if len(model) > 0 {
 		classifier = model[0]
 	}

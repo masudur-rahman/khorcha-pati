@@ -35,16 +35,23 @@ type ChatRequest struct {
 type OpenRouterModel string
 
 const (
-	DeepSeekChatFree     OpenRouterModel = "deepseek/deepseek-chat:free"
-	DeepSeekR1Free       OpenRouterModel = "deepseek/deepseek-r1-distill-qwen-1.5b:free"
-	DeepSeekR10525Free   OpenRouterModel = "deepseek/deepseek-r1-0528:free"
-	Gemini20FlashFree    OpenRouterModel = "google/gemini-2.0-flash-exp:free"
-	Gemma34bITFree       OpenRouterModel = "google/gemma-3-4b-it:free"
-	NVDIANemotron30bFree OpenRouterModel = "nvidia/nemotron-3-nano-30b-a3b:free" // Working model
-	NVDIANemotron9bFree  OpenRouterModel = "nvidia/nemotron-nano-9b-v2:free"
-	NVDIANemotron12bFree OpenRouterModel = "nvidia/nemotron-nano-12b-v2-vl:free"
-	DeepSeekV31NexN1Free OpenRouterModel = "nex-agi/deepseek-v3.1-nex-n1:free"
-	StepFun35FlashFree   OpenRouterModel = "stepfun/step-3.5-flash:free"
+	DeepSeekChatFree              OpenRouterModel = "deepseek/deepseek-chat:free"
+	DeepSeekR1Free                OpenRouterModel = "deepseek/deepseek-r1-distill-qwen-1.5b:free"
+	DeepSeekR10525Free            OpenRouterModel = "deepseek/deepseek-r1-0528:free"
+	Gemini20FlashFree             OpenRouterModel = "google/gemini-2.0-flash-exp:free"
+	Gemma34bITFree                OpenRouterModel = "google/gemma-3-4b-it:free"
+	NVDIANemotron30bFree          OpenRouterModel = "nvidia/nemotron-3-nano-30b-a3b:free" // Working model
+	NVDIANemotron9bFree           OpenRouterModel = "nvidia/nemotron-nano-9b-v2:free"
+	NVDIANemotron12bFree          OpenRouterModel = "nvidia/nemotron-nano-12b-v2-vl:free"
+	DeepSeekV31NexN1Free          OpenRouterModel = "nex-agi/deepseek-v3.1-nex-n1:free"
+	StepFun35FlashFree            OpenRouterModel = "stepfun/step-3.5-flash:free"
+	NVDIANemotronUltra55bFree     OpenRouterModel = "nvidia/nemotron-3-ultra-550b-a55b:free"
+	NVDIANLLamaNemotronRerankFree OpenRouterModel = "nvidia/llama-nemotron-rerank-vl-1b-v2:free"
+	NVIDIANemotronSuper120bFree   OpenRouterModel = "nvidia/nemotron-3-super-120b-a12b:free"
+	PoolsideLagunaM1Free          OpenRouterModel = "poolside/laguna-m.1:free"
+	OpenAIGPTOSS120bFree          OpenRouterModel = "openai/gpt-oss-120b:free"
+	CohereNorthMiniCodeFree       OpenRouterModel = "cohere/north-mini-code:free"
+	//ByteDanceSeedream             OpenRouterModel = "bytedance-seed/seedream-4.5"
 )
 
 // NewClient creates an OpenRouter client
@@ -160,7 +167,7 @@ func (c *Client) query(ctx context.Context, model OpenRouterModel, messages []ma
 func (c *Client) TxnSubcategoryClassifier(ctx context.Context, userInput string, taxonomyJSON string) (*ClassificationResult, error) {
 	messages := c.buildPrompt(taxonomyJSON, userInput)
 
-	result, err := c.query(ctx, NVDIANemotron30bFree, messages)
+	result, err := c.query(ctx, NVDIANLLamaNemotronRerankFree, messages)
 	if err != nil {
 		return nil, err
 	}
