@@ -2,5 +2,7 @@
   "listenHost": "0.0.0.0",
   "listenPort": 65262,
   "serverName": "khorcha-pati.mrahman.xyz",
-  "apiBase": "https://khorcha-pati-api.mrahman.xyz"
+  "apiBase": "https://khorcha-pati-api.mrahman.xyz",
+  "botUrl": "https://t.me/KhorchaPatiBot",
+  "repoUrl": "https://github.com/masudur-rahman/khorcha-pati"
 }

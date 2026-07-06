@@ -1,9 +1,10 @@
 import { useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
+import { getBotUrl, getRepoUrl } from '../api/client'
 import './Landing.css'
 
-const BOT_URL = 'https://t.me/XpenseTrackerBot'
-const REPO_URL = 'https://github.com/masudur-rahman/expense-tracker-bot'
+const BOT_URL = getBotUrl()
+const REPO_URL = getRepoUrl()
 
 export default function Landing() {
   const heroLayerRefs = useRef<HTMLElement[]>([])

@@ -3,6 +3,7 @@ import { useNavigate, useLocation, Link } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { requestOTP, verifyOTP, initQR, pollQR, verifyMagicLink } from '../api/endpoints'
 import { QRCodeSVG } from 'qrcode.react'
+import { getBotUrl } from '../api/client'
 
 export default function Login() {
   const [tab, setTab] = useState<'otp' | 'qr'>('otp')
@@ -104,7 +105,7 @@ export default function Login() {
 
         <div style={{ marginTop: 28, paddingTop: 20, borderTop: '1px solid #DFE1E6', textAlign: 'center' }}>
           <p style={{ fontSize: 12, color: '#6B778C', fontWeight: 500 }}>
-            Need help? Contact <a href="https://t.me/expense_tracker_bot" target="_blank" rel="noreferrer" style={{ color: '#0052CC', fontWeight: 700, textDecoration: 'none' }}>Support Bot</a>
+            Need help? Contact <a href={getBotUrl()} target="_blank" rel="noreferrer" style={{ color: '#0052CC', fontWeight: 700, textDecoration: 'none' }}>Support Bot</a>
           </p>
         </div>
       </div>

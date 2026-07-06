@@ -16,17 +16,23 @@ LISTEN_HOST="${LISTEN_HOST:-$(cfg listenHost)}"
 LISTEN_PORT="${LISTEN_PORT:-$(cfg listenPort)}"
 SERVER_NAME="${SERVER_NAME:-$(cfg serverName)}"
 API_BASE="${API_BASE:-$(cfg apiBase)}"
+BOT_URL="${BOT_URL:-$(cfg botUrl)}"
+REPO_URL="${REPO_URL:-$(cfg repoUrl)}"
 
 # Apply defaults
 LISTEN_HOST="${LISTEN_HOST:-0.0.0.0}"
 LISTEN_PORT="${LISTEN_PORT:-65262}"
 SERVER_NAME="${SERVER_NAME:-_}"
 API_BASE="${API_BASE:-https://khorcha-pati-api.mrahman.xyz}"
+BOT_URL="${BOT_URL:-https://t.me/KhorchaPatiBot}"
+REPO_URL="${REPO_URL:-https://github.com/masudur-rahman/khorcha-pati}"
 
 # Generate runtime config for the frontend JS app
 cat >/usr/share/nginx/html/config.js <<EOF
 window.__CONFIG__ = {
   API_BASE: "${API_BASE}",
+  BOT_URL: "${BOT_URL}",
+  REPO_URL: "${REPO_URL}",
 };
 EOF
 
