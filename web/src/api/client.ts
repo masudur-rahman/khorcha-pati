@@ -9,14 +9,19 @@ export function getApiBase(): string {
 const DEFAULT_BOT_URL = 'https://t.me/KhorchaPatiBot'
 const DEFAULT_REPO_URL = 'https://github.com/masudur-rahman/khorcha-pati'
 
+// absoluteUrl ensures a link has a scheme so the browser never resolves it relative to the origin.
+function absoluteUrl(url: string): string {
+  return /^https?:\/\//i.test(url) ? url : `https://${url.replace(/^\/+/, '')}`
+}
+
 // getBotUrl returns the Telegram bot link from runtime config, falling back to the default handle.
 export function getBotUrl(): string {
-  return (window as any).__CONFIG__?.BOT_URL || import.meta.env.VITE_BOT_URL || DEFAULT_BOT_URL
+  return absoluteUrl((window as any).__CONFIG__?.BOT_URL || import.meta.env.VITE_BOT_URL || DEFAULT_BOT_URL)
 }
 
 // getRepoUrl returns the source repository link from runtime config, falling back to the default repo.
 export function getRepoUrl(): string {
-  return (window as any).__CONFIG__?.REPO_URL || import.meta.env.VITE_REPO_URL || DEFAULT_REPO_URL
+  return absoluteUrl((window as any).__CONFIG__?.REPO_URL || import.meta.env.VITE_REPO_URL || DEFAULT_REPO_URL)
 }
 
 const RT_KEY = 'expense_rt'

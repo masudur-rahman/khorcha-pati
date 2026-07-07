@@ -49,6 +49,12 @@ server {
         try_files \$uri \$uri/ /index.html;
     }
 
+    # Runtime config changes every deploy — never cache it (exact match beats the regex below).
+    location = /config.js {
+        add_header Cache-Control "no-store";
+        expires -1;
+    }
+
     location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff2?)$ {
         expires 1y;
         add_header Cache-Control "public, immutable";
