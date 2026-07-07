@@ -119,6 +119,7 @@ func HandleExample(ctx telebot.Context) error {
 - govulncheck: Standard library vulnerabilities can be resolved by updating the `go` directive in `go.mod` to a patched version (e.g., 1.26.3). Dependencies in `vendor/` must be synced with `go mod vendor` after updates.
 - Backend intent validation: `validateClassification` in `api/web/ai_cache_handlers.go` should use `strings.EqualFold` when checking against predefined types in `models/transaction.go` to support case-insensitively validated intents.
 - Placeholder replacement: Reordering placeholder replacements to process double curly braces before single curly braces, or using a robust regular expression like `(?i)\{\{\s*name\s*\}\}|\{\s*name\s*\}` prevents sub-pattern matching from causing malformed outputs.
+- Commit Management: Always create a new commit when instructed to commit, rather than amending the previous commit, unless explicitly asked to amend.
 
 
 <!-- code-review-graph MCP tools -->

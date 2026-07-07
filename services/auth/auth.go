@@ -75,7 +75,7 @@ func (s *authService) RequestOTP(identifier string) error {
 		return fmt.Errorf("cache otp: %w", err)
 	}
 
-	msg := fmt.Sprintf("Your login code: %s\nExpires in 5 minutes.", otp)
+	msg := fmt.Sprintf("Your login code: `%s`\nExpires in 5 minutes.", otp)
 	return s.messenger.SendMessage(user.TelegramID, msg)
 }
 

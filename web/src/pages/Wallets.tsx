@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { listWallets } from '../api/endpoints'
+import { listWallets, listCategories, listSubcategories } from '../api/endpoints'
 import { useCreateWallet } from '../hooks/useWallets'
 import { useTransactions } from '../hooks/useTransactions'
 import { useSearch } from '../context/SearchContext'
@@ -97,6 +97,30 @@ export default function Wallets() {
 
 function WalletDrawer({ wallet, onClose }: { wallet: Wallet; onClose: () => void }) {
   const { data: resp } = useTransactions()
+  const { data: subcategories } = useQuery({ queryKey: ['subcategories'], queryFn: () => listSubcategories() })
+  const { data: categories } = useQuery({ queryKey: ['categories'], queryFn: () => listCategories() })
+
+  const subcatMap = useMemo(() => {
+    const m = new Map<string, string>()
+    subcategories?.forEach(s => m.set(s.id, s.name))
+    return m
+  }, [subcategories])
+
+  const catNameMap = useMemo(() => {
+    const m = new Map<string, string>()
+    categories?.forEach(c => m.set(c.id, c.name))
+    return m
+  }, [categories])
+
+  const subToCatMap = useMemo(() => {
+    const m = new Map<string, string>()
+    subcategories?.forEach(s => {
+      const cName = catNameMap.get(s.catId) || s.catId
+      m.set(s.id, cName)
+    })
+    return m
+  }, [subcategories, catNameMap])
+
   const txns = (resp?.data ?? [])
     .filter(t => t.srcId === wallet.shortName || t.dstId === wallet.shortName)
     .sort((a, b) => b.timestamp - a.timestamp)
@@ -139,10 +163,17 @@ function WalletDrawer({ wallet, onClose }: { wallet: Wallet; onClose: () => void
                     borderRadius: 'var(--radius-md)', gap: 12,
                   }}>
                     <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0, gap: 4 }}>
-                      <Badge type={t.type as any} />
-                      <span style={{ fontSize: 11, color: 'var(--color-text-tertiary)', fontWeight: 600 }}>
-                        {new Date(t.timestamp * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                      </span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <Badge type={t.type as any} />
+                        <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {t.remarks || subcatMap.get(t.subcategoryId) || t.subcategoryId}
+                        </span>
+                      </div>
+                      <div style={{ fontSize: 11, color: 'var(--color-text-tertiary)', fontWeight: 500, marginLeft: 4, display: 'flex', gap: 6, alignItems: 'center' }}>
+                        <span>{subToCatMap.get(t.subcategoryId) || 'Miscellaneous'} › {subcatMap.get(t.subcategoryId) || t.subcategoryId}</span>
+                        <span>•</span>
+                        <span>{new Date(t.timestamp * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                      </div>
                     </div>
                     <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color, fontSize: 14, whiteSpace: 'nowrap' }}>
                       {sign}{fmt(t.amount)}

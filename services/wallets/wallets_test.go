@@ -6,8 +6,10 @@ import (
 
 	"github.com/masudur-rahman/khorcha-pati/models"
 	"github.com/masudur-rahman/khorcha-pati/repos/mocks"
+	"github.com/masudur-rahman/styx"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
 const testUserID int64 = 42
@@ -15,7 +17,8 @@ const testUserID int64 = 42
 func TestCreateWallet_success(t *testing.T) {
 	t.Parallel()
 	repo := &mocks.WalletRepo{}
-	svc := NewWalletService(repo)
+	txnRepo := &mocks.TransactionRepo{}
+	svc := NewWalletService(styx.UnitOfWork{}, repo, txnRepo)
 
 	wallet := &models.Wallet{
 		UserID:    testUserID,
@@ -32,10 +35,83 @@ func TestCreateWallet_success(t *testing.T) {
 	repo.AssertExpectations(t)
 }
 
+func TestCreateWallet_positiveInitialBalance(t *testing.T) {
+	t.Parallel()
+	repo := &mocks.WalletRepo{}
+	txnRepo := &mocks.TransactionRepo{}
+	svc := NewWalletService(styx.UnitOfWork{}, repo, txnRepo)
+
+	wallet := &models.Wallet{
+		UserID:    testUserID,
+		ShortName: "cash",
+		Name:      "Cash",
+		Type:      models.CashAccount,
+		Balance:   1000,
+	}
+
+	repo.On("AddNewWallet", mock.MatchedBy(func(w *models.Wallet) bool {
+		return w.Balance == 0
+	})).Return(nil)
+
+	txnRepo.On("AddTransaction", mock.MatchedBy(func(txn models.Transaction) bool {
+		return txn.UserID == testUserID &&
+			txn.Amount == 1000 &&
+			txn.Type == models.IncomeTransaction &&
+			txn.DstID == "cash" &&
+			txn.SubcategoryID == "misc-init" &&
+			txn.Remarks == "Initial Amount"
+	})).Return(nil)
+
+	repo.On("UpdateWalletBalance", testUserID, "cash", 1000.0).Return(nil)
+
+	err := svc.CreateWallet(wallet)
+
+	assert.NoError(t, err)
+	repo.AssertExpectations(t)
+	txnRepo.AssertExpectations(t)
+}
+
+func TestCreateWallet_negativeInitialBalance(t *testing.T) {
+	t.Parallel()
+	repo := &mocks.WalletRepo{}
+	txnRepo := &mocks.TransactionRepo{}
+	svc := NewWalletService(styx.UnitOfWork{}, repo, txnRepo)
+
+	wallet := &models.Wallet{
+		UserID:    testUserID,
+		ShortName: "cc",
+		Name:      "Credit Card",
+		Type:      models.BankAccount,
+		Balance:   -500,
+	}
+
+	repo.On("AddNewWallet", mock.MatchedBy(func(w *models.Wallet) bool {
+		return w.Balance == 0
+	})).Return(nil)
+
+	txnRepo.On("AddTransaction", mock.MatchedBy(func(txn models.Transaction) bool {
+		return txn.UserID == testUserID &&
+			txn.Amount == 500 &&
+			txn.Type == models.ExpenseTransaction &&
+			txn.SrcID == "cc" &&
+			txn.SubcategoryID == "misc-init" &&
+			txn.Remarks == "Initial Amount"
+	})).Return(nil)
+
+	repo.On("UpdateWalletBalance", testUserID, "cc", -500.0).Return(nil)
+
+	err := svc.CreateWallet(wallet)
+
+	assert.NoError(t, err)
+	repo.AssertExpectations(t)
+	txnRepo.AssertExpectations(t)
+}
+
 func TestCreateWallet_missingUserID(t *testing.T) {
 	t.Parallel()
 	repo := &mocks.WalletRepo{}
-	svc := NewWalletService(repo)
+	txnRepo := &mocks.TransactionRepo{}
+	svc := NewWalletService(styx.UnitOfWork{}, repo, txnRepo)
 
 	wallet := &models.Wallet{ShortName: "cash", Name: "Cash"}
 
@@ -47,7 +123,8 @@ func TestCreateWallet_missingUserID(t *testing.T) {
 func TestCreateWallet_duplicateError(t *testing.T) {
 	t.Parallel()
 	repo := &mocks.WalletRepo{}
-	svc := NewWalletService(repo)
+	txnRepo := &mocks.TransactionRepo{}
+	svc := NewWalletService(styx.UnitOfWork{}, repo, txnRepo)
 
 	wallet := &models.Wallet{
 		UserID:    testUserID,
@@ -66,7 +143,8 @@ func TestCreateWallet_duplicateError(t *testing.T) {
 func TestGetWalletByShortName_success(t *testing.T) {
 	t.Parallel()
 	repo := &mocks.WalletRepo{}
-	svc := NewWalletService(repo)
+	txnRepo := &mocks.TransactionRepo{}
+	svc := NewWalletService(styx.UnitOfWork{}, repo, txnRepo)
 
 	expected := &models.Wallet{
 		ID:        1,
@@ -86,7 +164,8 @@ func TestGetWalletByShortName_success(t *testing.T) {
 func TestGetWalletByShortName_notFound(t *testing.T) {
 	t.Parallel()
 	repo := &mocks.WalletRepo{}
-	svc := NewWalletService(repo)
+	txnRepo := &mocks.TransactionRepo{}
+	svc := NewWalletService(styx.UnitOfWork{}, repo, txnRepo)
 
 	repo.On("GetWalletByShortName", testUserID, "nope").
 		Return(nil, fmt.Errorf("not found"))
@@ -100,7 +179,8 @@ func TestGetWalletByShortName_notFound(t *testing.T) {
 func TestListWallets_success(t *testing.T) {
 	t.Parallel()
 	repo := &mocks.WalletRepo{}
-	svc := NewWalletService(repo)
+	txnRepo := &mocks.TransactionRepo{}
+	svc := NewWalletService(styx.UnitOfWork{}, repo, txnRepo)
 
 	expected := []models.Wallet{
 		{ID: 1, ShortName: "cash", Balance: 500},
@@ -118,7 +198,8 @@ func TestListWallets_success(t *testing.T) {
 func TestUpdateWalletBalance_success(t *testing.T) {
 	t.Parallel()
 	repo := &mocks.WalletRepo{}
-	svc := NewWalletService(repo)
+	txnRepo := &mocks.TransactionRepo{}
+	svc := NewWalletService(styx.UnitOfWork{}, repo, txnRepo)
 
 	repo.On("UpdateWalletBalance", testUserID, "cash", 100.0).Return(nil)
 
@@ -130,7 +211,8 @@ func TestUpdateWalletBalance_success(t *testing.T) {
 func TestUpdateWalletBalance_optimisticLock(t *testing.T) {
 	t.Parallel()
 	repo := &mocks.WalletRepo{}
-	svc := NewWalletService(repo)
+	txnRepo := &mocks.TransactionRepo{}
+	svc := NewWalletService(styx.UnitOfWork{}, repo, txnRepo)
 
 	repo.On("UpdateWalletBalance", testUserID, "cash", 100.0).
 		Return(models.ErrOptimisticLock)
@@ -143,7 +225,8 @@ func TestUpdateWalletBalance_optimisticLock(t *testing.T) {
 func TestDeleteWallet_success(t *testing.T) {
 	t.Parallel()
 	repo := &mocks.WalletRepo{}
-	svc := NewWalletService(repo)
+	txnRepo := &mocks.TransactionRepo{}
+	svc := NewWalletService(styx.UnitOfWork{}, repo, txnRepo)
 
 	repo.On("DeleteWallet", testUserID, "cash").Return(nil)
 
