@@ -1,25 +1,35 @@
 # syntax=docker/dockerfile:1
 # ══════════════════════════════════════════════════════════════════════════════
-# Stage 1 · Build
+# Application image. The heavy runtime layers (fonts, wkhtmltopdf, chromium) live
+# in prebuilt base images (see Dockerfile.base) so this build only cross-compiles
+# the Go binary and copies it in.
+#
+# Base references are injected as build args by the Makefile so each registry
+# (ghcr / docker hub) resolves its own base. Pin to an immutable digest in CI
+# for supply-chain safety, e.g. BASE_WK=<registry>/khorcha-pati-base@sha256:…
 # ══════════════════════════════════════════════════════════════════════════════
-FROM golang:1.26-bookworm AS builder
+ARG BASE_WK=masudjuly02/khorcha-pati-base:wkhtmltopdf
+ARG BASE_CHROMEDP=masudjuly02/khorcha-pati-base:chromedp
+
+# ── Build (runs natively on the builder platform, cross-compiles per target) ──
+FROM --platform=$BUILDPLATFORM golang:1.26-bookworm AS builder
 
 ARG VERSION=dev
 ARG BUILD_DATE=unknown
 ARG GIT_COMMIT=none
+ARG TARGETOS
+ARG TARGETARCH
 
 WORKDIR /app
 
-# Only copy go.mod and go.sum to cache dependencies
 COPY go.mod go.sum ./
 RUN --mount=type=cache,target=/go/pkg/mod \
     go mod download
 
-# Copy source code after dependencies are cached
 COPY . .
 RUN --mount=type=cache,target=/go/pkg/mod \
     --mount=type=cache,target=/root/.cache/go-build \
-    CGO_ENABLED=0 GOOS=linux \
+    CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} \
     go build \
       -ldflags "-s -w \
         -X github.com/masudur-rahman/khorcha-pati/cmd.Version=${VERSION} \
@@ -27,108 +37,10 @@ RUN --mount=type=cache,target=/go/pkg/mod \
         -X github.com/masudur-rahman/khorcha-pati/cmd.GitCommit=${GIT_COMMIT}" \
       -o /bin/khorcha-pati .
 
-# ══════════════════════════════════════════════════════════════════════════════
-# Stage 2 · Runtime base
-# ══════════════════════════════════════════════════════════════════════════════
-FROM debian:bookworm-slim AS runtime-base
+# ── wkhtmltopdf edition ───────────────────────────────────────────────────────
+FROM ${BASE_WK} AS wkhtmltopdf
+COPY --from=builder --chown=65535:65535 /bin/khorcha-pati /app/khorcha-pati
 
-ARG DEBIAN_RELEASE_NAME=bookworm
-
-# Use apt cache mounts to speed up package installation
-RUN rm -f /etc/apt/apt.conf.d/docker-clean; echo 'Binary::apt::APT::Keep-Downloaded-Packages "true";' > /etc/apt/apt.conf.d/keep-cache
-RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
-    --mount=type=cache,target=/var/lib/apt,sharing=locked \
-    apt-get update && \
-    apt-get upgrade -y && \
-    apt-get install -y --no-install-recommends ca-certificates wget gnupg fontconfig && \
-    echo 'Etc/UTC' > /etc/timezone
-
-# Pre-seed EULA for ttf-mscorefonts-installer to avoid interactive prompt
-RUN echo "ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula select true" | debconf-set-selections
-
-RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
-    --mount=type=cache,target=/var/lib/apt,sharing=locked \
-    echo "deb http://deb.debian.org/debian ${DEBIAN_RELEASE_NAME} contrib" >> /etc/apt/sources.list && \
-    apt-get update && \
-    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-      fonts-lohit-beng-bengali \
-      fonts-dejavu \
-      ttf-mscorefonts-installer && \
-    fc-cache -f
-
-WORKDIR /app
-COPY --from=builder /bin/khorcha-pati /app/khorcha-pati
-
-EXPOSE 8080
-
-HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-  CMD ["wget", "-q", "--spider", "http://localhost:8080/healthz"]
-
-ENTRYPOINT ["/app/khorcha-pati"]
-CMD ["serve"]
-
-# ══════════════════════════════════════════════════════════════════════════════
-# Stage 3a · wkhtmltopdf edition
-# ══════════════════════════════════════════════════════════════════════════════
-FROM runtime-base AS wkhtmltopdf
-
-LABEL org.opencontainers.image.source="https://github.com/masudur-rahman/khorcha-pati"
-
-ARG TARGETARCH
-ARG WKHTMLTOPDF_VERSION=0.12.6.1-3
-ARG DEBIAN_RELEASE_NAME=bookworm
-
-# Cache the heavy download and install dependencies properly
-RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
-    --mount=type=cache,target=/var/lib/apt,sharing=locked \
-    set -x && \
-    # Map TARGETARCH to wkhtmltopdf arch naming
-    case "${TARGETARCH}" in \
-        "amd64") WK_ARCH="amd64" ;; \
-        "arm64") WK_ARCH="arm64" ;; \
-        *) WK_ARCH="amd64" ;; \
-    esac && \
-    apt-get update && \
-    apt-get install -y --no-install-recommends \
-      libxrender1 libxtst6 libfontconfig1 libjpeg62-turbo xfonts-75dpi xfonts-base && \
-    wget -q https://github.com/wkhtmltopdf/packaging/releases/download/${WKHTMLTOPDF_VERSION}/wkhtmltox_${WKHTMLTOPDF_VERSION}.${DEBIAN_RELEASE_NAME}_${WK_ARCH}.deb && \
-    dpkg -i wkhtmltox_${WKHTMLTOPDF_VERSION}.${DEBIAN_RELEASE_NAME}_${WK_ARCH}.deb && \
-    ldconfig && \
-    rm wkhtmltox_${WKHTMLTOPDF_VERSION}.${DEBIAN_RELEASE_NAME}_${WK_ARCH}.deb
-
-RUN mkdir -p /app/configs /app/.sqlite && \
-    chown -R 65535:65535 /app
-
-USER 65535:65535
-
-# ══════════════════════════════════════════════════════════════════════════════
-# Stage 2b · Chromium Base (Stable Dependencies)
-# ══════════════════════════════════════════════════════════════════════════════
-FROM runtime-base AS chromium-base
-
-# Install Chromium and its dependencies with cache mounts
-RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
-    --mount=type=cache,target=/var/lib/apt,sharing=locked \
-    apt-get update && \
-    apt-get install -y --no-install-recommends \
-      chromium \
-      libnss3 \
-      libxss1 \
-      libasound2 \
-      libatk-bridge2.0-0 \
-      libgtk-3-0 && \
-    fc-cache -f
-
-# ══════════════════════════════════════════════════════════════════════════════
-# Stage 3b · chromedp edition
-# ══════════════════════════════════════════════════════════════════════════════
-FROM chromium-base AS chromedp
-
-LABEL org.opencontainers.image.source="https://github.com/masudur-rahman/khorcha-pati"
-
-ENV CHROME_PATH=/usr/bin/chromium
-ENV HOME=/tmp
-RUN mkdir -p /app/configs /app/.sqlite && \
-    chown -R 65535:65535 /app
-
-USER 65535:65535
+# ── chromedp edition ──────────────────────────────────────────────────────────
+FROM ${BASE_CHROMEDP} AS chromedp
+COPY --from=builder --chown=65535:65535 /bin/khorcha-pati /app/khorcha-pati

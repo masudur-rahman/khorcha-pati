@@ -1,0 +1,100 @@
+# syntax=docker/dockerfile:1
+# ══════════════════════════════════════════════════════════════════════════════
+# Prebuilt runtime base images for khorcha-pati.
+#
+# These carry the heavy, slow-changing layers (OS packages, fonts, wkhtmltopdf /
+# chromium) so the per-commit application build only compiles Go and copies the
+# binary. Built + pushed by .github/workflows/base-image.yml on a weekly schedule
+# (for security patches) and whenever this file changes.
+#
+# Targets:  wkhtmltopdf  ·  chromedp
+# ══════════════════════════════════════════════════════════════════════════════
+
+# ── Common runtime base ───────────────────────────────────────────────────────
+FROM debian:bookworm-slim AS runtime-base
+
+ARG DEBIAN_RELEASE_NAME=bookworm
+
+RUN rm -f /etc/apt/apt.conf.d/docker-clean; echo 'Binary::apt::APT::Keep-Downloaded-Packages "true";' > /etc/apt/apt.conf.d/keep-cache
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    apt-get update && \
+    apt-get upgrade -y && \
+    apt-get install -y --no-install-recommends ca-certificates wget gnupg fontconfig && \
+    echo 'Etc/UTC' > /etc/timezone
+
+# Pre-seed EULA for ttf-mscorefonts-installer to avoid interactive prompt
+RUN echo "ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula select true" | debconf-set-selections
+
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    echo "deb http://deb.debian.org/debian ${DEBIAN_RELEASE_NAME} contrib" >> /etc/apt/sources.list && \
+    apt-get update && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+      fonts-lohit-beng-bengali \
+      fonts-dejavu \
+      ttf-mscorefonts-installer && \
+    fc-cache -f
+
+WORKDIR /app
+
+EXPOSE 8080
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+  CMD ["wget", "-q", "--spider", "http://localhost:8080/healthz"]
+
+ENTRYPOINT ["/app/khorcha-pati"]
+CMD ["serve"]
+
+# ── wkhtmltopdf edition ───────────────────────────────────────────────────────
+FROM runtime-base AS wkhtmltopdf
+
+LABEL org.opencontainers.image.source="https://github.com/masudur-rahman/khorcha-pati"
+
+ARG TARGETARCH
+ARG WKHTMLTOPDF_VERSION=0.12.6.1-3
+ARG DEBIAN_RELEASE_NAME=bookworm
+
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    set -x && \
+    case "${TARGETARCH}" in \
+        "amd64") WK_ARCH="amd64" ;; \
+        "arm64") WK_ARCH="arm64" ;; \
+        *) WK_ARCH="amd64" ;; \
+    esac && \
+    apt-get update && \
+    apt-get install -y --no-install-recommends \
+      libxrender1 libxtst6 libfontconfig1 libjpeg62-turbo xfonts-75dpi xfonts-base && \
+    wget -q https://github.com/wkhtmltopdf/packaging/releases/download/${WKHTMLTOPDF_VERSION}/wkhtmltox_${WKHTMLTOPDF_VERSION}.${DEBIAN_RELEASE_NAME}_${WK_ARCH}.deb && \
+    dpkg -i wkhtmltox_${WKHTMLTOPDF_VERSION}.${DEBIAN_RELEASE_NAME}_${WK_ARCH}.deb && \
+    ldconfig && \
+    rm wkhtmltox_${WKHTMLTOPDF_VERSION}.${DEBIAN_RELEASE_NAME}_${WK_ARCH}.deb
+
+RUN mkdir -p /app/configs /app/.sqlite && chown -R 65535:65535 /app
+USER 65535:65535
+
+# ── Chromium base (stable deps) ───────────────────────────────────────────────
+FROM runtime-base AS chromium-base
+
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    apt-get update && \
+    apt-get install -y --no-install-recommends \
+      chromium \
+      libnss3 \
+      libxss1 \
+      libasound2 \
+      libatk-bridge2.0-0 \
+      libgtk-3-0 && \
+    fc-cache -f
+
+# ── chromedp edition ──────────────────────────────────────────────────────────
+FROM chromium-base AS chromedp
+
+LABEL org.opencontainers.image.source="https://github.com/masudur-rahman/khorcha-pati"
+
+ENV CHROME_PATH=/usr/bin/chromium
+ENV HOME=/tmp
+RUN mkdir -p /app/configs /app/.sqlite && chown -R 65535:65535 /app
+USER 65535:65535

@@ -23,6 +23,12 @@ endif
 DOCKER_IMAGE := $(REGISTRY)/$(BIN)
 GO_VERSION   ?= 1.24
 
+# Prebuilt runtime base images carry the heavy fonts/wkhtmltopdf/chromium layers.
+# Override BASE_REF_* with an immutable digest (…-base@sha256:…) to pin in CI.
+BASE_IMAGE        := $(REGISTRY)/$(BIN)-base
+BASE_REF_WK       ?= $(BASE_IMAGE):wkhtmltopdf
+BASE_REF_CHROMEDP ?= $(BASE_IMAGE):chromedp
+
 # Local dev: allowed host + direct API base for the web dev server (override per run if needed).
 DEV_WEB_HOST ?= khorchapati.mrahman.xyz
 DEV_API      ?= https://khorchapati-api.mrahman.xyz
@@ -109,6 +115,8 @@ docker-build: # @HELP builds a single-arch Docker image (PDF_GENERATOR=wkhtmltop
 	  --build-arg VERSION=$(VERSION) \
 	  --build-arg BUILD_DATE=$(commit_timestamp) \
 	  --build-arg GIT_COMMIT=$(commit_hash) \
+	  --build-arg BASE_WK=$(BASE_REF_WK) \
+	  --build-arg BASE_CHROMEDP=$(BASE_REF_CHROMEDP) \
 	  $(DOCKER_CACHE_ARGS) \
 	  -t $(DOCKER_IMAGE):$(VERSION)$(DOCKER_TAG_SUFFIX) \
 	  -f Dockerfile .
@@ -145,8 +153,40 @@ docker-compose-up: # @HELP runs backend + frontend via Docker Compose
 docker-build-push: # @HELP builds and pushes multi-arch image (PDF_GENERATOR=wkhtmltopdf|chromedp)
 	docker buildx build --platform linux/amd64,linux/arm64 \
 	  --target $(PDF_GENERATOR) \
+	  --build-arg VERSION=$(VERSION) \
+	  --build-arg BUILD_DATE=$(commit_timestamp) \
+	  --build-arg GIT_COMMIT=$(commit_hash) \
+	  --build-arg BASE_WK=$(BASE_REF_WK) \
+	  --build-arg BASE_CHROMEDP=$(BASE_REF_CHROMEDP) \
+	  $(DOCKER_CACHE_ARGS) \
 	  --output "type=image,push=true" \
-	  --tag $(DOCKER_IMAGE):$(VERSION)$(DOCKER_TAG_SUFFIX) .
+	  --tag $(DOCKER_IMAGE):$(VERSION)$(DOCKER_TAG_SUFFIX) \
+	  -f Dockerfile .
+
+.PHONY: ensure-base
+ensure-base: # @HELP builds the base images only if they are missing from the registry (self-heals a cold release)
+	@if docker manifest inspect $(BASE_REF_WK) >/dev/null 2>&1 && \
+	    docker manifest inspect $(BASE_REF_CHROMEDP) >/dev/null 2>&1; then \
+		echo "Base images present — skipping base build."; \
+	else \
+		echo "Base image(s) missing — building them first..."; \
+		$(MAKE) base-build-push --no-print-directory; \
+	fi
+
+.PHONY: base-build-push
+base-build-push: # @HELP builds and pushes the prebuilt runtime base images (wkhtmltopdf + chromedp)
+	docker buildx build --platform linux/amd64,linux/arm64 \
+	  --target wkhtmltopdf \
+	  $(DOCKER_CACHE_ARGS) \
+	  --output "type=image,push=true" \
+	  --tag $(BASE_REF_WK) \
+	  -f Dockerfile.base .
+	docker buildx build --platform linux/amd64,linux/arm64 \
+	  --target chromedp \
+	  $(DOCKER_CACHE_ARGS) \
+	  --output "type=image,push=true" \
+	  --tag $(BASE_REF_CHROMEDP) \
+	  -f Dockerfile.base .
 
 .PHONY: release
 release: # @HELP builds and pushes both wkhtmltopdf and chromedp backend images
