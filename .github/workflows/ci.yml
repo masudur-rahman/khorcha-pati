@@ -100,6 +100,10 @@ jobs:
       - name: Verify modules
         run: make verify
 
+      - name: Build runtime base (local, not pushed)
+        run: |
+          make base-build-local DOCKER_CACHE_ARGS="--cache-from=type=gha,scope=base --cache-to=type=gha,mode=max,scope=base"
+
       - name: Build container
         run: |
-          make docker-build DOCKER_CACHE_ARGS="--cache-from=type=gha --cache-to=type=gha,mode=max"
+          make docker-build DOCKER_CACHE_ARGS="--cache-from=type=gha,scope=app --cache-to=type=gha,mode=max,scope=app"

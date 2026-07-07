@@ -163,6 +163,14 @@ docker-build-push: # @HELP builds and pushes multi-arch image (PDF_GENERATOR=wkh
 	  --tag $(DOCKER_IMAGE):$(VERSION)$(DOCKER_TAG_SUFFIX) \
 	  -f Dockerfile .
 
+.PHONY: base-build-local
+base-build-local: # @HELP builds the runtime base locally (single-arch, not pushed) for CI/local image verification
+	DOCKER_BUILDKIT=1 docker build \
+	  --target $(PDF_GENERATOR) \
+	  $(DOCKER_CACHE_ARGS) \
+	  -t $(if $(filter chromedp,$(PDF_GENERATOR)),$(BASE_REF_CHROMEDP),$(BASE_REF_WK)) \
+	  -f Dockerfile.base .
+
 .PHONY: ensure-base
 ensure-base: # @HELP builds the base images only if they are missing from the registry (self-heals a cold release)
 	@if docker manifest inspect $(BASE_REF_WK) >/dev/null 2>&1 && \
