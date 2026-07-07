@@ -21,7 +21,7 @@ import MetricChip from '../components/ui/MetricChip'
 import TxnDialog, { TXN_TYPE_OPTIONS, TxnType } from '../components/ui/TxnDialog'
 
 const typeOptions = TXN_TYPE_OPTIONS
-const PAGE_SIZE = 15
+const PAGE_SIZE = 10
 
 export default function Transactions() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -160,19 +160,19 @@ export default function Transactions() {
       {/* Table */}
       <Card padding={0}>
         <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+          <table style={{ width: '100%', tableLayout: 'fixed', borderCollapse: 'collapse', fontSize: 13 }}>
             <thead>
               <tr style={{ borderBottom: '1px solid var(--color-border)' }}>
                 {[
-                  { h: 'Date', cls: '' },
-                  { h: 'Type', cls: '' },
-                  { h: 'Category', cls: '' },
-                  { h: 'Amount', cls: '' },
-                  { h: 'Wallets', cls: 'hidden md:table-cell' },
-                  { h: 'Remarks', cls: 'hidden lg:table-cell' },
-                  { h: '', cls: '' },
-                ].map(({ h, cls }) => (
-                  <th key={h || 'actions'} className={cls} style={{ padding: '14px 24px', textAlign: h === 'Amount' ? 'right' : h === 'Wallets' ? 'center' : 'left', fontSize: 10, fontWeight: 700, color: 'var(--color-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{h}</th>
+                  { h: 'Date', cls: '', w: 96 },
+                  { h: 'Type', cls: '', w: 120 },
+                  { h: 'Category', cls: '', w: undefined },
+                  { h: 'Amount', cls: '', w: 130 },
+                  { h: 'Wallets', cls: 'hidden md:table-cell', w: 240 },
+                  { h: 'Remarks', cls: 'hidden lg:table-cell', w: undefined },
+                  { h: '', cls: '', w: 96 },
+                ].map(({ h, cls, w }) => (
+                  <th key={h || 'actions'} className={cls} style={{ width: w, padding: '14px 24px', textAlign: h === 'Amount' ? 'right' : h === 'Wallets' ? 'center' : 'left', fontSize: 10, fontWeight: 700, color: 'var(--color-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{h}</th>
                 ))}
               </tr>
             </thead>

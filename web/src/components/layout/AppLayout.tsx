@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
 import Sidebar from './Sidebar'
 import MobileNav from './MobileNav'
@@ -9,6 +9,11 @@ export default function AppLayout() {
   const location = useLocation()
   const showFab = location.pathname !== '/transactions'
   const [showAddTxn, setShowAddTxn] = useState(false)
+
+  // Reset scroll to the top whenever the route changes so a page never opens mid-scroll.
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [location.pathname])
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--color-bg)' }}>
