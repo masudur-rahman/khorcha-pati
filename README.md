@@ -1,7 +1,7 @@
-# Expense Tracker
+# Khorcha-Pati
 
 A Telegram Bot to track your expenses.
-`Expense Tracker Bot` is a Telegram Bot to track your daily transactions.
+`Khorcha-Pati` is a Telegram Bot to track your daily transactions.
 
 ## Features
 
@@ -20,8 +20,8 @@ A Telegram Bot to track your expenses.
 - **Mobile-First Formatting**: Summaries and lists are formatted with hierarchical tree connectors for perfect readability on mobile screens.
 
 ## Usage
-The `Expense Tracker Bot` is now available for public use.
-To use this bot, go to Telegram and search for [@XpenseTrackerBot](https://t.me/XpenseTrackerBot)
+The `Khorcha-Pati` bot is now available for public use.
+To use this bot, go to Telegram and search for [@KhorchaPatiBot](https://t.me/KhorchaPatiBot)
 
 Once you are inside the bot inbox,  press `Start` button to start using the Tracker Bot.
 
@@ -222,7 +222,7 @@ You always can send `/cat` command to list the subcategory
 
 ## Live Demonstration
 
-https://github.com/masudur-rahman/expense-tracker-bot/assets/13915755/83db45c8-1e84-473e-8d58-cda6ef8cc6ef
+https://github.com/masudur-rahman/khorcha-pati/assets/13915755/83db45c8-1e84-473e-8d58-cda6ef8cc6ef
 
 ## Future Work
 
@@ -234,7 +234,7 @@ A list of possible future work:
 
 ## Self Hosting
 
-If you want to host your own `Expense Tracker Bot`, refer to the [self-hosting](./docs-selfhost) doc page.
+If you want to host your own `Khorcha-Pati` bot, refer to the [self-hosting](./docs-selfhost) doc page.
 
 ## Contacts
 
