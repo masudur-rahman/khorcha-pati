@@ -36,11 +36,15 @@ func Dashboard(ctx telebot.Context) error {
 	if targetURL == "" {
 		targetURL = cfg.BaseURL
 	}
-	dashboardURL := fmt.Sprintf("%s/login?token=%s", strings.TrimRight(targetURL, "/"), token)
+	baseURL := strings.TrimRight(targetURL, "/")
+	dashboardURL := fmt.Sprintf("%s/login?token=%s", baseURL, token)
 
 	btn := &telebot.ReplyMarkup{}
 	webBtn := btn.URL("Open Dashboard", dashboardURL)
 	btn.Inline(btn.Row(webBtn))
 
-	return ctx.Send("Click to Open Dashboard", btn)
+	// URL shown as inline code (not a bare link) so it stays visible but non-tappable —
+	// users tap the button, which carries the one-time login token.
+	msg := fmt.Sprintf("🖥 *Your dashboard*\n`%s`\n\nTap the button below to open it — you'll be signed in automatically.", baseURL)
+	return ctx.Send(msg, btn, telebot.ModeMarkdown)
 }
