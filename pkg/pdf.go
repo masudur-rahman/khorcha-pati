@@ -72,7 +72,9 @@ func convertViaChromeDP(outputFile string, htmlContent, header, footer []byte) e
 	fileURL := "file://" + tmpFile
 
 	opts := append(chromedp.DefaultExecAllocatorOptions[:],
-		chromedp.Flag("headless", true),
+		// "new" headless mode; the legacy boolean "--headless" was removed in Chrome 128+
+		// and fails to expose the DevTools websocket ("websocket url timeout reached").
+		chromedp.Flag("headless", "new"),
 		chromedp.Flag("disable-gpu", true),
 		chromedp.Flag("no-sandbox", true),
 		chromedp.Flag("font-render-hinting", "none"),

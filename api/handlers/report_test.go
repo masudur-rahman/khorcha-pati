@@ -29,6 +29,9 @@ func TestGenerateTransactionInvoice_Wkhtmltopdf(t *testing.T) {
 }
 
 func TestGenerateTransactionInvoice_ChromeDP(t *testing.T) {
+	if lookupChrome() == "" {
+		t.Skip("chrome/chromium not installed, skipping")
+	}
 	report, err := generateSampleReport()
 	assert.NoError(t, err)
 	configs.TrackerConfig.System.PDFGenerator = configs.PDFGeneratorChromeDP
@@ -37,6 +40,18 @@ func TestGenerateTransactionInvoice_ChromeDP(t *testing.T) {
 	//defer os.Remove(pdfPath)
 	fmt.Println(pdfPath)
 	assert.FileExists(t, pdfPath)
+}
+
+// lookupChrome returns the path to a usable Chrome/Chromium binary, or "" if none is found.
+func lookupChrome() string {
+	for _, name := range []string{
+		"google-chrome", "google-chrome-stable", "chromium", "chromium-browser", "chrome", "headless-shell",
+	} {
+		if path, err := exec.LookPath(name); err == nil {
+			return path
+		}
+	}
+	return ""
 }
 
 func generateSampleReport() (gqtypes.Report, error) {
