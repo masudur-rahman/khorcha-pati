@@ -144,7 +144,7 @@ export default function Admin() {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
       <TopBar title="Admin Dashboard" subtitle="System overview and user management" />
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 16 }}>
         {statCards.map(card => (
           <MetricChip key={card.label} label={card.label} value={String(card.value)} accent={card.color} />
         ))}

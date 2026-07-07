@@ -98,7 +98,7 @@ export default function AICachePanel() {
       </div>
 
       <div style={{ overflowX: 'auto' }}>
-        <table style={{ width: '100%', tableLayout: 'fixed', borderCollapse: 'collapse', fontSize: 14 }}>
+        <table style={{ width: '100%', minWidth: 820, tableLayout: 'fixed', borderCollapse: 'collapse', fontSize: 14 }}>
           <thead>
             <tr style={{ borderBottom: '1px solid var(--color-border)' }}>
               {[
@@ -129,7 +129,7 @@ export default function AICachePanel() {
                     <div style={{ fontSize: 11, color: 'var(--color-text-tertiary)', fontFamily: 'var(--font-mono, monospace)' }}>{e.subcategoryId}</div>
                   </td>
                   <td style={{ padding: '12px 16px' }}><IntentPill intent={e.intent} /></td>
-                  <td style={{ padding: '12px 16px', minWidth: 120 }}><ConfidenceBar value={e.confidence} /></td>
+                  <td style={{ padding: '12px 16px' }}><ConfidenceBar value={e.confidence} /></td>
                   <td style={{ padding: '12px 16px', color: 'var(--color-text-tertiary)', fontSize: 13, whiteSpace: 'nowrap' }}>{fmtDate(e.createdAt)}</td>
                   <td style={{ padding: '12px 16px', textAlign: 'right', whiteSpace: 'nowrap' }}>
                     <IconButton label="Edit" onClick={() => setEditing(e)}><EditIcon /></IconButton>
