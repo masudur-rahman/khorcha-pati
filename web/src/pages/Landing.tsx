@@ -291,7 +291,7 @@ export default function Landing() {
             <a href={REPO_URL} target="_blank" rel="noreferrer">GitHub</a>
             <a href={`${REPO_URL}/issues`} target="_blank" rel="noreferrer">Issues</a>
           </div>
-          <div className="copy">© {new Date().getFullYear()} Khorcha-Pati.</div>
+          <div className="copy">© {new Date().getFullYear()} Khorcha-Pati by <strong>Masudur Rahman</strong>.</div>
         </div>
       </footer>
     </div>

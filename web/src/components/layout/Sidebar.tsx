@@ -169,18 +169,17 @@ export default function Sidebar() {
         }}
       >
         {!collapsed && (
-          <p
+          <div
             style={{
-              fontSize: 10,
-              fontWeight: 600,
-              color: 'var(--color-text-tertiary)',
-              textTransform: 'uppercase',
-              letterSpacing: '0.08em',
               textAlign: 'center',
+              lineHeight: 1.4,
             }}
           >
-            Khorcha-Pati v2.0
-          </p>
+            <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--color-text-primary)' }}>Khorcha-Pati</div>
+            <div style={{ fontSize: 11, color: 'var(--color-text-tertiary)', marginTop: 2 }}>
+              by <span style={{ fontWeight: 600, color: 'var(--color-text-secondary)' }}>Masudur Rahman</span>
+            </div>
+          </div>
         )}
       </div>
     </div>
