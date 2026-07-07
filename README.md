@@ -1,6 +1,8 @@
 # Khorcha-Pati
 
-A Telegram Bot to track your expenses.
+[![Latest release](https://img.shields.io/github/v/release/masudur-rahman/khorcha-pati?sort=semver&color=2684FF)](https://github.com/masudur-rahman/khorcha-pati/releases/latest)
+
+A Telegram Bot — now with a web dashboard — to track your expenses.
 `Khorcha-Pati` is a Telegram Bot to track your daily transactions.
 
 ## Features
