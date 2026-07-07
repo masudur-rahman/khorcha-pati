@@ -133,6 +133,37 @@ export const setAdminUserActive = (id: number, isActive: boolean) =>
     body: JSON.stringify({ isActive }),
   })
 
+// Admin — AI classification cache
+export interface AICacheEntry {
+  id: number
+  inputText: string
+  subcategoryId: string
+  intent: string
+  confidence: number
+  createdAt: number
+}
+
+export interface AICacheInput {
+  inputText?: string
+  subcategoryId: string
+  intent: string
+  confidence?: number
+}
+
+export const listAICache = (q?: string) => {
+  const qs = q ? `?q=${encodeURIComponent(q)}` : ''
+  return apiFetch<AICacheEntry[]>(`${API}/admin/ai-cache${qs}`)
+}
+
+export const createAICache = (body: AICacheInput) =>
+  apiFetch<AICacheEntry>(`${API}/admin/ai-cache`, { method: 'POST', body: JSON.stringify(body) })
+
+export const updateAICache = (id: number, body: AICacheInput) =>
+  apiFetch<AICacheEntry>(`${API}/admin/ai-cache/${id}`, { method: 'PUT', body: JSON.stringify(body) })
+
+export const deleteAICache = (id: number) =>
+  apiFetch<{ id: number }>(`${API}/admin/ai-cache/${id}`, { method: 'DELETE' })
+
 // Profile
 export const getProfile = () => apiFetch<Profile>(`${API}/profile`)
 

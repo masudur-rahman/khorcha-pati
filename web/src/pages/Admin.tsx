@@ -7,6 +7,7 @@ import Card from '../components/ui/Card'
 import MetricChip from '../components/ui/MetricChip'
 import Modal from '../components/ui/Modal'
 import Button from '../components/ui/Button'
+import AICachePanel from '../components/admin/AICachePanel'
 
 function decodeUserID(): number | null {
   const t = getAccessToken()
@@ -252,6 +253,8 @@ export default function Admin() {
         onClose={() => setSelectedUser(null)}
         onToggle={() => setConfirmUser(liveSelected)}
       />}
+
+      <AICachePanel />
 
       {confirmUser && (
         <Modal title={confirmUser.isActive ? 'Disable user?' : 'Enable user?'} onClose={() => setConfirmUser(null)} width={460}>

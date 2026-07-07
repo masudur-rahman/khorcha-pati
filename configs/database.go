@@ -3,7 +3,6 @@ package configs
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
 	"fmt"
 	"os"
 	"sync"
@@ -211,12 +210,7 @@ func LoadAICacheIntoMemory() {
 		return
 	}
 	for _, row := range rows {
-		resultJSON, _ := json.Marshal(map[string]any{
-			"intent":         row.Intent,
-			"subcategory_id": row.SubcategoryID,
-			"confidence":     row.Confidence,
-		})
-		_ = cache.SetCache(row.InputText, string(resultJSON), -1)
+		setAICacheMemory(row)
 	}
 	logr.DefaultLogger.Infow("AI cache loaded from DB", "count", len(rows))
 }
