@@ -16,6 +16,6 @@ func NewBotMessenger(bot *telebot.Bot) auth.Messenger {
 }
 
 func (m *botMessenger) SendMessage(telegramID int64, text string) error {
-	_, err := m.bot.Send(telebot.ChatID(telegramID), text)
+	_, err := m.bot.Send(telebot.ChatID(telegramID), text, telebot.ModeMarkdown)
 	return err
 }

@@ -14,7 +14,9 @@ func TestValidateClassification(t *testing.T) {
 		wantErr bool
 	}{
 		{"valid expense", "food-groc", "Expense", false},
+		{"valid expense lowercase", "food-groc", "expense", false},
 		{"valid income", "fin-sal", "Income", false},
+		{"valid income lowercase", "fin-sal", "income", false},
 		{"unknown subcategory", "not-a-real-id", "Expense", true},
 		{"intent not allowed for subcategory", "fin-sal", "Expense", true},
 		{"empty intent", "food-groc", "", true},

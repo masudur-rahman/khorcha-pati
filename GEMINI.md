@@ -117,6 +117,9 @@ func HandleExample(ctx telebot.Context) error {
 - Parser: Avoid using day-name substrings (e.g., "fri") in test inputs to prevent false matches.
 - Hooks: Always call React Hooks (e.g., useMemo) at the top level, before any early returns (e.g., if (isLoading) return ...), to maintain consistent hook order across renders.
 - govulncheck: Standard library vulnerabilities can be resolved by updating the `go` directive in `go.mod` to a patched version (e.g., 1.26.3). Dependencies in `vendor/` must be synced with `go mod vendor` after updates.
+- Backend intent validation: `validateClassification` in `api/web/ai_cache_handlers.go` should use `strings.EqualFold` when checking against predefined types in `models/transaction.go` to support case-insensitively validated intents.
+- Placeholder replacement: Reordering placeholder replacements to process double curly braces before single curly braces, or using a robust regular expression like `(?i)\{\{\s*name\s*\}\}|\{\s*name\s*\}` prevents sub-pattern matching from causing malformed outputs.
+
 
 <!-- code-review-graph MCP tools -->
 ## MCP Tools: code-review-graph

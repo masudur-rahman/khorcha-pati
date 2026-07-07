@@ -1,9 +1,12 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useQuery } from '@tanstack/react-query'
 import { useTransactions } from '../../hooks/useTransactions'
 import { useWallets } from '../../hooks/useWallets'
 import { useContacts } from '../../hooks/useContacts'
 import { useSearch } from '../../context/SearchContext'
+import { useAuth } from '../../hooks/useAuth'
+import { getAdminUsers, listAICache, type AICacheEntry } from '../../api/endpoints'
 import { fmt } from '../../lib/formatter'
 import { ICONS } from '../ui/Icons'
 
@@ -23,6 +26,22 @@ export default function SearchResults({ anchorTop, onClose }: SearchResultsProps
   const { data: txnResp } = useTransactions()
   const { data: wallets } = useWallets()
   const { data: contacts } = useContacts()
+
+  const { isAdmin } = useAuth()
+
+  const { data: adminUsersData } = useQuery({
+    queryKey: ['adminUsersAll'],
+    queryFn: () => getAdminUsers(),
+    enabled: isAdmin,
+  })
+  const adminUsers = adminUsersData?.users ?? []
+
+  const { data: aiCacheData } = useQuery({
+    queryKey: ['adminAICache'],
+    queryFn: () => listAICache(),
+    enabled: isAdmin,
+  })
+  const aiCache = aiCacheData ?? []
 
   const txns = txnResp?.data ?? []
 
@@ -59,9 +78,27 @@ export default function SearchResults({ anchorTop, onClose }: SearchResultsProps
     return SETTINGS_SECTIONS.filter(s => s.toLowerCase().includes(term))
   }, [term])
 
+  const userMatches = useMemo(() => {
+    if (!term || !isAdmin) return []
+    return adminUsers.filter(u =>
+      [u.firstName, u.lastName].filter(Boolean).join(' ').toLowerCase().includes(term) ||
+      (u.username && u.username.toLowerCase().includes(term)) ||
+      String(u.telegramId).includes(term)
+    )
+  }, [adminUsers, term, isAdmin])
+
+  const aiCacheMatches = useMemo(() => {
+    if (!term || !isAdmin) return []
+    return aiCache.filter((e: AICacheEntry) =>
+      (e.inputText || '').toLowerCase().includes(term) ||
+      (e.intent || '').toLowerCase().includes(term) ||
+      (e.subcategoryId || '').toLowerCase().includes(term)
+    )
+  }, [aiCache, term, isAdmin])
+
   if (!term) return null
 
-  const total = txnMatches.length + walletMatches.length + contactMatches.length + settingMatches.length
+  const total = txnMatches.length + walletMatches.length + contactMatches.length + settingMatches.length + userMatches.length + aiCacheMatches.length
 
   const go = (path: string) => {
     setSearchTerm('')
@@ -144,10 +181,40 @@ export default function SearchResults({ anchorTop, onClose }: SearchResultsProps
 
         <Section title="Contacts" count={contactMatches.length} icon={ICONS.user(13)}>
           {contactMatches.slice(0, PER_SECTION).map(c => (
-            <Row key={c.nickName} onClick={() => go('/wallets')}>
+            <Row key={c.nickName} onClick={() => go(`/contacts?show=${c.id}`)}>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-text-primary)' }}>{c.fullName || c.nickName}</div>
                 <div style={{ fontSize: 11, color: 'var(--color-text-tertiary)', marginTop: 2 }}>{c.nickName}</div>
+              </div>
+            </Row>
+          ))}
+        </Section>
+
+        <Section title="Registered Users" count={userMatches.length} icon={ICONS.users(13)}>
+          {userMatches.slice(0, PER_SECTION).map(u => (
+            <Row key={u.id} onClick={() => go('/admin')}>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-text-primary)' }}>
+                  {[u.firstName, u.lastName].filter(Boolean).join(' ') || `@${u.username}`}
+                </div>
+                <div style={{ fontSize: 11, color: 'var(--color-text-tertiary)', marginTop: 2 }}>
+                  {u.username ? `@${u.username} · ` : ''}Telegram ID: {u.telegramId}
+                </div>
+              </div>
+            </Row>
+          ))}
+        </Section>
+
+        <Section title="AI Cache" count={aiCacheMatches.length} icon={ICONS.budget(13)}>
+          {aiCacheMatches.slice(0, PER_SECTION).map((e: AICacheEntry) => (
+            <Row key={e.id} onClick={() => go('/admin')}>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-text-primary)' }}>
+                  {e.inputText}
+                </div>
+                <div style={{ fontSize: 11, color: 'var(--color-text-tertiary)', marginTop: 2 }}>
+                  Intent: <span style={{ textTransform: 'capitalize' }}>{e.intent}</span> · Subcategory: {e.subcategoryId}
+                </div>
               </div>
             </Row>
           ))}

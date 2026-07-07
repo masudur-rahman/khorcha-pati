@@ -1,5 +1,6 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { useSearchParams } from 'react-router-dom'
 import { listContacts } from '../api/endpoints'
 import { useCreateContact } from '../hooks/useContacts'
 import { useTransactions } from '../hooks/useTransactions'
@@ -23,6 +24,17 @@ export default function Contacts() {
   const { data: contacts, isLoading } = useQuery({ queryKey: ['contacts'], queryFn: listContacts })
   const [showAddContact, setShowAddContact] = useState(false)
   const [activeId, setActiveId] = useState<number | null>(null)
+  const [searchParams] = useSearchParams()
+  const showParam = searchParams.get('show')
+
+  useEffect(() => {
+    if (showParam) {
+      const id = parseInt(showParam, 10)
+      if (!isNaN(id)) {
+        setActiveId(id)
+      }
+    }
+  }, [showParam])
 
   const filtered = useMemo(() =>
     (contacts ?? []).filter(c =>

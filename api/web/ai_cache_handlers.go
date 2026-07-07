@@ -126,7 +126,7 @@ func validateClassification(subID, intent string) error {
 		return errors.New("unknown subcategory: " + subID)
 	}
 	for _, t := range models.SubcategoryTypes[subID] {
-		if string(t) == intent {
+		if strings.EqualFold(string(t), intent) {
 			return nil
 		}
 	}

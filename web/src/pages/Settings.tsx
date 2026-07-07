@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { getProfile, updateProfile } from '../api/endpoints'
-import { useSearch } from '../context/SearchContext'
 import { useTheme } from '../context/ThemeContext'
 
 import TopBar from '../components/layout/TopBar'
@@ -13,7 +12,6 @@ import Eyebrow from '../components/ui/Eyebrow'
 import { ICONS } from '../components/ui/Icons'
 
 export default function Settings() {
-  const { searchTerm } = useSearch()
   const { theme, setTheme } = useTheme()
   const qc = useQueryClient()
   const { data: profile, isLoading } = useQuery({ queryKey: ['profile'], queryFn: getProfile })
@@ -33,7 +31,7 @@ export default function Settings() {
   if (isLoading) return <p style={{ color: 'var(--color-text-tertiary)', padding: 40 }}>Loading...</p>
   if (!profile) return <p style={{ color: 'var(--color-text-tertiary)', padding: 40 }}>Could not load profile</p>
 
-  const matchesSearch = (text: string) => !searchTerm || text.toLowerCase().includes(searchTerm.toLowerCase())
+  const matchesSearch = (_text: string) => true
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>

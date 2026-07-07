@@ -125,12 +125,29 @@ export interface AdminUser {
 }
 
 export const getAdminStats = () => apiFetch<AdminStats>(`${API}/admin/stats`)
-export const getAdminUsers = () => apiFetch<AdminUser[]>(`${API}/admin/users`)
+export interface PaginatedUsers {
+  users: AdminUser[]
+  total: number
+}
+
+export const getAdminUsers = (page?: number, limit?: number) => {
+  const params = new URLSearchParams()
+  if (page !== undefined) params.set('page', String(page))
+  if (limit !== undefined) params.set('limit', String(limit))
+  const qs = params.toString() ? `?${params.toString()}` : ''
+  return apiFetch<PaginatedUsers>(`${API}/admin/users${qs}`)
+}
 export const getAdminUserDetail = (id: number) => apiFetch<AdminUser>(`${API}/admin/users/${id}`)
 export const setAdminUserActive = (id: number, isActive: boolean) =>
   apiFetch<{ id: number; isActive: boolean }>(`${API}/admin/users/${id}/activate`, {
     method: 'PATCH',
     body: JSON.stringify({ isActive }),
+  })
+
+export const sendAdminBroadcast = (message: string, includeUserIds?: number[], excludeUserIds?: number[]) =>
+  apiFetch<{ success: boolean; sent: number; failed: number }>(`${API}/admin/broadcast`, {
+    method: 'POST',
+    body: JSON.stringify({ message, includeUserIds, excludeUserIds }),
   })
 
 // Admin — AI classification cache

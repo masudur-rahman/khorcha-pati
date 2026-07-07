@@ -3,10 +3,12 @@ package web
 import (
 	"context"
 	"net/http"
+	"regexp"
 	"strconv"
 	"strings"
 
 	"github.com/masudur-rahman/khorcha-pati/configs"
+	"github.com/masudur-rahman/khorcha-pati/infra/logr"
 	"github.com/masudur-rahman/khorcha-pati/models"
 	"github.com/masudur-rahman/khorcha-pati/services/all"
 
@@ -70,8 +72,8 @@ func HandleAdminStats(w http.ResponseWriter, _ *http.Request) {
 	})
 }
 
-// HandleAdminUsers returns all registered users with resource counts.
-func HandleAdminUsers(w http.ResponseWriter, _ *http.Request) {
+// HandleAdminUsers returns all registered users with resource counts, optionally paginated.
+func HandleAdminUsers(w http.ResponseWriter, r *http.Request) {
 	svc := all.GetServices()
 	users, err := svc.User.ListUsers()
 	if err != nil {
@@ -79,8 +81,40 @@ func HandleAdminUsers(w http.ResponseWriter, _ *http.Request) {
 		return
 	}
 
-	result := make([]adminUserResponse, 0, len(users))
-	for _, u := range users {
+	pageStr := r.URL.Query().Get("page")
+	limitStr := r.URL.Query().Get("limit")
+
+	page := 0
+	limit := 0
+	if pageStr != "" {
+		if p, err := strconv.Atoi(pageStr); err == nil && p > 0 {
+			page = p
+		}
+	}
+	if limitStr != "" {
+		if l, err := strconv.Atoi(limitStr); err == nil && l > 0 {
+			limit = l
+		}
+	}
+
+	total := len(users)
+	var paginatedUsers []models.Profile
+	if page > 0 && limit > 0 {
+		start := (page - 1) * limit
+		end := start + limit
+		if start > total {
+			start = total
+		}
+		if end > total {
+			end = total
+		}
+		paginatedUsers = users[start:end]
+	} else {
+		paginatedUsers = users
+	}
+
+	result := make([]adminUserResponse, 0, len(paginatedUsers))
+	for _, u := range paginatedUsers {
 		wallets, _ := svc.Wallet.ListWallets(u.ID)
 		txns, _ := svc.Txn.ListTransactions(u.ID)
 		contacts, _ := svc.Contact.ListContacts(u.ID)
@@ -100,7 +134,10 @@ func HandleAdminUsers(w http.ResponseWriter, _ *http.Request) {
 		})
 	}
 
-	WriteJSON(w, http.StatusOK, result)
+	WriteJSON(w, http.StatusOK, map[string]any{
+		"users": result,
+		"total": total,
+	})
 }
 
 // HandleAdminUserDetail returns detail for a single user by ID.
@@ -205,4 +242,82 @@ func countResources() (txnCount, walletCount int64) {
 	}
 
 	return txnCount, walletCount
+}
+
+// HandleAdminBroadcast sends a custom message to all active users via the bot.
+func HandleAdminBroadcast(w http.ResponseWriter, r *http.Request) {
+	var body struct {
+		Message        string  `json:"message"`
+		IncludeUserIDs []int64 `json:"includeUserIds"`
+		ExcludeUserIDs []int64 `json:"excludeUserIds"`
+	}
+	if err := ReadJSON(r, &body); err != nil {
+		WriteError(w, http.StatusBadRequest, "bad_request", "invalid request body")
+		return
+	}
+	body.Message = strings.TrimSpace(body.Message)
+	if body.Message == "" {
+		WriteError(w, http.StatusBadRequest, "invalid_input", "message is required")
+		return
+	}
+
+	messenger := all.GetMessenger()
+	if messenger == nil {
+		WriteError(w, http.StatusInternalServerError, "messenger_error", "telegram messenger is not initialized")
+		return
+	}
+
+	svc := all.GetServices()
+	users, err := svc.User.ListUsers()
+	if err != nil {
+		WriteError(w, http.StatusInternalServerError, "users_error", err.Error())
+		return
+	}
+
+	includes := make(map[int64]bool)
+	for _, id := range body.IncludeUserIDs {
+		includes[id] = true
+	}
+	excludes := make(map[int64]bool)
+	for _, id := range body.ExcludeUserIDs {
+		excludes[id] = true
+	}
+
+	re := regexp.MustCompile(`(?i)\{\{\s*name\s*\}\}|\{\s*name\s*\}`)
+
+	var sentCount, failCount int
+	for _, u := range users {
+		if u.TelegramID == 0 {
+			continue
+		}
+		if len(includes) > 0 && !includes[u.ID] {
+			continue
+		}
+		if excludes[u.ID] {
+			continue
+		}
+
+		name := strings.TrimSpace(u.FirstName + " " + u.LastName)
+		if name == "" {
+			name = u.Username
+		}
+		if name == "" {
+			name = "User"
+		}
+
+		msg := re.ReplaceAllString(body.Message, name)
+
+		if err := messenger.SendMessage(u.TelegramID, msg); err != nil {
+			logr.DefaultLogger.Errorw("failed to send broadcast message to user", "userId", u.ID, "telegramId", u.TelegramID, "error", err.Error())
+			failCount++
+		} else {
+			sentCount++
+		}
+	}
+
+	WriteJSON(w, http.StatusOK, map[string]any{
+		"success": true,
+		"sent":    sentCount,
+		"failed":  failCount,
+	})
 }

@@ -22,7 +22,8 @@ export default function TopBar({ title, subtitle }: TopBarProps) {
   const { data: profile } = useQuery({ queryKey: ['profile'], queryFn: getProfile, enabled: isAuthenticated })
   const fullName = profile ? `${profile.firstName} ${profile.lastName}`.trim() : ''
   const username = profile?.username ? `@${profile.username}` : ''
-  const [isSearchExpanded, setIsSearchExpanded] = useState(false)
+  const [isSearchExpanded, setIsSearchExpanded] = useState(!!searchTerm.trim())
+  const [showSearchResults, setShowSearchResults] = useState(!!searchTerm.trim())
   const [showProfile, setShowProfile] = useState(false)
   const [showNotifications, setShowNotifications] = useState(false)
   const profileRef = useRef<HTMLDivElement>(null)
@@ -43,12 +44,23 @@ export default function TopBar({ title, subtitle }: TopBarProps) {
       if (profileRef.current && !profileRef.current.contains(e.target as Node)) setShowProfile(false)
       if (notifRef.current && !notifRef.current.contains(e.target as Node)) setShowNotifications(false)
       if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
-        setIsSearchExpanded(false)
+        setShowSearchResults(false)
+        if (!searchTerm.trim()) {
+          setIsSearchExpanded(false)
+        }
       }
     }
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
-  }, [])
+  }, [searchTerm])
+
+  // Sync search expansion when search term changes
+  useEffect(() => {
+    if (searchTerm.trim() !== '') {
+      setIsSearchExpanded(true)
+      setShowSearchResults(true)
+    }
+  }, [searchTerm])
 
   // Esc closes search panel
   useEffect(() => {
@@ -111,7 +123,12 @@ export default function TopBar({ title, subtitle }: TopBarProps) {
               overflow: 'hidden',
               cursor: isSearchExpanded ? 'default' : 'pointer',
             }}
-            onClick={() => !isSearchExpanded && setIsSearchExpanded(true)}
+            onClick={() => {
+              if (!isSearchExpanded) {
+                setIsSearchExpanded(true)
+              }
+              setShowSearchResults(true)
+            }}
           >
             <span style={{ color: 'var(--color-text-tertiary)', display: 'flex', flexShrink: 0 }}>
               {ICONS.search(18)}
@@ -123,6 +140,7 @@ export default function TopBar({ title, subtitle }: TopBarProps) {
                   autoFocus
                   value={searchTerm}
                   onChange={e => setSearchTerm(e.target.value)}
+                  onFocus={() => setShowSearchResults(true)}
                   placeholder="Search anything..."
                   style={{
                     background: 'transparent',
@@ -152,8 +170,8 @@ export default function TopBar({ title, subtitle }: TopBarProps) {
               </>
             )}
           </div>
-          {isSearchExpanded && searchTerm && (
-            <SearchResults anchorTop={searchResultsTop} onClose={() => setIsSearchExpanded(false)} />
+          {showSearchResults && searchTerm && (
+            <SearchResults anchorTop={searchResultsTop} onClose={() => setShowSearchResults(false)} />
           )}
         </div>
 

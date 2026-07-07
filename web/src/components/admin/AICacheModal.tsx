@@ -33,7 +33,7 @@ export default function AICacheModal({ entry, subMeta, subOptions, onClose, onSa
 
   const save = useMutation({
     mutationFn: () => {
-      const body: AICacheInput = { subcategoryId: subId, intent, confidence: clampPct(pct) / 100 }
+      const body: AICacheInput = { subcategoryId: subId, intent: intent.toLowerCase(), confidence: clampPct(pct) / 100 }
       return isEdit ? updateAICache(existing!.id, body) : createAICache({ ...body, inputText: inputText.trim() })
     },
     onSuccess: onSaved,

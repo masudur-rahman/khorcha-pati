@@ -57,6 +57,14 @@ func GetServices() *Services {
 	return svc
 }
 
+// GetMessenger returns the auth Messenger instance.
+func GetMessenger() authmod.Messenger {
+	if webCfg == nil {
+		return nil
+	}
+	return webCfg.messenger
+}
+
 func InitiateSQLServices(uow styx.UnitOfWork, logger logr.Logger) {
 	userRepo := user.NewSQLUserRepository(uow.SQL, logger)
 	walletRepo := wallets.NewSQLWalletRepository(uow.SQL, logger)

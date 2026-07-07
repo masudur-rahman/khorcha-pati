@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   listAICache, deleteAICache, listCategories, listSubcategories, type AICacheEntry,
 } from '../../api/endpoints'
+import { useSearch } from '../../context/SearchContext'
 import Card from '../ui/Card'
 import Modal from '../ui/Modal'
 import Button from '../ui/Button'
@@ -45,13 +46,33 @@ export default function AICachePanel() {
   const [editing, setEditing] = useState<AICacheEntry | 'new' | null>(null)
   const [deleting, setDeleting] = useState<AICacheEntry | null>(null)
 
-  const { data: entries, isLoading } = useQuery({ queryKey: ['aiCache', q], queryFn: () => listAICache(q) })
+  const { data: rawEntries, isLoading } = useQuery({ queryKey: ['aiCache', q], queryFn: () => listAICache(q) })
 
+  const entries = useMemo(() => {
+    if (!rawEntries) return undefined
+    return rawEntries.map(e => ({
+      ...e,
+      intent: e.intent ? e.intent.charAt(0).toUpperCase() + e.intent.slice(1).toLowerCase() : e.intent,
+    }))
+  }, [rawEntries])
+
+  const { searchTerm } = useSearch()
   const all = entries ?? []
-  const totalPages = Math.max(1, Math.ceil(all.length / PAGE_SIZE))
-  const paged = all.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
 
-  useEffect(() => { setPage(0) }, [q])                                        // reset paging on new search
+  const filteredAll = useMemo(() => {
+    if (!searchTerm.trim()) return all
+    const term = searchTerm.toLowerCase()
+    return all.filter(e =>
+      (e.inputText || '').toLowerCase().includes(term) ||
+      (e.intent || '').toLowerCase().includes(term) ||
+      (e.subcategoryId || '').toLowerCase().includes(term)
+    )
+  }, [all, searchTerm])
+
+  const totalPages = Math.max(1, Math.ceil(filteredAll.length / PAGE_SIZE))
+  const paged = filteredAll.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
+
+  useEffect(() => { setPage(0) }, [q, searchTerm])                            // reset paging on new search
   useEffect(() => { if (page >= totalPages) setPage(totalPages - 1) }, [page, totalPages]) // clamp after deletes
   const { data: subs } = useQuery({ queryKey: ['subcategories'], queryFn: () => listSubcategories() })
   const { data: cats } = useQuery({ queryKey: ['categories'], queryFn: () => listCategories() })
@@ -143,16 +164,16 @@ export default function AICachePanel() {
       </div>
 
       {isLoading && <p style={{ padding: 24, textAlign: 'center', color: 'var(--color-text-tertiary)' }}>Loading…</p>}
-      {!isLoading && all.length === 0 && (
+      {!isLoading && filteredAll.length === 0 && (
         <p style={{ padding: 24, textAlign: 'center', color: 'var(--color-text-tertiary)' }}>
-          {q ? `No entries matching “${q}”.` : 'No cache entries yet.'}
+          {q || searchTerm ? `No entries matching your search query.` : 'No cache entries yet.'}
         </p>
       )}
 
       {totalPages > 1 && (
         <div style={{ padding: '16px 20px', borderTop: '1px solid var(--color-border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <p style={{ fontSize: 12, color: 'var(--color-text-tertiary)', fontWeight: 500 }}>
-            Showing {page * PAGE_SIZE + 1}–{Math.min((page + 1) * PAGE_SIZE, all.length)} of {all.length}
+            Showing {page * PAGE_SIZE + 1}–{Math.min((page + 1) * PAGE_SIZE, filteredAll.length)} of {filteredAll.length}
           </p>
           <div style={{ display: 'flex', gap: 6 }}>
             <PageButton disabled={page === 0} onClick={() => setPage(p => p - 1)}>Previous</PageButton>
