@@ -62,7 +62,7 @@ export default function MobileNav() {
           right: 0,
           background: 'var(--color-surface)',
           borderTop: '1px solid var(--color-border)',
-          zIndex: 200,
+          zIndex: 95,
           padding: '6px 8px env(safe-area-inset-bottom, 8px)',
         }}
         className="flex! md:hidden!"
@@ -134,6 +134,21 @@ export default function MobileNav() {
               danger
               onClick={() => { setShowMore(false); logout() }}
             />
+            <div style={{ height: 1, background: 'var(--color-border)', margin: '8px 0' }} />
+            <div
+              style={{
+                fontSize: 11,
+                textAlign: 'center',
+                color: 'var(--color-text-tertiary)',
+                lineHeight: 1.4,
+                paddingTop: 4,
+              }}
+            >
+              <div style={{ fontWeight: 600 }}>Khorcha-Pati</div>
+              <div style={{ fontSize: 9, opacity: 0.8 }}>
+                © {new Date().getFullYear()} by <span style={{ fontWeight: 600, color: 'var(--color-text-secondary)' }}>Masudur Rahman</span>
+              </div>
+            </div>
           </div>
           <style>{`@keyframes sheetUp { from { transform: translateY(100%); } to { transform: translateY(0); } }`}</style>
         </div>

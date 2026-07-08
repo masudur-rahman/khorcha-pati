@@ -136,7 +136,7 @@ export default function Admin() {
   const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null)
   const [confirmUser, setConfirmUser] = useState<AdminUser | null>(null)
   const [broadcastModalOpen, setBroadcastModalOpen] = useState(false)
-  const [notifyUser, setNotifyUser] = useState<AdminUser | null>(null)
+  const [messageUser, setMessageUser] = useState<AdminUser | null>(null)
 
   const toggleActive = useMutation({
     mutationFn: ({ id, isActive }: { id: number; isActive: boolean }) => setAdminUserActive(id, isActive),
@@ -273,7 +273,7 @@ export default function Admin() {
                     </button>
                     {u.telegramId > 0 && (
                       <button
-                        onClick={() => setNotifyUser(u)}
+                        onClick={() => setMessageUser(u)}
                         style={{
                           padding: '4px 10px', borderRadius: 6, fontSize: 11, fontWeight: 600,
                           border: '1px solid var(--color-border)',
@@ -286,7 +286,7 @@ export default function Admin() {
                         onMouseEnter={e => e.currentTarget.style.background = 'var(--color-hover)'}
                         onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                       >
-                        Notify
+                        Message
                       </button>
                     )}
                   </td>
@@ -342,8 +342,8 @@ export default function Admin() {
         <BroadcastModal onClose={() => setBroadcastModalOpen(false)} />
       )}
 
-      {notifyUser && (
-        <NotifyUserModal user={notifyUser} onClose={() => setNotifyUser(null)} />
+      {messageUser && (
+        <MessageUserModal user={messageUser} onClose={() => setMessageUser(null)} />
       )}
 
       {confirmUser && (
@@ -649,7 +649,7 @@ function BroadcastModal({ onClose }: ModalProps) {
   }
 
   return (
-    <Modal title="Broadcast Notification" onClose={onClose} width={580}>
+    <Modal title="Broadcast Message" onClose={onClose} width={580}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
         <p style={{ margin: 0, fontSize: 13, color: 'var(--color-text-secondary)', lineHeight: 1.5 }}>
           Send a customized Telegram message to selected active users. Supports Telegram Markdown formatting.
@@ -804,7 +804,7 @@ function BroadcastModal({ onClose }: ModalProps) {
   )
 }
 
-function NotifyUserModal({ user, onClose }: { user: AdminUser } & ModalProps) {
+function MessageUserModal({ user, onClose }: { user: AdminUser } & ModalProps) {
   const [message, setMessage] = useState('')
   const [status, setStatus] = useState<{ success: boolean; msg: string } | null>(null)
 
@@ -829,7 +829,7 @@ function NotifyUserModal({ user, onClose }: { user: AdminUser } & ModalProps) {
   }
 
   return (
-    <Modal title={`Notify ${userLabel(user)}`} onClose={onClose} width={480}>
+    <Modal title={`Message ${userLabel(user)}`} onClose={onClose} width={480}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <Avatar user={user} size={40} showStatus={false} />
