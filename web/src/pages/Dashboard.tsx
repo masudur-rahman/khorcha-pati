@@ -245,7 +245,7 @@ export default function Dashboard() {
           <Link to="/transactions" style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-primary)', textDecoration: 'none' }}>View All</Link>
         </div>
         <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+          <table style={{ width: '100%', minWidth: 640, borderCollapse: 'collapse', fontSize: 13 }}>
             <thead>
               <tr style={{ borderBottom: '1px solid var(--color-border)' }}>
                 {['Date', 'Type', 'Category', 'Amount', 'Wallet'].map(h => (
@@ -271,6 +271,7 @@ export default function Dashboard() {
                   <td style={{
                     padding: '14px 24px', textAlign: 'right', fontWeight: 700, fontSize: 14,
                     color: t.type === 'Income' ? 'var(--color-success)' : t.type === 'Transfer' ? 'var(--color-primary)' : 'var(--color-danger)',
+                    whiteSpace: 'nowrap',
                   }}>
                     {t.type === 'Income' ? '+' : t.type === 'Transfer' ? '' : '-'}{fmt(t.amount)}
                   </td>

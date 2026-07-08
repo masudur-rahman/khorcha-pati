@@ -98,7 +98,7 @@ export default function AICachePanel() {
   const onSaved = () => { qc.invalidateQueries({ queryKey: ['aiCache'] }); setEditing(null) }
 
   return (
-    <Card padding={0}>
+    <Card padding={0} style={{ width: '100%', overflow: 'hidden' }}>
       <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--color-border)', display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
         <div style={{ flex: 1, minWidth: 200 }}>
           <h3 style={{ fontSize: 16, fontWeight: 600, color: 'var(--color-text)' }}>AI Classification Cache</h3>

@@ -194,14 +194,14 @@ export default function TransactionDetails({
                   <span style={{ display: 'flex' }}>{ICONS.swapHoriz(13)}</span>
                   <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Movement</span>
                 </div>
-                <div style={{
+                <div className="movement-grid" style={{
                   display: 'grid',
                   gridTemplateColumns: from && to ? '1fr auto 1fr' : '1fr',
                   gap: 12, alignItems: 'center', marginTop: 14,
                 }}>
                   {from && <MovementCell role="Source" party={from} />}
                   {from && to && (
-                    <div style={{ color: 'var(--color-text-tertiary)', fontWeight: 700, fontSize: 18, lineHeight: 1 }}>→</div>
+                    <div className="movement-arrow" style={{ color: 'var(--color-text-tertiary)', fontWeight: 700, fontSize: 18, lineHeight: 1, textAlign: 'center' }}>→</div>
                   )}
                   {to && <MovementCell role="Destination" party={to} />}
                 </div>
@@ -282,7 +282,7 @@ function MovementCell({ role, party }: {
 
   return (
     <div style={{ minWidth: 0, display: 'flex', flexDirection: 'column', gap: 8 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--color-text-tertiary)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--color-text-tertiary)', flexWrap: 'wrap' }}>
         <span style={{
           width: 22, height: 22, borderRadius: 6,
           background: isContact ? 'var(--color-primary-subtle)' : 'var(--color-bg)',

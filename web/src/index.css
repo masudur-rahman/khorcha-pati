@@ -216,3 +216,53 @@ h1, h2, h3, h4, h5, h6 {
     max-width: 320px;
   }
 }
+
+/* Mobile Search Bar Width */
+@media (max-width: 480px) {
+  :root {
+    --search-width: 160px;
+  }
+}
+
+/* Movement Card Stacking */
+@media (max-width: 480px) {
+  .movement-grid {
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
+  }
+  .movement-arrow {
+    transform: rotate(90deg);
+    margin: 4px auto;
+  }
+}
+
+/* Admin Card Header Stacking */
+@media (max-width: 480px) {
+  .admin-card-header {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 12px !important;
+  }
+}
+
+/* Modal Responsive Padding & Smooth Scrolling */
+.modal-body {
+  padding: 32px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+@media (max-width: 640px) {
+  .modal-overlay-resp {
+    padding: 10px !important;
+  }
+  .modal-container-resp {
+    max-height: calc(100vh - 20px) !important;
+  }
+  .modal-header-resp {
+    padding: 16px 20px !important;
+  }
+  .modal-body {
+    padding: 20px 16px !important;
+  }
+}

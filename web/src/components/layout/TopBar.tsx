@@ -118,7 +118,7 @@ export default function TopBar({ title, subtitle }: TopBarProps) {
               borderRadius: 'var(--radius-md)',
               padding: '0 12px',
               height: 42,
-              width: isSearchExpanded ? 260 : 42,
+              width: isSearchExpanded ? 'var(--search-width, 260px)' : 42,
               transition: 'width 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
               overflow: 'hidden',
               cursor: isSearchExpanded ? 'default' : 'pointer',

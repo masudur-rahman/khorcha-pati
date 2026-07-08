@@ -7,13 +7,31 @@ import TxnDialog from '../ui/TxnDialog'
 
 export default function AppLayout() {
   const location = useLocation()
-  const showFab = location.pathname !== '/transactions'
+  const showFab = true
   const [showAddTxn, setShowAddTxn] = useState(false)
+  const [fabVisible, setFabVisible] = useState(true)
 
   // Reset scroll to the top whenever the route changes so a page never opens mid-scroll.
   useEffect(() => {
     window.scrollTo(0, 0)
+    setFabVisible(true)
   }, [location.pathname])
+
+  // Track scroll direction to hide/show FAB
+  useEffect(() => {
+    let lastScrollY = window.scrollY
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY
+      if (currentScrollY > lastScrollY && currentScrollY > 60) {
+        setFabVisible(false)
+      } else {
+        setFabVisible(true)
+      }
+      lastScrollY = currentScrollY
+    }
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--color-bg)' }}>
@@ -43,7 +61,11 @@ export default function AppLayout() {
             justifyContent: 'center',
             boxShadow: '0 8px 24px rgba(0, 82, 204, 0.35)',
             cursor: 'pointer',
-            zIndex: 150,
+            zIndex: 90,
+            transform: fabVisible ? 'scale(1)' : 'scale(0) translateY(40px)',
+            opacity: fabVisible ? 1 : 0,
+            transition: 'transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s',
+            pointerEvents: fabVisible ? 'auto' : 'none',
           }}
         >
           {ICONS.plus(24)}

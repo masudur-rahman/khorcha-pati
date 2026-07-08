@@ -170,13 +170,14 @@ export default function Admin() {
         ))}
       </div>
 
-      <Card padding={0}>
-        <div style={{ 
+      <Card padding={0} style={{ width: '100%', overflow: 'hidden' }}>
+        <div className="admin-card-header" style={{ 
           padding: '16px 20px', 
           borderBottom: '1px solid var(--color-border)',
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
+          gap: 12,
         }}>
           <h3 style={{ fontSize: 16, fontWeight: 600, color: 'var(--color-text)', margin: 0 }}>Registered Users</h3>
           <Button 

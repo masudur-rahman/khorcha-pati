@@ -22,6 +22,7 @@ export default function Modal({ children, onClose, title, width = 560 }: ModalPr
 
   return (
     <div 
+      className="modal-overlay-resp"
       style={{
         position: 'fixed',
         inset: 0,
@@ -36,6 +37,7 @@ export default function Modal({ children, onClose, title, width = 560 }: ModalPr
       onClick={onClose}
     >
       <div 
+        className="modal-container-resp"
         style={{
           background: 'var(--color-surface)',
           borderRadius: 24,
@@ -52,7 +54,7 @@ export default function Modal({ children, onClose, title, width = 560 }: ModalPr
         onClick={e => e.stopPropagation()}
       >
         {true && (
-          <div style={{
+          <div className="modal-header-resp" style={{
             padding: '24px 32px',
             borderBottom: '1px solid var(--color-border)',
             display: 'flex',
@@ -85,7 +87,7 @@ export default function Modal({ children, onClose, title, width = 560 }: ModalPr
             </button>
           </div>
         )}
-        <div style={{ padding: '32px', overflowY: 'auto' }}>
+        <div className="modal-body">
           {children}
         </div>
       </div>
