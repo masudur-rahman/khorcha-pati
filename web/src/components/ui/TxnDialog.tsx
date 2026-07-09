@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState, type KeyboardEvent } from 'react'
+import { useEffect, useMemo, useState, useRef, type KeyboardEvent } from 'react'
+import toast from 'react-hot-toast'
 import { useQuery } from '@tanstack/react-query'
 import { listCategories, listSubcategories } from '../../api/endpoints'
 import { useCreateTransaction, useUpdateTransaction } from '../../hooks/useTransactions'
@@ -61,6 +62,8 @@ export default function TxnDialog({ txn, initialType, initialContact, initialSub
   const update = useUpdateTransaction()
   const isEdit = !!txn
 
+  const amountRef = useRef<HTMLInputElement>(null)
+
   const { data: wallets = [] } = useWallets()
   const { data: contacts = [] } = useContacts()
 
@@ -76,7 +79,6 @@ export default function TxnDialog({ txn, initialType, initialContact, initialSub
   const [showResults, setShowResults] = useState(false)
   const [highlight, setHighlight] = useState(0)
   const [attempted, setAttempted] = useState(false)
-  const [done, setDone] = useState(false)
 
   const { data: categories = [], isFetching: catFetching } = useQuery({
     queryKey: ['categories', type],
@@ -158,6 +160,9 @@ export default function TxnDialog({ txn, initialType, initialContact, initialSub
     setSearch('')
     setShowResults(false)
     setHighlight(0)
+    setTimeout(() => {
+      amountRef.current?.focus()
+    }, 50)
   }
 
   // Keyboard traversal of the Quick Add suggestions.
@@ -192,7 +197,7 @@ export default function TxnDialog({ txn, initialType, initialContact, initialSub
   const validate = () => {
     const e: { amount?: string; sub?: string; wallet?: string; contact?: string } = {}
     const amt = parseFloat(amount)
-    if (!amount || isNaN(amt) || amt <= 0) e.amount = 'Enter a valid amount'
+    if (!amount || isNaN(amt) || amt <= 0) e.amount = 'Amount must be greater than zero'
     if (!subcategoryId) e.sub = 'Pick a subcategory'
     if (type === 'Transfer') {
       if (!srcId || !dstId) e.wallet = 'Select both wallets'
@@ -216,47 +221,33 @@ export default function TxnDialog({ txn, initialType, initialContact, initialSub
       dstId: type === 'Expense' ? '' : dstId,
       contactName: type === 'Transfer' ? '' : contactName,
     }
-    if (isEdit) update.mutate({ id: txn!.id, ...payload }, { onSuccess: () => setDone(true) })
-    else create.mutate(payload, { onSuccess: () => setDone(true) })
+    if (isEdit) {
+      update.mutate({ id: txn!.id, ...payload }, { 
+        onSuccess: () => {
+          toast.success('Transaction updated successfully')
+          onClose()
+        } 
+      })
+    } else {
+      create.mutate(payload, { 
+        onSuccess: () => {
+          toast.success('Transaction recorded successfully')
+          onClose()
+        } 
+      })
+    }
   }
-
-  // Auto-close shortly after the success confirmation shows.
-  useEffect(() => {
-    if (!done) return
-    const t = setTimeout(onClose, 1200)
-    return () => clearTimeout(t)
-  }, [done, onClose])
 
   const mutationError = create.isError || update.isError
   const walletOptions = wallets.map(w => ({ value: w.shortName, label: w.name }))
 
-  if (done) {
-    return (
-      <Modal title={isEdit ? 'Transaction Updated' : 'Transaction Added'} onClose={onClose}>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, padding: '24px 0' }}>
-          <div style={{
-            width: 56, height: 56, borderRadius: '50%', background: 'var(--color-success-subtle, #e6f6ec)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}>
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--color-success, #22a45d)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="20 6 9 17 4 12" />
-            </svg>
-          </div>
-          <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--color-text-primary)' }}>
-            {isEdit ? 'Changes saved' : 'Transaction recorded'}
-          </span>
-        </div>
-      </Modal>
-    )
-  }
-
   return (
     <Modal title={isEdit ? 'Edit Transaction' : 'Add Transaction'} onClose={onClose}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-        {/* Fuzzy quick-add */}
+        {/* Fuzzy smart-search */}
         <div style={{ position: 'relative' }}>
           <Input
-            label="Quick Add"
+            label="Smart Search"
             value={search}
             onChange={e => { setSearch(e.target.value); setShowResults(true); setHighlight(0) }}
             onKeyDown={onSearchKeyDown}
@@ -295,7 +286,7 @@ export default function TxnDialog({ txn, initialType, initialContact, initialSub
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
           <Select label="Type" value={type} onChange={e => setType(e.target.value as TxnType)} options={TXN_TYPE_OPTIONS.map(t => ({ value: t, label: t }))} />
-          <Input label="Amount" type="number" value={amount} onChange={e => setAmount(e.target.value)} placeholder="0.00" error={errors.amount} />
+          <Input ref={amountRef} label="Amount" type="number" value={amount} onChange={e => setAmount(e.target.value)} placeholder="0.00" error={errors.amount} />
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
           <Select label="Category" value={catId} onChange={e => { setCatId(e.target.value); setSubcategoryId('') }} options={categories.map(c => ({ value: c.id, label: c.name }))} />

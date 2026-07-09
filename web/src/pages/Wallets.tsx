@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react'
+import toast from 'react-hot-toast'
 import { useQuery } from '@tanstack/react-query'
 import { listWallets, listCategories, listSubcategories } from '../api/endpoints'
-import { useCreateWallet } from '../hooks/useWallets'
+import { useCreateWallet, useUpdateWallet, useDeleteWallet } from '../hooks/useWallets'
 import { useTransactions } from '../hooks/useTransactions'
 import { useSearch } from '../context/SearchContext'
 import { fmt } from '../lib/formatter'
@@ -18,6 +19,7 @@ import Eyebrow from '../components/ui/Eyebrow'
 import Badge from '../components/ui/Badge'
 import WalletCard, { WalletCardGhost, inferVariant } from '../components/ui/WalletCard'
 import DrawerPanel from '../components/ui/DrawerPanel'
+import ConfirmDialog from '../components/ui/ConfirmDialog'
 import { ICONS } from '../components/ui/Icons'
 
 function variantOf(w: Wallet) {
@@ -28,7 +30,10 @@ export default function Wallets() {
   const { searchTerm } = useSearch()
   const { data: wallets, isLoading } = useQuery({ queryKey: ['wallets'], queryFn: listWallets })
   const [showAddWallet, setShowAddWallet] = useState(false)
+  const [showEditWallet, setShowEditWallet] = useState<Wallet | null>(null)
+  const [showDeleteWallet, setShowDeleteWallet] = useState<Wallet | null>(null)
   const [activeWalletId, setActiveWalletId] = useState<number | null>(null)
+  const del = useDeleteWallet()
 
   const filteredWallets = useMemo(() =>
     (wallets ?? []).filter(w =>
@@ -42,6 +47,25 @@ export default function Wallets() {
     () => (wallets ?? []).find(w => w.id === activeWalletId) ?? null,
     [wallets, activeWalletId]
   )
+
+  const handleDeleteConfirm = (w: Wallet) => {
+    del.mutate(w.shortName, {
+      onSuccess: () => {
+        toast.success('Wallet deleted successfully')
+        setShowDeleteWallet(null)
+      },
+      onError: (err: any) => {
+        toast.error(
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            <strong style={{ fontSize: 14 }}>Failed to Delete Wallet</strong>
+            <span style={{ fontSize: 13, opacity: 0.9 }}>{err.message || 'An unknown error occurred.'}</span>
+          </div>,
+          { duration: 4000 }
+        )
+        setShowDeleteWallet(null)
+      }
+    })
+  }
 
   if (isLoading) return <p style={{ color: 'var(--color-text-tertiary)', padding: 40 }}>Loading...</p>
 
@@ -88,14 +112,46 @@ export default function Wallets() {
       </section>
 
       {showAddWallet && <AddWalletDialog onClose={() => setShowAddWallet(false)} />}
+      {showEditWallet && (
+        <EditWalletDialog 
+          wallet={showEditWallet} 
+          onClose={() => setShowEditWallet(null)} 
+        />
+      )}
+      {showDeleteWallet && (
+        <ConfirmDialog
+          title="Delete Wallet"
+          message={<>
+            Delete <strong>"{showDeleteWallet.name}"</strong>?
+            <br />
+            <span style={{ fontSize: 13, opacity: 0.7 }}>This action cannot be undone.</span>
+          </>}
+          confirmText="Delete"
+          type="danger"
+          onConfirm={() => handleDeleteConfirm(showDeleteWallet)}
+          onClose={() => setShowDeleteWallet(null)}
+        />
+      )}
       {activeWallet && (
-        <WalletDrawer wallet={activeWallet} onClose={() => setActiveWalletId(null)} />
+        <WalletDrawer
+          wallet={activeWallet}
+          wallets={wallets ?? []}
+          onEdit={(w) => {
+            setShowEditWallet(w)
+            setActiveWalletId(null)
+          }}
+          onDelete={(w) => {
+            setShowDeleteWallet(w)
+            setActiveWalletId(null)
+          }}
+          onClose={() => setActiveWalletId(null)}
+        />
       )}
     </div>
   )
 }
 
-function WalletDrawer({ wallet, onClose }: { wallet: Wallet; onClose: () => void }) {
+function WalletDrawer({ wallet, wallets, onEdit, onDelete, onClose }: { wallet: Wallet; wallets: Wallet[]; onEdit: (w: Wallet) => void; onDelete: (w: Wallet) => void; onClose: () => void }) {
   const { data: resp } = useTransactions()
   const { data: subcategories } = useQuery({ queryKey: ['subcategories'], queryFn: () => listSubcategories() })
   const { data: categories } = useQuery({ queryKey: ['categories'], queryFn: () => listCategories() })
@@ -121,6 +177,18 @@ function WalletDrawer({ wallet, onClose }: { wallet: Wallet; onClose: () => void
     return m
   }, [subcategories, catNameMap])
 
+  // Compute the same paletteIndex that the list view uses
+  const paletteIndex = useMemo(() => {
+    const counts: Record<string, number> = {}
+    for (const w of wallets) {
+      const v = variantOf(w)
+      const idx = counts[v] ?? 0
+      counts[v] = idx + 1
+      if (w.id === wallet.id) return idx
+    }
+    return 0
+  }, [wallets, wallet.id])
+
   const txns = (resp?.data ?? [])
     .filter(t => t.srcId === wallet.shortName || t.dstId === wallet.shortName)
     .sort((a, b) => b.timestamp - a.timestamp)
@@ -136,9 +204,12 @@ function WalletDrawer({ wallet, onClose }: { wallet: Wallet; onClose: () => void
       <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
         <WalletCard
           variant={variantOf(wallet)}
+          paletteIndex={paletteIndex}
           name={wallet.name}
           shortName={wallet.shortName}
           balance={wallet.balance}
+          onEdit={() => onEdit(wallet)}
+          onDelete={() => onDelete(wallet)}
         />
 
         <div>
@@ -196,6 +267,23 @@ function AddWalletDialog({ onClose }: { onClose: () => void }) {
   const [name, setName] = useState('')
   const [balance, setBalance] = useState('')
 
+  const handleSubmit = () => {
+    create.mutate({
+      type: type as any,
+      shortName,
+      name,
+      balance: balance === '' ? 0 : parseFloat(balance)
+    }, {
+      onSuccess: () => {
+        toast.success('Wallet created successfully')
+        onClose()
+      },
+      onError: (err: any) => {
+        toast.error(err.message || 'Failed to create wallet.')
+      }
+    })
+  }
+
   return (
     <Modal title="Add New Wallet" onClose={onClose} width={460}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
@@ -205,7 +293,45 @@ function AddWalletDialog({ onClose }: { onClose: () => void }) {
         <Input label="Initial Balance" type="number" placeholder="0.00" value={balance} onChange={e => setBalance(e.target.value)} />
         <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', marginTop: 12 }}>
           <Button variant="secondary" onClick={onClose}>Cancel</Button>
-          <Button onClick={() => create.mutate({ type: type as any, shortName, name, balance: parseFloat(balance) }, { onSuccess: onClose })} disabled={!name || !shortName || !balance} style={{ padding: '12px 32px' }}>Create Wallet</Button>
+          <Button onClick={handleSubmit} disabled={!name || !shortName || create.isPending} style={{ padding: '12px 32px' }}>
+            Create Wallet
+          </Button>
+        </div>
+      </div>
+    </Modal>
+  )
+}
+
+function EditWalletDialog({ wallet, onClose }: { wallet: Wallet; onClose: () => void }) {
+  const update = useUpdateWallet()
+  const [name, setName] = useState(wallet.name)
+  const [shortName, setShortName] = useState(wallet.shortName)
+
+  const handleSubmit = () => {
+    update.mutate(
+      { id: wallet.id, wallet: { name, shortName } },
+      { 
+        onSuccess: () => {
+          toast.success('Wallet updated successfully')
+          onClose()
+        },
+        onError: (err: any) => {
+          toast.error(err.message || 'Failed to update wallet.')
+        }
+      }
+    )
+  }
+
+  return (
+    <Modal title="Edit Wallet" onClose={onClose} width={460}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+        <Input label="Short Name" placeholder="e.g. brac, cash" value={shortName} onChange={e => setShortName(e.target.value)} />
+        <Input label="Display Name" placeholder="e.g. Personal Savings" value={name} onChange={e => setName(e.target.value)} />
+        <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', marginTop: 12 }}>
+          <Button variant="secondary" onClick={onClose}>Cancel</Button>
+          <Button onClick={handleSubmit} disabled={!name || !shortName || update.isPending} style={{ padding: '12px 32px' }}>
+            Save Changes
+          </Button>
         </div>
       </div>
     </Modal>

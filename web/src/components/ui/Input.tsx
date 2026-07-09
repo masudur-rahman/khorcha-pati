@@ -1,11 +1,11 @@
-import React from 'react'
+import React, { forwardRef } from 'react'
 
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label: string
   error?: string
 }
 
-export default function Input({ label, error, style, ...props }: InputProps) {
+const Input = forwardRef<HTMLInputElement, InputProps>(function Input({ label, error, style, ...props }, ref) {
   return (
     <label style={{ display: 'flex', flexDirection: 'column', gap: 6, width: '100%' }}>
       <span style={{ 
@@ -19,6 +19,7 @@ export default function Input({ label, error, style, ...props }: InputProps) {
         {label}
       </span>
       <input 
+        ref={ref}
         style={{
           width: '100%',
           background: 'var(--color-bg)',
@@ -45,4 +46,6 @@ export default function Input({ label, error, style, ...props }: InputProps) {
       {error && <span style={{ fontSize: 11, color: 'var(--color-danger)', marginLeft: 4 }}>{error}</span>}
     </label>
   )
-}
+})
+
+export default Input

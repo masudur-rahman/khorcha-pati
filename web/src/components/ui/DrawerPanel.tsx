@@ -8,9 +8,10 @@ interface Props {
   width?: number
   children: ReactNode
   footer?: ReactNode
+  headerActions?: ReactNode
 }
 
-export default function DrawerPanel({ title, subtitle, onClose, width = 480, children, footer }: Props) {
+export default function DrawerPanel({ title, subtitle, onClose, width = 480, children, footer, headerActions }: Props) {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
     document.addEventListener('keydown', onKey)
@@ -59,18 +60,21 @@ export default function DrawerPanel({ title, subtitle, onClose, width = 480, chi
               <p style={{ margin: '2px 0 0', fontSize: 12, color: 'var(--color-text-tertiary)' }}>{subtitle}</p>
             )}
           </div>
-          <button
-            onClick={onClose}
-            aria-label="Close"
-            style={{
-              width: 36, height: 36, borderRadius: 'var(--radius-sm)',
-              border: '1px solid var(--color-border)', background: 'var(--color-surface)',
-              color: 'var(--color-text-secondary)', cursor: 'pointer',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-            }}
-          >
-            {ICONS.x(16)}
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+            {headerActions}
+            <button
+              onClick={onClose}
+              aria-label="Close"
+              style={{
+                width: 36, height: 36, borderRadius: 'var(--radius-sm)',
+                border: '1px solid var(--color-border)', background: 'var(--color-surface)',
+                color: 'var(--color-text-secondary)', cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+              }}
+            >
+              {ICONS.x(16)}
+            </button>
+          </div>
         </header>
         <div style={{ flex: 1, overflowY: 'auto', padding: '20px 24px' }}>{children}</div>
         {footer && (

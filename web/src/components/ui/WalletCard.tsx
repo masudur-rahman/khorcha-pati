@@ -1,5 +1,6 @@
 import { CSSProperties } from 'react'
 import { fmt } from '../../lib/formatter'
+import { ICONS } from './Icons'
 
 export type WalletCardVariant = 'Bank' | 'Cash' | 'Mobile' | 'Credit'
 
@@ -11,6 +12,8 @@ interface Props {
   paletteIndex?: number
   trend?: { amount: number; days?: number }
   onClick?: () => void
+  onEdit?: () => void
+  onDelete?: () => void
   style?: CSSProperties
 }
 
@@ -59,7 +62,7 @@ export function inferVariant(type: string, name: string, shortName: string): Wal
   return 'Cash'
 }
 
-export default function WalletCard({ variant, name, shortName, balance, paletteIndex = 0, trend, onClick, style }: Props) {
+export default function WalletCard({ variant, name, shortName, balance, paletteIndex = 0, trend, onClick, onEdit, onDelete, style }: Props) {
   const palette = palettes[variant]
   const bg = palette[paletteIndex % palette.length]
   const pattern = PATTERNS[paletteIndex % PATTERNS.length]
@@ -167,7 +170,7 @@ export default function WalletCard({ variant, name, shortName, balance, paletteI
           {fmt(balance)}
         </span>
         <div style={{
-          display: 'flex', justifyContent: 'space-between', alignItems: 'baseline',
+          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
           fontSize: 'clamp(9px, 2.6cqi, 11px)', fontWeight: 700, opacity: 0.94,
           gap: 8, minWidth: 0,
         }}>
@@ -175,11 +178,47 @@ export default function WalletCard({ variant, name, shortName, balance, paletteI
             textTransform: 'uppercase', letterSpacing: '0.08em',
             whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0,
           }}>{name}</span>
-          {trend && (
+          {trend && !onEdit && !onDelete && (
             <span style={{ whiteSpace: 'nowrap', flexShrink: 0 }}>
               {trendPositive ? '↑' : '↓'} {trendPositive ? '+' : '−'}{fmt(Math.abs(trend.amount))}
               {trend.days ? ` · ${trend.days}d` : ''}
             </span>
+          )}
+          {(onEdit || onDelete) && (
+            <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+              {onEdit && (
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); onEdit() }}
+                  style={{
+                    background: 'rgba(59,130,246,0.5)', border: '1px solid rgba(59,130,246,0.6)', borderRadius: 8, width: 30, height: 30,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'white',
+                    backdropFilter: 'blur(4px)', transition: 'all 0.2s',
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.background = 'rgba(59,130,246,0.75)' }}
+                  onMouseLeave={e => { e.currentTarget.style.background = 'rgba(59,130,246,0.5)' }}
+                  title="Edit Wallet"
+                >
+                  {ICONS.edit(14)}
+                </button>
+              )}
+              {onDelete && (
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); onDelete() }}
+                  style={{
+                    background: 'rgba(220,38,38,0.5)', border: '1px solid rgba(220,38,38,0.6)', borderRadius: 8, width: 30, height: 30,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'white',
+                    backdropFilter: 'blur(4px)', transition: 'all 0.2s',
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.background = 'rgba(220,38,38,0.75)' }}
+                  onMouseLeave={e => { e.currentTarget.style.background = 'rgba(220,38,38,0.5)' }}
+                  title="Delete Wallet"
+                >
+                  {ICONS.trash(14)}
+                </button>
+              )}
+            </div>
           )}
         </div>
       </div>

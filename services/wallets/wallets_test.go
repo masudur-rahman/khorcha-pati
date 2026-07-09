@@ -28,6 +28,7 @@ func TestCreateWallet_success(t *testing.T) {
 		Type:      models.CashAccount,
 	}
 
+	repo.On("ListWallets", testUserID).Return([]models.Wallet{}, nil)
 	repo.On("AddNewWallet", wallet).Return(nil)
 
 	err := svc.CreateWallet(wallet)
@@ -50,6 +51,7 @@ func TestCreateWallet_positiveInitialBalance(t *testing.T) {
 		Balance:   1000,
 	}
 
+	repo.On("ListWallets", testUserID).Return([]models.Wallet{}, nil)
 	repo.On("AddNewWallet", mock.MatchedBy(func(w *models.Wallet) bool {
 		return w.Balance == 0
 	})).Return(nil)
@@ -86,6 +88,7 @@ func TestCreateWallet_negativeInitialBalance(t *testing.T) {
 		Balance:   -500,
 	}
 
+	repo.On("ListWallets", testUserID).Return([]models.Wallet{}, nil)
 	repo.On("AddNewWallet", mock.MatchedBy(func(w *models.Wallet) bool {
 		return w.Balance == 0
 	})).Return(nil)
@@ -133,6 +136,7 @@ func TestCreateWallet_duplicateError(t *testing.T) {
 		Name:      "Cash",
 	}
 
+	repo.On("ListWallets", testUserID).Return([]models.Wallet{}, nil)
 	repo.On("AddNewWallet", wallet).Return(fmt.Errorf("duplicate key"))
 
 	err := svc.CreateWallet(wallet)
@@ -229,6 +233,7 @@ func TestDeleteWallet_success(t *testing.T) {
 	txnRepo := &mocks.TransactionRepo{}
 	svc := NewWalletService(styx.UnitOfWork{}, repo, txnRepo)
 
+	txnRepo.On("ListTransactions", mock.Anything).Return([]models.Transaction{}, nil)
 	repo.On("DeleteWallet", testUserID, "cash").Return(nil)
 
 	err := svc.DeleteWallet(testUserID, "cash")

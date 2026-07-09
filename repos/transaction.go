@@ -16,6 +16,8 @@ type TransactionRepository interface {
 	ListTransactionsByCategory(userID int64, catID string) ([]models.Transaction, error)
 	ListTransactions(filter models.Transaction) ([]models.Transaction, error)
 	ListTransactionsByTime(userID int64, txnType models.TransactionType, startTime, endTime int64) ([]models.Transaction, error)
+	UpdateTransactionsWallet(userID int64, oldShortName, newShortName string) error
+	UpdateTransactionsContact(userID int64, oldNickName, newNickName string) error
 
 	GetTxnCategoryName(catID string) (string, error)
 	ListTxnCategories() ([]models.TxnCategory, error)

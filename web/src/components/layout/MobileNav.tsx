@@ -8,10 +8,11 @@ const primary = [
   { to: '/', icon: ICONS.dashboard, label: 'Home', match: (p: string) => p === '/' },
   { to: '/transactions', icon: ICONS.transactions, label: 'Txns', match: (p: string) => p.startsWith('/transactions') },
   { to: '/wallets', icon: ICONS.wallet, label: 'Wallets', match: (p: string) => p.startsWith('/wallets') },
+  { to: '/contacts', icon: ICONS.users, label: 'Contacts', match: (p: string) => p.startsWith('/contacts') },
   { to: '/budgets', icon: ICONS.budget, label: 'Budgets', match: (p: string) => p.startsWith('/budgets') },
 ]
 
-const moreRoutes = ['/contacts', '/settings', '/admin']
+const moreRoutes = ['/settings', '/admin']
 
 export default function MobileNav() {
   const { isAdmin, logout } = useAuth()
@@ -117,7 +118,6 @@ export default function MobileNav() {
               textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 12px 8px',
             }}>More</h3>
 
-            <SheetRow icon={ICONS.users(20)} label="Contacts" onClick={() => navigate('/contacts')} />
             <SheetRow icon={ICONS.settings(20)} label="Settings" onClick={() => navigate('/settings')} />
             {isAdmin && <SheetRow icon={ICONS.admin(20)} label="Admin" onClick={() => navigate('/admin')} />}
 

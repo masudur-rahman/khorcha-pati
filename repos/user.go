@@ -12,6 +12,7 @@ type ContactRepository interface {
 	GetContactByName(userID int64, name string) (*models.Contacts, error)
 	ListContacts(userID int64) ([]models.Contacts, error)
 	AddNewContact(contact *models.Contacts) error
+	UpdateContact(contact *models.Contacts) error
 	UpdateContactBalance(id int64, amount float64) error
 	DeleteContact(id int64) error
 }

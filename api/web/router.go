@@ -41,8 +41,12 @@ func NewRouter(jwtSecret, corsOrigin string) chi.Router {
 
 			r.Get("/wallets", HandleListWallets)
 			r.Post("/wallets", HandleCreateWallet)
+			r.Put("/wallets/{id}", HandleUpdateWallet)
+			r.Delete("/wallets/{shortName}", HandleDeleteWallet)
 			r.Get("/contacts", HandleListContacts)
 			r.Post("/contacts", HandleCreateContact)
+			r.Put("/contacts/{id}", HandleUpdateContact)
+			r.Delete("/contacts/{id}", HandleDeleteContact)
 
 			r.Get("/budgets", HandleListBudgets)
 			r.Post("/budgets", HandleSetBudget)

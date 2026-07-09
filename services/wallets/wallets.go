@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math"
+	"strings"
 	"time"
 
 	"github.com/masudur-rahman/khorcha-pati/models"
@@ -45,6 +46,26 @@ func (ws *walletService) CreateWallet(wallet *models.Wallet) (err error) {
 	if wallet.UserID == 0 {
 		return fmt.Errorf("user-id can't be empty")
 	}
+
+	wallets, err := ws.walletRepo.ListWallets(wallet.UserID)
+	if err != nil {
+		return err
+	}
+	for _, existing := range wallets {
+		if strings.EqualFold(existing.Name, wallet.Name) {
+			return models.StatusError{
+				Status:  409,
+				Message: fmt.Sprintf("wallet already exists with name: %s", wallet.Name),
+			}
+		}
+		if strings.EqualFold(existing.ShortName, wallet.ShortName) {
+			return models.StatusError{
+				Status:  409,
+				Message: fmt.Sprintf("wallet already exists with short-name: %s", wallet.ShortName),
+			}
+		}
+	}
+
 	wallet.CreatedAt = time.Now().Unix()
 
 	initialBalance := wallet.Balance
@@ -104,10 +125,102 @@ func (ws *walletService) CreateWallet(wallet *models.Wallet) (err error) {
 	return nil
 }
 
+func (ws *walletService) GetWalletByID(userID, id int64) (*models.Wallet, error) {
+	return ws.walletRepo.GetWalletByID(userID, id)
+}
+
+func (ws *walletService) UpdateWallet(userID, id int64, name, shortName string) (err error) {
+	if name == "" || shortName == "" {
+		return models.StatusError{
+			Status:  400,
+			Message: "wallet name and short name cannot be empty",
+		}
+	}
+
+	w, err := ws.walletRepo.GetWalletByID(userID, id)
+	if err != nil {
+		return err
+	}
+
+	oldShortName := w.ShortName
+
+	wallets, err := ws.walletRepo.ListWallets(userID)
+	if err != nil {
+		return err
+	}
+	for _, existing := range wallets {
+		if existing.ID != id {
+			if strings.EqualFold(existing.Name, name) {
+				return models.StatusError{
+					Status:  409,
+					Message: fmt.Sprintf("wallet already exists with name: %s", name),
+				}
+			}
+			if strings.EqualFold(existing.ShortName, shortName) {
+				return models.StatusError{
+					Status:  409,
+					Message: fmt.Sprintf("wallet already exists with short-name: %s", shortName),
+				}
+			}
+		}
+	}
+
+	w.Name = name
+	w.ShortName = shortName
+
+	uow, err := ws.uow.Begin(context.Background())
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err != nil {
+			_ = uow.Rollback()
+			return
+		}
+		err = uow.Commit()
+	}()
+
+	if err = ws.walletRepo.WithUnitOfWork(uow).UpdateWallet(w); err != nil {
+		return err
+	}
+
+	if oldShortName != shortName {
+		if err = ws.txnRepo.WithUnitOfWork(uow).UpdateTransactionsWallet(userID, oldShortName, shortName); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func (ws *walletService) UpdateWalletBalance(userID int64, shortName string, amount float64) error {
 	return ws.walletRepo.UpdateWalletBalance(userID, shortName, amount)
 }
 
 func (ws *walletService) DeleteWallet(userID int64, shortName string) error {
+	// Check if transactions exist referencing this wallet as SrcID
+	txns, err := ws.txnRepo.ListTransactions(models.Transaction{UserID: userID, SrcID: shortName})
+	if err != nil {
+		return err
+	}
+	if len(txns) > 0 {
+		return models.StatusError{
+			Status:  400,
+			Message: fmt.Sprintf("cannot delete wallet '%s': it has active transactions", shortName),
+		}
+	}
+
+	// Check if transactions exist referencing this wallet as DstID
+	txns, err = ws.txnRepo.ListTransactions(models.Transaction{UserID: userID, DstID: shortName})
+	if err != nil {
+		return err
+	}
+	if len(txns) > 0 {
+		return models.StatusError{
+			Status:  400,
+			Message: fmt.Sprintf("cannot delete wallet '%s': it has active transactions", shortName),
+		}
+	}
+
 	return ws.walletRepo.DeleteWallet(userID, shortName)
 }

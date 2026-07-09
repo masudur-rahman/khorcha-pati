@@ -53,7 +53,7 @@ func (u *SQLContactRepository) GetContactByName(userID int64, name string) (*mod
 	}
 	ctx := context.Background()
 	var c models.Contacts
-	found, err := u.db.MustFilterCols("nick_name").FindOne(ctx, &c, models.Contacts{UserID: userID, NickName: name})
+	found, err := u.db.Where("LOWER(nick_name) = LOWER(?)", name).FindOne(ctx, &c, models.Contacts{UserID: userID})
 	if err != nil {
 		return nil, err
 	}
@@ -102,4 +102,10 @@ func (u *SQLContactRepository) DeleteContact(id int64) error {
 	u.logger.Infow("deleting contact", "id", id)
 	ctx := context.Background()
 	return u.db.DeleteOne(ctx, models.Contacts{ID: id})
+}
+
+func (u *SQLContactRepository) UpdateContact(contact *models.Contacts) error {
+	u.logger.Infow("updating contact name and nickname", "id", contact.ID)
+	ctx := context.Background()
+	return u.db.ID(contact.ID).MustCols("nick_name", "full_name", "email", "contact_info").UpdateOne(ctx, contact)
 }

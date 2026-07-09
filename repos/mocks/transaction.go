@@ -86,3 +86,11 @@ func (m *TransactionRepo) ListTxnSubcategories(catID string) ([]models.TxnSubcat
 func (m *TransactionRepo) UpdateTxnCategories() error {
 	return m.Called().Error(0)
 }
+
+func (m *TransactionRepo) UpdateTransactionsWallet(userID int64, oldShortName, newShortName string) error {
+	return m.Called(userID, oldShortName, newShortName).Error(0)
+}
+
+func (m *TransactionRepo) UpdateTransactionsContact(userID int64, oldNickName, newNickName string) error {
+	return m.Called(userID, oldNickName, newNickName).Error(0)
+}

@@ -9,6 +9,7 @@ type ContactService interface {
 	GetContactByName(userID int64, name string) (*models.Contacts, error)
 	ListContacts(userID int64) ([]models.Contacts, error)
 	CreateContact(contact *models.Contacts) error
+	UpdateContact(userID, id int64, nickName, fullName, email string) error
 	UpdateContactBalance(id int64, amount float64) error
 	DeleteContact(id int64) error
 }

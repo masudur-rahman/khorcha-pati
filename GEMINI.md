@@ -120,6 +120,8 @@ func HandleExample(ctx telebot.Context) error {
 - Backend intent validation: `validateClassification` in `api/web/ai_cache_handlers.go` should use `strings.EqualFold` when checking against predefined types in `models/transaction.go` to support case-insensitively validated intents.
 - Placeholder replacement: Reordering placeholder replacements to process double curly braces before single curly braces, or using a robust regular expression like `(?i)\{\{\s*name\s*\}\}|\{\s*name\s*\}` prevents sub-pattern matching from causing malformed outputs.
 - Commit Management: Always create a new commit when instructed to commit, rather than amending the previous commit, unless explicitly asked to amend.
+- React Input Component Ref Forwarding: When focusing inputs dynamically using React refs, make sure the input component itself is wrapped in `React.forwardRef` to avoid ref-forwarding warnings/errors.
+- Transaction Cascading on Rename: Denormalized text columns in transaction tables (like wallet name/contact name) must be updated inside a database unit of work (transaction block) using raw SQL EXEC queries to ensure atomic cascading updates.
 
 
 <!-- code-review-graph MCP tools -->

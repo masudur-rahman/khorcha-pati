@@ -37,7 +37,7 @@ func (ts *txnService) AddTransaction(txn models.Transaction) (err error) {
 	if txn.SubcategoryID == "" {
 		return models.ErrInvalidTransaction{Reason: "subcategory is required"}
 	}
-	if txn.Amount <= 0 {
+	if txn.Amount <= 0 && txn.SubcategoryID != "misc-init" {
 		return models.ErrInvalidTransaction{Reason: "amount must be greater than zero"}
 	}
 	if types, ok := models.SubcategoryTypes[txn.SubcategoryID]; ok {

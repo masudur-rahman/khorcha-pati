@@ -2,9 +2,12 @@ package web
 
 import (
 	"net/http"
+	"strconv"
 
 	"github.com/masudur-rahman/khorcha-pati/models"
 	"github.com/masudur-rahman/khorcha-pati/services/all"
+
+	"github.com/go-chi/chi/v5"
 )
 
 // HandleListWallets handles GET /wallets.
@@ -51,9 +54,65 @@ func HandleCreateWallet(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := all.GetServices().Wallet.CreateWallet(wallet); err != nil {
-		WriteError(w, http.StatusInternalServerError, "create_failed", err.Error())
+		status, msg := models.ParseStatusError(err)
+		WriteError(w, status, "create_failed", msg)
 		return
 	}
 
 	WriteJSON(w, http.StatusCreated, wallet)
+}
+
+// HandleUpdateWallet handles PUT /wallets/{id}.
+func HandleUpdateWallet(w http.ResponseWriter, r *http.Request) {
+	claims, ok := UserFromContext(r.Context())
+	if !ok {
+		WriteError(w, http.StatusUnauthorized, "unauthorized", "missing claims")
+		return
+	}
+
+	id, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
+	if err != nil {
+		WriteError(w, http.StatusBadRequest, "bad_request", "invalid wallet id")
+		return
+	}
+
+	var req struct {
+		Name      string `json:"name"`
+		ShortName string `json:"shortName"`
+	}
+	if err := ReadJSON(r, &req); err != nil {
+		WriteError(w, http.StatusBadRequest, "bad_request", "invalid request body")
+		return
+	}
+
+	if err := all.GetServices().Wallet.UpdateWallet(claims.UserID, id, req.Name, req.ShortName); err != nil {
+		status, msg := models.ParseStatusError(err)
+		WriteError(w, status, "update_failed", msg)
+		return
+	}
+
+	WriteJSON(w, http.StatusOK, map[string]string{"message": "wallet updated"})
+}
+
+// HandleDeleteWallet handles DELETE /wallets/{shortName}.
+func HandleDeleteWallet(w http.ResponseWriter, r *http.Request) {
+	claims, ok := UserFromContext(r.Context())
+	if !ok {
+		WriteError(w, http.StatusUnauthorized, "unauthorized", "missing claims")
+		return
+	}
+
+	shortName := chi.URLParam(r, "shortName")
+	if shortName == "" {
+		WriteError(w, http.StatusBadRequest, "bad_request", "missing wallet shortName")
+		return
+	}
+
+	if err := all.GetServices().Wallet.DeleteWallet(claims.UserID, shortName); err != nil {
+		status, msg := models.ParseStatusError(err)
+		WriteError(w, status, "delete_failed", msg)
+		return
+	}
+
+	WriteJSON(w, http.StatusOK, map[string]string{"message": "wallet deleted"})
 }

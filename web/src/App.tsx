@@ -16,6 +16,8 @@ import Settings from './pages/Settings'
 import Statement from './pages/Statement'
 import Admin from './pages/Admin'
 
+import { Toaster } from 'react-hot-toast'
+
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, staleTime: 30_000 } },
 })
@@ -32,6 +34,16 @@ export default function App() {
           </SearchProvider>
         </AuthProvider>
       </ThemeProvider>
+      <Toaster 
+        position="top-right" 
+        toastOptions={{
+          style: {
+            background: 'var(--color-surface)',
+            color: 'var(--color-text-primary)',
+            border: '1px solid var(--color-border)'
+          }
+        }}
+      />
     </QueryClientProvider>
   )
 }

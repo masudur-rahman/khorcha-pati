@@ -53,11 +53,23 @@ export const listWallets = () => apiFetch<Wallet[]>(`${API}/wallets`)
 export const createWallet = (wallet: Partial<Wallet>) =>
   apiFetch<Wallet>(`${API}/wallets`, { method: 'POST', body: JSON.stringify(wallet) })
 
+export const updateWallet = (id: number, wallet: Partial<Wallet>) =>
+  apiFetch<{ message: string }>(`${API}/wallets/${id}`, { method: 'PUT', body: JSON.stringify(wallet) })
+
+export const deleteWallet = (shortName: string) =>
+  apiFetch<{ message: string }>(`${API}/wallets/${shortName}`, { method: 'DELETE' })
+
 // Contacts
 export const listContacts = () => apiFetch<Contact[]>(`${API}/contacts`)
 
 export const createContact = (contact: Partial<Contact>) =>
   apiFetch<Contact>(`${API}/contacts`, { method: 'POST', body: JSON.stringify(contact) })
+
+export const updateContact = (id: number, contact: Partial<Contact>) =>
+  apiFetch<{ message: string }>(`${API}/contacts/${id}`, { method: 'PUT', body: JSON.stringify(contact) })
+
+export const deleteContact = (id: number) =>
+  apiFetch<{ message: string }>(`${API}/contacts/${id}`, { method: 'DELETE' })
 
 // Budgets
 export const listBudgets = () => apiFetch<BudgetStatus[]>(`${API}/budgets`)

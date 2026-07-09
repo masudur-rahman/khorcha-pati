@@ -49,3 +49,15 @@ func (m *WalletRepo) UpdateWalletBalance(userID int64, shortName string, amount 
 func (m *WalletRepo) DeleteWallet(userID int64, shortName string) error {
 	return m.Called(userID, shortName).Error(0)
 }
+
+func (m *WalletRepo) GetWalletByID(userID, id int64) (*models.Wallet, error) {
+	args := m.Called(userID, id)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*models.Wallet), args.Error(1)
+}
+
+func (m *WalletRepo) UpdateWallet(wallet *models.Wallet) error {
+	return m.Called(wallet).Error(0)
+}

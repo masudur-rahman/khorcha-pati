@@ -75,7 +75,7 @@ func InitiateSQLServices(uow styx.UnitOfWork, logger logr.Logger) {
 
 	userSvc := usersvc.NewProfileService(userRepo)
 	walletSvc := walletsvc.NewWalletService(uow, walletRepo, txnRepo)
-	contactSvc := usersvc.NewContactService(contactRepo)
+	contactSvc := usersvc.NewContactService(uow, contactRepo, txnRepo)
 	txnSvc := txnsvc.NewTxnService(uow, walletRepo, contactRepo, txnRepo, eventRepo)
 	eventSvc := eventsvc.NewEventService(eventRepo)
 	budgetSvc := budgetsvc.NewBudgetService(budgetRepo, txnRepo)

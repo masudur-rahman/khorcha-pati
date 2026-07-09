@@ -3,6 +3,7 @@ package wallets
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/masudur-rahman/khorcha-pati/infra/logr"
@@ -99,4 +100,24 @@ func (a *SQLWalletRepository) DeleteWallet(userID int64, shortName string) error
 	a.logger.Infow("deleting wallet", "wallet", shortName)
 	ctx := context.Background()
 	return a.db.DeleteOne(ctx, models.Wallet{ShortName: shortName, UserID: userID})
+}
+
+func (a *SQLWalletRepository) GetWalletByID(userID, id int64) (*models.Wallet, error) {
+	a.logger.Infow("get wallet by id", "id", id)
+	ctx := context.Background()
+	var w models.Wallet
+	found, err := a.db.FindOne(ctx, &w, models.Wallet{ID: id, UserID: userID})
+	if err != nil {
+		return nil, err
+	}
+	if !found {
+		return nil, models.ErrAccountNotFound{AccID: fmt.Sprintf("%d", id)}
+	}
+	return &w, nil
+}
+
+func (a *SQLWalletRepository) UpdateWallet(wallet *models.Wallet) error {
+	a.logger.Infow("updating wallet name and shortName", "id", wallet.ID)
+	ctx := context.Background()
+	return a.db.ID(wallet.ID).MustCols("name", "short_name").UpdateOne(ctx, wallet)
 }

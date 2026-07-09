@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
+import toast from 'react-hot-toast'
 import { useQuery } from '@tanstack/react-query'
 import { useSearchParams } from 'react-router-dom'
 import { listContacts } from '../api/endpoints'
-import { useCreateContact } from '../hooks/useContacts'
+import { useCreateContact, useUpdateContact, useDeleteContact } from '../hooks/useContacts'
 import { useTransactions } from '../hooks/useTransactions'
 import { useSearch } from '../context/SearchContext'
 import { fmt } from '../lib/formatter'
@@ -16,6 +17,7 @@ import Input from '../components/ui/Input'
 import Eyebrow from '../components/ui/Eyebrow'
 import SectionHeader from '../components/ui/SectionHeader'
 import DrawerPanel from '../components/ui/DrawerPanel'
+import ConfirmDialog from '../components/ui/ConfirmDialog'
 import TxnDialog, { TxnType } from '../components/ui/TxnDialog'
 import { ICONS } from '../components/ui/Icons'
 
@@ -23,9 +25,12 @@ export default function Contacts() {
   const { searchTerm } = useSearch()
   const { data: contacts, isLoading } = useQuery({ queryKey: ['contacts'], queryFn: listContacts })
   const [showAddContact, setShowAddContact] = useState(false)
+  const [showEditContact, setShowEditContact] = useState<Contact | null>(null)
+  const [showDeleteContact, setShowDeleteContact] = useState<Contact | null>(null)
   const [activeId, setActiveId] = useState<number | null>(null)
   const [searchParams] = useSearchParams()
   const showParam = searchParams.get('show')
+  const del = useDeleteContact()
 
   useEffect(() => {
     if (showParam) {
@@ -51,6 +56,25 @@ export default function Contacts() {
       oweOthers: list.filter(c => c.netBalance < 0).reduce((s, c) => s + Math.abs(c.netBalance), 0),
     }
   }, [contacts])
+
+  const handleDeleteConfirm = (c: Contact) => {
+    del.mutate(c.id, {
+      onSuccess: () => {
+        toast.success('Contact deleted successfully')
+        setShowDeleteContact(null)
+      },
+      onError: (err: any) => {
+        toast.error(
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            <strong style={{ fontSize: 14 }}>Failed to Delete Contact</strong>
+            <span style={{ fontSize: 13, opacity: 0.9 }}>{err.message || 'An unknown error occurred.'}</span>
+          </div>,
+          { duration: 4000 }
+        )
+        setShowDeleteContact(null)
+      }
+    })
+  }
 
   const active = useMemo(() => (contacts ?? []).find(c => c.id === activeId) ?? null, [contacts, activeId])
 
@@ -98,7 +122,11 @@ export default function Contacts() {
           <Card padding={0}>
             <div className="contact-list">
               {filtered.map(c => (
-                <ContactRow key={c.id} contact={c} onClick={() => setActiveId(c.id)} />
+                <ContactRow
+                  key={c.id}
+                  contact={c}
+                  onClick={() => setActiveId(c.id)}
+                />
               ))}
             </div>
           </Card>
@@ -106,7 +134,40 @@ export default function Contacts() {
       </section>
 
       {showAddContact && <AddContactDialog onClose={() => setShowAddContact(false)} />}
-      {active && <ContactDrawer contact={active} onClose={() => setActiveId(null)} />}
+      {showEditContact && (
+        <EditContactDialog 
+          contact={showEditContact} 
+          onClose={() => setShowEditContact(null)} 
+        />
+      )}
+      {showDeleteContact && (
+        <ConfirmDialog
+          title="Delete Contact"
+          message={<>
+            Delete <strong>"{showDeleteContact.fullName || showDeleteContact.nickName}"</strong>?
+            <br />
+            <span style={{ fontSize: 13, opacity: 0.7 }}>This action cannot be undone.</span>
+          </>}
+          confirmText="Delete"
+          type="danger"
+          onConfirm={() => handleDeleteConfirm(showDeleteContact)}
+          onClose={() => setShowDeleteContact(null)}
+        />
+      )}
+      {active && (
+        <ContactDrawer
+          contact={active}
+          onEdit={(c) => {
+            setShowEditContact(c)
+            setActiveId(null)
+          }}
+          onDelete={(c) => {
+            setShowDeleteContact(c)
+            setActiveId(null)
+          }}
+          onClose={() => setActiveId(null)}
+        />
+      )}
     </div>
   )
 }
@@ -180,9 +241,10 @@ function ContactRow({ contact, onClick }: { contact: Contact; onClick: () => voi
   )
 }
 
-function ContactDrawer({ contact, onClose }: { contact: Contact; onClose: () => void }) {
+function ContactDrawer({ contact, onEdit, onDelete, onClose }: { contact: Contact; onEdit: (c: Contact) => void; onDelete: (c: Contact) => void; onClose: () => void }) {
   const [add, setAdd] = useState<{ type: TxnType; sub: string } | null>(null)
   const { data: resp } = useTransactions()
+
   const nick = contact.nickName.toLowerCase()
   const txns = (resp?.data ?? [])
     .filter(t =>
@@ -197,8 +259,6 @@ function ContactDrawer({ contact, onClose }: { contact: Contact; onClose: () => 
   const settled = contact.netBalance === 0
   const color = settled ? 'var(--color-text-tertiary)' : owesYou ? 'var(--color-success)' : 'var(--color-danger)'
 
-  // Prefill the debt subcategory from the relationship: paying settles what you
-  // owe (return) or lends anew; receiving is them repaying you (recover) or you borrowing.
   const goAdd = (type: 'Expense' | 'Income') => {
     const sub = type === 'Expense'
       ? (contact.netBalance < 0 ? 'fin-return' : 'fin-lend')
@@ -212,6 +272,40 @@ function ContactDrawer({ contact, onClose }: { contact: Contact; onClose: () => 
       subtitle={contact.nickName.toUpperCase()}
       onClose={onClose}
       width={480}
+      headerActions={
+        <>
+          <button
+            onClick={() => onEdit(contact)}
+            style={{
+              width: 32, height: 32, borderRadius: 'var(--radius-sm)',
+              border: 'none', background: 'var(--color-primary)',
+              color: 'white', cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              transition: 'all 0.2s', opacity: 0.85,
+            }}
+            onMouseEnter={e => { e.currentTarget.style.opacity = '1' }}
+            onMouseLeave={e => { e.currentTarget.style.opacity = '0.85' }}
+            title="Edit Contact"
+          >
+            {ICONS.edit(15)}
+          </button>
+          <button
+            onClick={() => onDelete(contact)}
+            style={{
+              width: 32, height: 32, borderRadius: 'var(--radius-sm)',
+              border: 'none', background: 'var(--color-danger)',
+              color: 'white', cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              transition: 'all 0.2s', opacity: 0.85,
+            }}
+            onMouseEnter={e => { e.currentTarget.style.opacity = '1' }}
+            onMouseLeave={e => { e.currentTarget.style.opacity = '0.85' }}
+            title="Delete Contact"
+          >
+            {ICONS.trash(15)}
+          </button>
+        </>
+      }
     >
       <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
         <Card style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: 18, borderLeft: `4px solid ${color}`, borderRadius: 'var(--radius-md)' }}>
@@ -328,6 +422,18 @@ function AddContactDialog({ onClose }: { onClose: () => void }) {
   const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
 
+  const handleSubmit = () => {
+    create.mutate({ nickName, fullName, email }, { 
+      onSuccess: () => {
+        toast.success('Contact created successfully')
+        onClose()
+      },
+      onError: (err: any) => {
+        toast.error(err.message || 'Failed to create contact.')
+      }
+    })
+  }
+
   return (
     <Modal title="Add New Contact" onClose={onClose} width={460}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
@@ -337,11 +443,49 @@ function AddContactDialog({ onClose }: { onClose: () => void }) {
         <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', marginTop: 12 }}>
           <Button variant="secondary" onClick={onClose}>Cancel</Button>
           <Button
-            onClick={() => create.mutate({ nickName, fullName, email }, { onSuccess: onClose })}
-            disabled={!nickName}
+            onClick={handleSubmit}
+            disabled={!nickName || create.isPending}
             style={{ padding: '12px 32px' }}
           >
             Create Contact
+          </Button>
+        </div>
+      </div>
+    </Modal>
+  )
+}
+
+function EditContactDialog({ contact, onClose }: { contact: Contact; onClose: () => void }) {
+  const update = useUpdateContact()
+  const [nickName, setNickName] = useState(contact.nickName)
+  const [fullName, setFullName] = useState(contact.fullName || '')
+  const [email, setEmail] = useState(contact.email || '')
+
+  const handleSubmit = () => {
+    update.mutate(
+      { id: contact.id, contact: { nickName, fullName, email } },
+      { 
+        onSuccess: () => {
+          toast.success('Contact updated successfully')
+          onClose()
+        },
+        onError: (err: any) => {
+          toast.error(err.message || 'Failed to update contact.')
+        }
+      }
+    )
+  }
+
+  return (
+    <Modal title="Edit Contact" onClose={onClose} width={460}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+        <Input label="Nick Name (Unique)" placeholder="e.g. karim" value={nickName} onChange={e => setNickName(e.target.value)} />
+        <Input label="Full Name" placeholder="e.g. Abdul Karim" value={fullName} onChange={e => setFullName(e.target.value)} />
+        <Input label="Email Address" type="email" placeholder="karim@example.com" value={email} onChange={e => setEmail(e.target.value)} />
+        <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', marginTop: 12 }}>
+          <Button variant="secondary" onClick={onClose}>Cancel</Button>
+          <Button onClick={handleSubmit} disabled={!nickName || update.isPending} style={{ padding: '12px 32px' }}>
+            Save Changes
           </Button>
         </div>
       </div>

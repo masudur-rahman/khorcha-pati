@@ -97,6 +97,10 @@ func (m *ContactRepo) DeleteContact(id int64) error {
 	return m.Called(id).Error(0)
 }
 
+func (m *ContactRepo) UpdateContact(contact *models.Contacts) error {
+	return m.Called(contact).Error(0)
+}
+
 // EventRepo is a mock for repos.EventRepository.
 type EventRepo struct {
 	mock.Mock

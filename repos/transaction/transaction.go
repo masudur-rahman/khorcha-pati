@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/masudur-rahman/khorcha-pati/infra/logr"
@@ -223,4 +224,46 @@ func (t *SQLTransactionRepository) UpdateTxnCategories() error {
 		"subcatInserted", subcatInserted, "subcatUpdated", subcatUpdated,
 	)
 	return nil
+}
+
+func (t *SQLTransactionRepository) UpdateTransactionsWallet(userID int64, oldShortName, newShortName string) error {
+	t.logger.Infow("updating transactions wallet", "old", oldShortName, "new", newShortName)
+	ctx := context.Background()
+	query1 := formatQuery(t.db, `UPDATE "transaction" SET src_id = ? WHERE user_id = ? AND src_id = ?`)
+	_, err := t.db.Exec(ctx, query1, newShortName, userID, oldShortName)
+	if err != nil {
+		return err
+	}
+	query2 := formatQuery(t.db, `UPDATE "transaction" SET dst_id = ? WHERE user_id = ? AND dst_id = ?`)
+	_, err = t.db.Exec(ctx, query2, newShortName, userID, oldShortName)
+	return err
+}
+
+func (t *SQLTransactionRepository) UpdateTransactionsContact(userID int64, oldNickName, newNickName string) error {
+	t.logger.Infow("updating transactions contact", "old", oldNickName, "new", newNickName)
+	ctx := context.Background()
+	query := formatQuery(t.db, `UPDATE "transaction" SET contact_name = ? WHERE user_id = ? AND contact_name = ?`)
+	_, err := t.db.Exec(ctx, query, newNickName, userID, oldNickName)
+	return err
+}
+
+func formatQuery(db isql.Engine, query string) string {
+	typeName := fmt.Sprintf("%T", db)
+	valStr := fmt.Sprintf("%#v", db)
+	isPostgres := strings.Contains(typeName, "postgres") || strings.Contains(valStr, "postgres")
+	if !isPostgres {
+		return query
+	}
+
+	var sb strings.Builder
+	paramIdx := 1
+	for _, char := range query {
+		if char == '?' {
+			sb.WriteString(fmt.Sprintf("$%d", paramIdx))
+			paramIdx++
+		} else {
+			sb.WriteRune(char)
+		}
+	}
+	return sb.String()
 }

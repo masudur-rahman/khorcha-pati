@@ -2,9 +2,12 @@ package web
 
 import (
 	"net/http"
+	"strconv"
 
 	"github.com/masudur-rahman/khorcha-pati/models"
 	"github.com/masudur-rahman/khorcha-pati/services/all"
+
+	"github.com/go-chi/chi/v5"
 )
 
 // HandleListContacts handles GET /contacts.
@@ -51,9 +54,67 @@ func HandleCreateContact(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := all.GetServices().Contact.CreateContact(contact); err != nil {
-		WriteError(w, http.StatusInternalServerError, "create_failed", err.Error())
+		status, msg := models.ParseStatusError(err)
+		WriteError(w, status, "create_failed", msg)
 		return
 	}
 
 	WriteJSON(w, http.StatusCreated, contact)
+}
+
+// HandleUpdateContact handles PUT /contacts/{id}.
+func HandleUpdateContact(w http.ResponseWriter, r *http.Request) {
+	claims, ok := UserFromContext(r.Context())
+	if !ok {
+		WriteError(w, http.StatusUnauthorized, "unauthorized", "missing claims")
+		return
+	}
+
+	id, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
+	if err != nil {
+		WriteError(w, http.StatusBadRequest, "bad_request", "invalid contact id")
+		return
+	}
+
+	var req struct {
+		NickName    string `json:"nickName"`
+		FullName    string `json:"fullName"`
+		Email       string `json:"email"`
+		ContactInfo string `json:"contactInfo"`
+	}
+	if err := ReadJSON(r, &req); err != nil {
+		WriteError(w, http.StatusBadRequest, "bad_request", "invalid request body")
+		return
+	}
+
+	if err := all.GetServices().Contact.UpdateContact(claims.UserID, id, req.NickName, req.FullName, req.Email); err != nil {
+		status, msg := models.ParseStatusError(err)
+		WriteError(w, status, "update_failed", msg)
+		return
+	}
+
+	WriteJSON(w, http.StatusOK, map[string]string{"message": "contact updated"})
+}
+
+// HandleDeleteContact handles DELETE /contacts/{id}.
+func HandleDeleteContact(w http.ResponseWriter, r *http.Request) {
+	_, ok := UserFromContext(r.Context())
+	if !ok {
+		WriteError(w, http.StatusUnauthorized, "unauthorized", "missing claims")
+		return
+	}
+
+	id, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
+	if err != nil {
+		WriteError(w, http.StatusBadRequest, "bad_request", "invalid contact id")
+		return
+	}
+
+	if err := all.GetServices().Contact.DeleteContact(id); err != nil {
+		status, msg := models.ParseStatusError(err)
+		WriteError(w, status, "delete_failed", msg)
+		return
+	}
+
+	WriteJSON(w, http.StatusOK, map[string]string{"message": "contact deleted"})
 }
