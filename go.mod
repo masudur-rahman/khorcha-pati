@@ -1,6 +1,6 @@
 module github.com/masudur-rahman/khorcha-pati
 
-go 1.26.4
+go 1.26.5
 
 require (
 	github.com/chromedp/cdproto v0.0.0-20250222051814-50c6cb17f10a
