@@ -21,6 +21,7 @@ import WalletCard, { WalletCardGhost, inferVariant } from '../components/ui/Wall
 import DrawerPanel from '../components/ui/DrawerPanel'
 import ConfirmDialog from '../components/ui/ConfirmDialog'
 import { ICONS } from '../components/ui/Icons'
+import { validateDisplayName, validateShortName } from '../utils/validators'
 
 function variantOf(w: Wallet) {
   return inferVariant(w.type, w.name, w.shortName)
@@ -267,7 +268,11 @@ function AddWalletDialog({ onClose }: { onClose: () => void }) {
   const [name, setName] = useState('')
   const [balance, setBalance] = useState('')
 
+  const shortNameError = shortName ? validateShortName(shortName) : null
+  const nameError = name ? validateDisplayName(name) : null
+
   const handleSubmit = () => {
+    if (shortNameError || nameError) return
     create.mutate({
       type: type as any,
       shortName,
@@ -288,12 +293,12 @@ function AddWalletDialog({ onClose }: { onClose: () => void }) {
     <Modal title="Add New Wallet" onClose={onClose} width={460}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
         <Select label="Type" value={type} onChange={e => setType(e.target.value)} options={[{ value: 'Bank', label: 'Bank Account' }, { value: 'Cash', label: 'Cash / Other' }]} />
-        <Input label="Short Name" placeholder="e.g. brac, cash" value={shortName} onChange={e => setShortName(e.target.value)} />
-        <Input label="Display Name" placeholder="e.g. Personal Savings" value={name} onChange={e => setName(e.target.value)} />
+        <Input label="Short Name" placeholder="e.g. brac, cash" value={shortName} onChange={e => setShortName(e.target.value)} error={shortNameError || undefined} />
+        <Input label="Display Name" placeholder="e.g. Personal Savings" value={name} onChange={e => setName(e.target.value)} error={nameError || undefined} />
         <Input label="Initial Balance" type="number" placeholder="0.00" value={balance} onChange={e => setBalance(e.target.value)} />
         <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', marginTop: 12 }}>
           <Button variant="secondary" onClick={onClose}>Cancel</Button>
-          <Button onClick={handleSubmit} disabled={!name || !shortName || create.isPending} style={{ padding: '12px 32px' }}>
+          <Button onClick={handleSubmit} disabled={!name || !shortName || !!shortNameError || !!nameError || create.isPending} style={{ padding: '12px 32px' }}>
             Create Wallet
           </Button>
         </div>
@@ -307,7 +312,11 @@ function EditWalletDialog({ wallet, onClose }: { wallet: Wallet; onClose: () => 
   const [name, setName] = useState(wallet.name)
   const [shortName, setShortName] = useState(wallet.shortName)
 
+  const shortNameError = shortName ? validateShortName(shortName) : null
+  const nameError = name ? validateDisplayName(name) : null
+
   const handleSubmit = () => {
+    if (shortNameError || nameError) return
     update.mutate(
       { id: wallet.id, wallet: { name, shortName } },
       { 
@@ -325,11 +334,11 @@ function EditWalletDialog({ wallet, onClose }: { wallet: Wallet; onClose: () => 
   return (
     <Modal title="Edit Wallet" onClose={onClose} width={460}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-        <Input label="Short Name" placeholder="e.g. brac, cash" value={shortName} onChange={e => setShortName(e.target.value)} />
-        <Input label="Display Name" placeholder="e.g. Personal Savings" value={name} onChange={e => setName(e.target.value)} />
+        <Input label="Short Name" placeholder="e.g. brac, cash" value={shortName} onChange={e => setShortName(e.target.value)} error={shortNameError || undefined} />
+        <Input label="Display Name" placeholder="e.g. Personal Savings" value={name} onChange={e => setName(e.target.value)} error={nameError || undefined} />
         <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', marginTop: 12 }}>
           <Button variant="secondary" onClick={onClose}>Cancel</Button>
-          <Button onClick={handleSubmit} disabled={!name || !shortName || update.isPending} style={{ padding: '12px 32px' }}>
+          <Button onClick={handleSubmit} disabled={!name || !shortName || !!shortNameError || !!nameError || update.isPending} style={{ padding: '12px 32px' }}>
             Save Changes
           </Button>
         </div>

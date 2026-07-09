@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/masudur-rahman/khorcha-pati/models"
+	"github.com/masudur-rahman/khorcha-pati/pkg/validator"
 	"github.com/masudur-rahman/khorcha-pati/repos"
 	"github.com/masudur-rahman/khorcha-pati/services"
 
@@ -46,6 +47,20 @@ func (cs *contactService) CreateContact(contact *models.Contacts) error {
 		return fmt.Errorf("user-id can't be empty")
 	}
 
+	if !validator.IsValidShortName(contact.NickName) {
+		return models.StatusError{
+			Status:  400,
+			Message: "contact nickname cannot have spaces or special characters",
+		}
+	}
+
+	if contact.FullName != "" && !validator.IsValidDisplayName(contact.FullName) {
+		return models.StatusError{
+			Status:  400,
+			Message: "contact full name cannot have leading/trailing spaces or special characters",
+		}
+	}
+
 	contacts, err := cs.contactRepo.ListContacts(contact.UserID)
 	if err != nil {
 		return err
@@ -74,6 +89,20 @@ func (cs *contactService) UpdateContact(userID, id int64, nickName, fullName, em
 		return models.StatusError{
 			Status:  400,
 			Message: "contact nickname cannot be empty",
+		}
+	}
+
+	if !validator.IsValidShortName(nickName) {
+		return models.StatusError{
+			Status:  400,
+			Message: "contact nickname cannot have spaces or special characters",
+		}
+	}
+
+	if fullName != "" && !validator.IsValidDisplayName(fullName) {
+		return models.StatusError{
+			Status:  400,
+			Message: "contact full name cannot have leading/trailing spaces or special characters",
 		}
 	}
 

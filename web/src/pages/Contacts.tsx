@@ -20,6 +20,7 @@ import DrawerPanel from '../components/ui/DrawerPanel'
 import ConfirmDialog from '../components/ui/ConfirmDialog'
 import TxnDialog, { TxnType } from '../components/ui/TxnDialog'
 import { ICONS } from '../components/ui/Icons'
+import { validateDisplayName, validateShortName } from '../utils/validators'
 
 export default function Contacts() {
   const { searchTerm } = useSearch()
@@ -422,7 +423,11 @@ function AddContactDialog({ onClose }: { onClose: () => void }) {
   const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
 
+  const nickNameError = nickName ? validateShortName(nickName) : null
+  const fullNameError = fullName ? validateDisplayName(fullName) : null
+
   const handleSubmit = () => {
+    if (nickNameError || fullNameError) return
     create.mutate({ nickName, fullName, email }, { 
       onSuccess: () => {
         toast.success('Contact created successfully')
@@ -437,14 +442,14 @@ function AddContactDialog({ onClose }: { onClose: () => void }) {
   return (
     <Modal title="Add New Contact" onClose={onClose} width={460}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-        <Input label="Nick Name (Unique)" placeholder="e.g. karim" value={nickName} onChange={e => setNickName(e.target.value)} />
-        <Input label="Full Name" placeholder="e.g. Abdul Karim" value={fullName} onChange={e => setFullName(e.target.value)} />
+        <Input label="Nick Name (Unique)" placeholder="e.g. karim" value={nickName} onChange={e => setNickName(e.target.value)} error={nickNameError || undefined} />
+        <Input label="Full Name" placeholder="e.g. Abdul Karim" value={fullName} onChange={e => setFullName(e.target.value)} error={fullNameError || undefined} />
         <Input label="Email Address" type="email" placeholder="karim@example.com" value={email} onChange={e => setEmail(e.target.value)} />
         <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', marginTop: 12 }}>
           <Button variant="secondary" onClick={onClose}>Cancel</Button>
           <Button
             onClick={handleSubmit}
-            disabled={!nickName || create.isPending}
+            disabled={!nickName || !!nickNameError || !!fullNameError || create.isPending}
             style={{ padding: '12px 32px' }}
           >
             Create Contact
@@ -461,7 +466,11 @@ function EditContactDialog({ contact, onClose }: { contact: Contact; onClose: ()
   const [fullName, setFullName] = useState(contact.fullName || '')
   const [email, setEmail] = useState(contact.email || '')
 
+  const nickNameError = nickName ? validateShortName(nickName) : null
+  const fullNameError = fullName ? validateDisplayName(fullName) : null
+
   const handleSubmit = () => {
+    if (nickNameError || fullNameError) return
     update.mutate(
       { id: contact.id, contact: { nickName, fullName, email } },
       { 
@@ -479,12 +488,12 @@ function EditContactDialog({ contact, onClose }: { contact: Contact; onClose: ()
   return (
     <Modal title="Edit Contact" onClose={onClose} width={460}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-        <Input label="Nick Name (Unique)" placeholder="e.g. karim" value={nickName} onChange={e => setNickName(e.target.value)} />
-        <Input label="Full Name" placeholder="e.g. Abdul Karim" value={fullName} onChange={e => setFullName(e.target.value)} />
+        <Input label="Nick Name (Unique)" placeholder="e.g. karim" value={nickName} onChange={e => setNickName(e.target.value)} error={nickNameError || undefined} />
+        <Input label="Full Name" placeholder="e.g. Abdul Karim" value={fullName} onChange={e => setFullName(e.target.value)} error={fullNameError || undefined} />
         <Input label="Email Address" type="email" placeholder="karim@example.com" value={email} onChange={e => setEmail(e.target.value)} />
         <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', marginTop: 12 }}>
           <Button variant="secondary" onClick={onClose}>Cancel</Button>
-          <Button onClick={handleSubmit} disabled={!nickName || update.isPending} style={{ padding: '12px 32px' }}>
+          <Button onClick={handleSubmit} disabled={!nickName || !!nickNameError || !!fullNameError || update.isPending} style={{ padding: '12px 32px' }}>
             Save Changes
           </Button>
         </div>

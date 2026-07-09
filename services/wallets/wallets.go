@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/masudur-rahman/khorcha-pati/models"
+	"github.com/masudur-rahman/khorcha-pati/pkg/validator"
 	"github.com/masudur-rahman/khorcha-pati/repos"
 	"github.com/masudur-rahman/khorcha-pati/services"
 
@@ -45,6 +46,20 @@ func (ws *walletService) ListWalletsByType(userID int64, typ models.WalletType) 
 func (ws *walletService) CreateWallet(wallet *models.Wallet) (err error) {
 	if wallet.UserID == 0 {
 		return fmt.Errorf("user-id can't be empty")
+	}
+
+	if !validator.IsValidShortName(wallet.ShortName) {
+		return models.StatusError{
+			Status:  400,
+			Message: "wallet short name cannot have spaces or special characters",
+		}
+	}
+
+	if wallet.Name != "" && !validator.IsValidDisplayName(wallet.Name) {
+		return models.StatusError{
+			Status:  400,
+			Message: "wallet name cannot have leading/trailing spaces or special characters",
+		}
 	}
 
 	wallets, err := ws.walletRepo.ListWallets(wallet.UserID)
@@ -134,6 +149,20 @@ func (ws *walletService) UpdateWallet(userID, id int64, name, shortName string) 
 		return models.StatusError{
 			Status:  400,
 			Message: "wallet name and short name cannot be empty",
+		}
+	}
+
+	if !validator.IsValidShortName(shortName) {
+		return models.StatusError{
+			Status:  400,
+			Message: "wallet short name cannot have spaces or special characters",
+		}
+	}
+
+	if !validator.IsValidDisplayName(name) {
+		return models.StatusError{
+			Status:  400,
+			Message: "wallet name cannot have leading/trailing spaces or special characters",
 		}
 	}
 
