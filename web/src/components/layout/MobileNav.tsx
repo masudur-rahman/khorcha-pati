@@ -20,6 +20,8 @@ export default function MobileNav() {
   const navigate = useNavigate()
   const location = useLocation()
   const [showMore, setShowMore] = useState(false)
+  const [startY, setStartY] = useState(0)
+  const [currentY, setCurrentY] = useState(0)
 
   const moreActive = useMemo(() => moreRoutes.some(r => location.pathname.startsWith(r)), [location.pathname])
 
@@ -101,12 +103,29 @@ export default function MobileNav() {
         >
           <div
             onClick={e => e.stopPropagation()}
+            onTouchStart={e => setStartY(e.touches[0].clientY)}
+            onTouchMove={e => {
+              if (startY === 0) return
+              const y = e.touches[0].clientY
+              if (y > startY) {
+                setCurrentY(y - startY)
+              }
+            }}
+            onTouchEnd={() => {
+              if (currentY > 50) {
+                setShowMore(false)
+              }
+              setStartY(0)
+              setCurrentY(0)
+            }}
             style={{
               width: '100%', background: 'var(--color-surface)',
               borderTopLeftRadius: 20, borderTopRightRadius: 20,
               padding: '12px 16px calc(20px + env(safe-area-inset-bottom, 8px))',
               boxShadow: '0 -12px 32px rgba(0,0,0,0.18)',
               animation: 'sheetUp 0.22s cubic-bezier(0.4, 0, 0.2, 1)',
+              transform: `translateY(${currentY}px)`,
+              transition: currentY === 0 ? 'transform 0.2s' : 'none',
             }}
           >
             <div style={{

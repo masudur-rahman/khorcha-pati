@@ -22,6 +22,7 @@ import SectionHeader from '../components/ui/SectionHeader'
 import Eyebrow from '../components/ui/Eyebrow'
 import WalletCard, { inferVariant } from '../components/ui/WalletCard'
 import TxnDialog, { TxnType } from '../components/ui/TxnDialog'
+import DeleteTxnDialog from '../components/ui/DeleteTxnDialog'
 
 export default function Dashboard() {
   const navigate = useNavigate()
@@ -39,6 +40,7 @@ export default function Dashboard() {
   const [selectedTxn, setSelectedTxn] = useState<any>(null)
   const [addTxnType, setAddTxnType] = useState<TxnType | null>(null)
   const [editTxn, setEditTxn] = useState<any>(null)
+  const [deleteTxn, setDeleteTxn] = useState<any>(null)
 
   const isLoading = isChartsLoading || isCatsLoading || isSubsLoading
 
@@ -302,8 +304,11 @@ export default function Dashboard() {
           subcategories={subcategories ?? []}
           onClose={() => setSelectedTxn(null)}
           onEdit={(t) => { setSelectedTxn(null); setEditTxn(t) }}
+          onDelete={(t) => { setSelectedTxn(null); setDeleteTxn(t) }}
         />
       )}
+
+      {deleteTxn && <DeleteTxnDialog txn={deleteTxn} onClose={() => setDeleteTxn(null)} />}
 
       {showStatementModal && <StatementModal onClose={() => setShowStatementModal(false)} />}
 

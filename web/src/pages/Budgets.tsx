@@ -9,6 +9,8 @@ import TopBar from '../components/layout/TopBar'
 import Card from '../components/ui/Card'
 import Button from '../components/ui/Button'
 import Modal from '../components/ui/Modal'
+import ConfirmDialog from '../components/ui/ConfirmDialog'
+import ActionButton from '../components/ui/ActionButton'
 import Input from '../components/ui/Input'
 import Select from '../components/ui/Select'
 import BudgetGauge from '../components/charts/BudgetGauge'
@@ -22,8 +24,10 @@ export default function Budgets() {
   const { data: budgets, isLoading } = useBudgets()
   const { data: alerts } = useBudgetAlerts()
   const { data: categories } = useQuery({ queryKey: ['categories'], queryFn: () => listCategories() })
+  const del = useDeleteBudget()
   const [showAdd, setShowAdd] = useState(false)
   const [editing, setEditing] = useState<import('../types').BudgetStatus | null>(null)
+  const [deleting, setDeleting] = useState<import('../types').BudgetStatus | null>(null)
 
   const filteredBudgets = useMemo(() =>
     (budgets ?? []).filter(b => !searchTerm || b.categoryName.toLowerCase().includes(searchTerm.toLowerCase())),
@@ -144,19 +148,34 @@ export default function Budgets() {
         </Card>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 18 }}>
-          {filteredBudgets.map(b => <BudgetCard key={b.categoryId} budget={b} onEdit={() => setEditing(b)} />)}
+          {filteredBudgets.map(b => <BudgetCard key={b.categoryId} budget={b} onEdit={() => setEditing(b)} onDelete={() => setDeleting(b)} />)}
           <CreateBudgetCard onClick={() => setShowAdd(true)} />
         </div>
       )}
 
       {showAdd && <SetBudgetDialog categories={categories ?? []} onClose={() => setShowAdd(false)} />}
       {editing && <SetBudgetDialog categories={categories ?? []} existing={editing} onClose={() => setEditing(null)} />}
+      {deleting && (
+        <ConfirmDialog
+          title="Delete Budget"
+          message={
+            <>
+              Are you sure you want to delete the budget for <strong>{deleting.categoryName}</strong>?
+            </>
+          }
+          confirmText="Delete"
+          type="danger"
+          onConfirm={() => {
+            del.mutate(deleting.categoryId)
+          }}
+          onClose={() => setDeleting(null)}
+        />
+      )}
     </div>
   )
 }
 
-function BudgetCard({ budget, onEdit }: { budget: import('../types').BudgetStatus; onEdit: () => void }) {
-  const del = useDeleteBudget()
+function BudgetCard({ budget, onEdit, onDelete }: { budget: import('../types').BudgetStatus; onEdit: () => void; onDelete: () => void }) {
   const catAccent = categoryAccent(budget.categoryId)
   const status = budget.percent >= 100
     ? { label: budget.percent > 100 ? 'Over limit' : 'Limit reached', color: 'var(--color-danger)' }
@@ -187,21 +206,19 @@ function BudgetCard({ budget, onEdit }: { budget: import('../types').BudgetStatu
               overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
             }}>{budget.categoryName}</h3>
           </div>
-          <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
-            <button
+          <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+            <ActionButton
+              actionType="edit"
+              icon={ICONS.edit(14)}
               onClick={onEdit}
               aria-label="Edit budget"
-              style={{ width: 28, height: 28, borderRadius: 'var(--radius-sm)', background: 'transparent', cursor: 'pointer', color: 'var(--color-text-tertiary)', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all var(--transition-fast)', border: 'none' }}
-              onMouseEnter={e => { e.currentTarget.style.background = 'var(--color-primary-subtle)'; e.currentTarget.style.color = 'var(--color-primary)' }}
-              onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--color-text-tertiary)' }}
-            >{ICONS.edit(14)}</button>
-            <button
-              onClick={() => del.mutate(budget.categoryId)}
+            />
+            <ActionButton
+              actionType="delete"
+              icon={ICONS.trash(14)}
+              onClick={onDelete}
               aria-label="Delete budget"
-              style={{ width: 28, height: 28, borderRadius: 'var(--radius-sm)', background: 'transparent', cursor: 'pointer', color: 'var(--color-text-tertiary)', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all var(--transition-fast)', border: 'none' }}
-              onMouseEnter={e => { e.currentTarget.style.background = 'var(--color-danger-subtle)'; e.currentTarget.style.color = 'var(--color-danger)' }}
-              onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--color-text-tertiary)' }}
-            >{ICONS.trash(14)}</button>
+            />
           </div>
         </div>
 

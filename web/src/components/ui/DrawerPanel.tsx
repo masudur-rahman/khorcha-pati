@@ -94,7 +94,14 @@ export default function DrawerPanel({ title, subtitle, onClose, width = 480, chi
         @keyframes drawerFade { from { opacity: 0; } to { opacity: 1; } }
         @keyframes drawerIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
         @media (max-width: 640px) {
-          aside[role="dialog"] { width: 100vw !important; }
+          aside[role="dialog"] { 
+            width: calc(100vw - 24px) !important;
+            right: 12px !important;
+            height: calc(100% - 90px - env(safe-area-inset-bottom, 0px)) !important;
+            top: 20px !important;
+            border-radius: var(--radius-xl) !important;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5) !important;
+          }
         }
       `}</style>
     </>

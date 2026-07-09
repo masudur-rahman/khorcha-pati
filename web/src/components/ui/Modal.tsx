@@ -61,7 +61,11 @@ export default function Modal({ children, onClose, title, width = 560 }: ModalPr
             alignItems: 'center',
             justifyContent: 'space-between',
           }}>
-            {title && <h2 style={{ fontSize: 20, fontWeight: 700, color: 'var(--color-text-primary)', margin: 0 }}>{title}</h2>}
+            {title ? (
+              <h2 style={{ fontSize: 20, fontWeight: 700, color: 'var(--color-text-primary)', margin: 0 }}>{title}</h2>
+            ) : (
+              <div />
+            )}
             <button 
               onClick={onClose}
               style={{

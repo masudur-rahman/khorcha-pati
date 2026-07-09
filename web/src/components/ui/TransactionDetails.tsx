@@ -4,6 +4,7 @@ import { fmt } from '../../lib/formatter'
 import { ICONS } from './Icons'
 import Badge from './Badge'
 import CategoryIcon, { categoryAccent } from './CategoryIcon'
+import ActionButton from './ActionButton'
 
 interface TransactionDetailsProps {
   txn: Transaction
@@ -232,30 +233,21 @@ export default function TransactionDetails({
 
           {/* Actions */}
           <div style={{ padding: '14px 20px', borderTop: '1px solid var(--color-border)', display: 'flex', gap: 10, background: 'var(--color-surface)' }}>
-            <button
-              className="td-action-btn"
+            <ActionButton
+              actionType="edit"
+              icon={ICONS.edit(16)}
               onClick={() => onEdit?.(txn)}
-              style={{
-                flex: 1, height: 44, borderRadius: 12, border: 'none',
-                background: 'var(--color-primary)', color: 'white', fontWeight: 700,
-                fontSize: 14, cursor: 'pointer', display: 'flex', alignItems: 'center',
-                justifyContent: 'center', gap: 8, transition: 'all 0.2s', fontFamily: 'inherit',
-              }}
+              style={{ flex: 1, height: 44, borderRadius: 12, fontSize: 14 }}
             >
-              {ICONS.edit(16)} Edit
-            </button>
-            <button
-              className="td-action-btn"
+              Edit
+            </ActionButton>
+            <ActionButton
+              actionType="delete"
+              icon={ICONS.trash(18)}
               onClick={() => onDelete?.(txn)}
               aria-label="Delete"
-              style={{
-                width: 44, height: 44, borderRadius: 12, border: '1px solid var(--color-border)',
-                background: 'var(--color-surface)', color: 'var(--color-danger)', cursor: 'pointer',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s',
-              }}
-            >
-              {ICONS.trash(18)}
-            </button>
+              style={{ height: 44, width: 44, borderRadius: 12 }}
+            />
           </div>
         </div>
       </div>

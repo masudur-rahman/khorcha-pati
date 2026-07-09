@@ -18,6 +18,7 @@ import Eyebrow from '../components/ui/Eyebrow'
 import SectionHeader from '../components/ui/SectionHeader'
 import DrawerPanel from '../components/ui/DrawerPanel'
 import ConfirmDialog from '../components/ui/ConfirmDialog'
+import ActionButton from '../components/ui/ActionButton'
 import TxnDialog, { TxnType } from '../components/ui/TxnDialog'
 import { ICONS } from '../components/ui/Icons'
 import { validateDisplayName, validateShortName } from '../utils/validators'
@@ -275,36 +276,18 @@ function ContactDrawer({ contact, onEdit, onDelete, onClose }: { contact: Contac
       width={480}
       headerActions={
         <>
-          <button
+          <ActionButton
+            actionType="edit"
+            icon={ICONS.edit(15)}
             onClick={() => onEdit(contact)}
-            style={{
-              width: 32, height: 32, borderRadius: 'var(--radius-sm)',
-              border: 'none', background: 'var(--color-primary)',
-              color: 'white', cursor: 'pointer',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              transition: 'all 0.2s', opacity: 0.85,
-            }}
-            onMouseEnter={e => { e.currentTarget.style.opacity = '1' }}
-            onMouseLeave={e => { e.currentTarget.style.opacity = '0.85' }}
             title="Edit Contact"
-          >
-            {ICONS.edit(15)}
-          </button>
-          <button
+          />
+          <ActionButton
+            actionType="delete"
+            icon={ICONS.trash(15)}
             onClick={() => onDelete(contact)}
-            style={{
-              width: 32, height: 32, borderRadius: 'var(--radius-sm)',
-              border: 'none', background: 'var(--color-danger)',
-              color: 'white', cursor: 'pointer',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              transition: 'all 0.2s', opacity: 0.85,
-            }}
-            onMouseEnter={e => { e.currentTarget.style.opacity = '1' }}
-            onMouseLeave={e => { e.currentTarget.style.opacity = '0.85' }}
             title="Delete Contact"
-          >
-            {ICONS.trash(15)}
-          </button>
+          />
         </>
       }
     >

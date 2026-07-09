@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { useTransactions, useDeleteTransaction } from '../hooks/useTransactions'
+import { useTransactions } from '../hooks/useTransactions'
 import { useSearch } from '../context/SearchContext'
 import { useWallets } from '../hooks/useWallets'
 import { useContacts } from '../hooks/useContacts'
@@ -13,7 +13,8 @@ import TopBar from '../components/layout/TopBar'
 import Card from '../components/ui/Card'
 import Badge from '../components/ui/Badge'
 import Button from '../components/ui/Button'
-import Modal from '../components/ui/Modal'
+import ActionButton from '../components/ui/ActionButton'
+import DeleteTxnDialog from '../components/ui/DeleteTxnDialog'
 import { ICONS } from '../components/ui/Icons'
 import WalletFlow from '../components/ui/WalletFlow'
 import TransactionDetails from '../components/ui/TransactionDetails'
@@ -202,19 +203,17 @@ export default function Transactions() {
                     {t.remarks || '—'}
                   </td>
                   <td style={{ padding: '14px 24px', textAlign: 'right' }}>
-                    <div style={{ display: 'flex', gap: 4, justifyContent: 'flex-end' }}>
-                      <button
+                    <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+                      <ActionButton
+                        actionType="edit"
+                        icon={ICONS.edit(14)}
                         onClick={e => { e.stopPropagation(); setEditTxn(t) }}
-                        style={{ width: 32, height: 32, borderRadius: 'var(--radius-sm)', border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--color-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all var(--transition-fast)' }}
-                        onMouseEnter={e => e.currentTarget.style.background = 'var(--color-primary-subtle)'}
-                        onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-                      >{ICONS.edit(14)}</button>
-                      <button
+                      />
+                      <ActionButton
+                        actionType="delete"
+                        icon={ICONS.trash(14)}
                         onClick={e => { e.stopPropagation(); setDeleteTxn(t) }}
-                        style={{ width: 32, height: 32, borderRadius: 'var(--radius-sm)', border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--color-danger)', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all var(--transition-fast)' }}
-                        onMouseEnter={e => e.currentTarget.style.background = 'var(--color-danger-subtle)'}
-                        onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-                      >{ICONS.trash(14)}</button>
+                      />
                     </div>
                   </td>
                 </tr>
@@ -280,29 +279,8 @@ export default function Transactions() {
           onClose={() => { setShowAdd(false); setEditTxn(null); setInitialType(undefined); setInitialContact(undefined) }}
         />
       )}
-      {deleteTxn && <DeleteDialog txn={deleteTxn} onClose={() => setDeleteTxn(null)} />}
+      {deleteTxn && <DeleteTxnDialog txn={deleteTxn} onClose={() => setDeleteTxn(null)} />}
     </div>
   )
 }
 
-
-function DeleteDialog({ txn, onClose }: { txn: Transaction; onClose: () => void }) {
-  const del = useDeleteTransaction()
-  return (
-    <Modal onClose={onClose} width={400}>
-      <div style={{ textAlign: 'center' }}>
-        <div style={{ width: 64, height: 64, background: 'var(--color-danger-subtle)', color: 'var(--color-danger)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
-          {ICONS.trash(32)}
-        </div>
-        <h2 style={{ fontSize: 20, fontWeight: 700, color: 'var(--color-text-primary)', margin: '0 0 10px' }}>Delete Transaction?</h2>
-        <p style={{ fontSize: 14, color: 'var(--color-text-tertiary)', lineHeight: 1.6, margin: '0 0 32px' }}>
-          Are you sure you want to delete this <span style={{ fontWeight: 700, color: 'var(--color-text-secondary)' }}>{txn.type}</span> for <span style={{ fontWeight: 700, color: 'var(--color-text-primary)' }}>{fmt(txn.amount)}</span>? This cannot be undone.
-        </p>
-        <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
-          <Button variant="secondary" onClick={onClose} style={{ padding: '12px 24px' }}>Cancel</Button>
-          <Button variant="danger" onClick={() => del.mutate(txn.id, { onSuccess: onClose })} style={{ padding: '12px 24px' }}>Confirm Delete</Button>
-        </div>
-      </div>
-    </Modal>
-  )
-}

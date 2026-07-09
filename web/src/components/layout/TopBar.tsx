@@ -142,6 +142,10 @@ export default function TopBar({ title, subtitle }: TopBarProps) {
                   onChange={e => setSearchTerm(e.target.value)}
                   onFocus={() => setShowSearchResults(true)}
                   placeholder="Search anything..."
+                  autoComplete="off"
+                  autoCorrect="off"
+                  spellCheck={false}
+                  autoCapitalize="none"
                   style={{
                     background: 'transparent',
                     border: 'none',

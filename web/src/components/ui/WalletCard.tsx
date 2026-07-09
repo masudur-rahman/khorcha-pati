@@ -1,6 +1,7 @@
 import { CSSProperties } from 'react'
 import { fmt } from '../../lib/formatter'
 import { ICONS } from './Icons'
+import ActionButton from './ActionButton'
 
 export type WalletCardVariant = 'Bank' | 'Cash' | 'Mobile' | 'Credit'
 
@@ -185,38 +186,24 @@ export default function WalletCard({ variant, name, shortName, balance, paletteI
             </span>
           )}
           {(onEdit || onDelete) && (
-            <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+            <div style={{ position: 'absolute', bottom: 12, right: 12, display: 'flex', gap: 6 }}>
               {onEdit && (
-                <button
-                  type="button"
+                <ActionButton
+                  actionType="edit"
+                  variant="glass"
+                  icon={ICONS.edit(14)}
                   onClick={(e) => { e.stopPropagation(); onEdit() }}
-                  style={{
-                    background: 'rgba(59,130,246,0.5)', border: '1px solid rgba(59,130,246,0.6)', borderRadius: 8, width: 30, height: 30,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'white',
-                    backdropFilter: 'blur(4px)', transition: 'all 0.2s',
-                  }}
-                  onMouseEnter={e => { e.currentTarget.style.background = 'rgba(59,130,246,0.75)' }}
-                  onMouseLeave={e => { e.currentTarget.style.background = 'rgba(59,130,246,0.5)' }}
                   title="Edit Wallet"
-                >
-                  {ICONS.edit(14)}
-                </button>
+                />
               )}
               {onDelete && (
-                <button
-                  type="button"
+                <ActionButton
+                  actionType="delete"
+                  variant="glass"
+                  icon={ICONS.trash(14)}
                   onClick={(e) => { e.stopPropagation(); onDelete() }}
-                  style={{
-                    background: 'rgba(220,38,38,0.5)', border: '1px solid rgba(220,38,38,0.6)', borderRadius: 8, width: 30, height: 30,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'white',
-                    backdropFilter: 'blur(4px)', transition: 'all 0.2s',
-                  }}
-                  onMouseEnter={e => { e.currentTarget.style.background = 'rgba(220,38,38,0.75)' }}
-                  onMouseLeave={e => { e.currentTarget.style.background = 'rgba(220,38,38,0.5)' }}
                   title="Delete Wallet"
-                >
-                  {ICONS.trash(14)}
-                </button>
+                />
               )}
             </div>
           )}
