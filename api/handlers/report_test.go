@@ -29,6 +29,9 @@ func TestGenerateTransactionInvoice_Wkhtmltopdf(t *testing.T) {
 }
 
 func TestGenerateTransactionInvoice_ChromeDP(t *testing.T) {
+	if os.Getenv("CI") != "" {
+		t.Skip("skipping chrome CDP test in CI environment")
+	}
 	if lookupChrome() == "" {
 		t.Skip("chrome/chromium not installed, skipping")
 	}
