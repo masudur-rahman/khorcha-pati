@@ -78,13 +78,13 @@
   <table class="stat-grid">
     <tr>
       <td>
-        <div class="stat-card" style="background:#E3FCEF; border:1px solid #ABF5D1;">
+        <div class="stat-card" style="background:#F3F0FF; border:1px solid #D9CFFC;">
           <p class="label">Total Amount</p>
-          <p class="value" style="color:#00875A;">{{ formatAmount .TotalAmount }}</p>
+          <p class="value" style="color:#5138ED;">{{ formatAmount .TotalAmount }}</p>
         </div>
       </td>
       <td>
-        <div class="stat-card" style="background:#FFEBE6; border:1px solid #FFBDAD;">
+        <div class="stat-card" style="background:{{ if ge .NetBalance 0.0 }}#E3FCEF{{ else }}#FFEBE6{{ end }}; border:1px solid {{ if ge .NetBalance 0.0 }}#ABF5D1{{ else }}#FFBDAD{{ end }};">
           <p class="label">Net Balance</p>
           <p class="value" style="color:{{ if ge .NetBalance 0.0 }}#00875A{{ else }}#DE350B{{ end }};">{{ formatAmount .NetBalance }}</p>
         </div>

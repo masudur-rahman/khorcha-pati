@@ -172,7 +172,6 @@ export default function Statement() {
     )
   }
 
-  const netColor = report.netBalance >= 0 ? '#00875A' : '#DE350B'
 
   return (
     <div id="statement-root" style={{ background: '#F4F5F7', minHeight: '100vh' }}>
@@ -206,8 +205,14 @@ export default function Statement() {
             <tr><td style={{ padding: 0 }}>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 28 }}>
-          <StatCard label="Total Amount" value={fmt(report.totalAmount)} bg="#E3FCEF" border="#ABF5D1" color="#00875A" />
-          <StatCard label="Net Balance" value={fmt(report.netBalance)} bg="#FFEBE6" border="#FFBDAD" color={netColor} />
+          <StatCard label="Total Amount" value={fmt(report.totalAmount)} bg="#F3F0FF" border="#D9CFFC" color="#5138ED" />
+          <StatCard 
+            label="Net Balance" 
+            value={fmt(report.netBalance)} 
+            bg={report.netBalance >= 0 ? '#E3FCEF' : '#FFEBE6'} 
+            border={report.netBalance >= 0 ? '#ABF5D1' : '#FFBDAD'} 
+            color={report.netBalance >= 0 ? '#00875A' : '#DE350B'} 
+          />
           <StatCard label="Transactions" value={String(report.transactions.length)} bg="#DEEBFF" border="#B3D4FF" color="#0052CC" />
         </div>
 
@@ -293,7 +298,7 @@ function StatCard({ label, value, bg, border, color }: { label: string; value: s
   return (
     <div style={{ background: bg, border: `1px solid ${border}`, borderRadius: 12, padding: 16, textAlign: 'center' }}>
       <p style={{ fontSize: 10, color: '#6B778C', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 4px' }}>{label}</p>
-      <p style={{ fontSize: 20, fontWeight: 800, color, margin: 0, fontFamily: "var(--font-display)" }}>{value}</p>
+      <p style={{ fontSize: 20, fontWeight: 800, color, margin: 0 }}>{value}</p>
     </div>
   )
 }

@@ -52,8 +52,14 @@ export default function DateRangePicker({ startDate, endDate, onChange }: DateRa
   const isInRange = (day: number) => {
     if (!startDate || !endDate) return false
     const d = new Date(currentYear, currentMonth, day)
-    return d > new Date(startDate) && d < new Date(endDate)
+    const offset = d.getTimezoneOffset() * 60000
+    const dateStr = new Date(d.getTime() - offset).toISOString().split('T')[0]
+    return dateStr > startDate && dateStr < endDate
   }
+
+  const today = new Date()
+  const todayOffset = today.getTimezoneOffset() * 60000
+  const todayStr = new Date(today.getTime() - todayOffset).toISOString().split('T')[0]
 
   const days = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa']
   const months = Array.from({ length: 12 }, (_, i) => new Date(0, i).toLocaleString('default', { month: 'long' }))
@@ -134,6 +140,14 @@ export default function DateRangePicker({ startDate, endDate, onChange }: DateRa
               return <div key={`empty-${i}`} />
             }
 
+            const d = new Date(currentYear, currentMonth, day)
+            const offset = d.getTimezoneOffset() * 60000
+            const dateStr = new Date(d.getTime() - offset).toISOString().split('T')[0]
+            
+            const isStart = dateStr === startDate
+            const isEnd = dateStr === endDate
+            const isToday = dateStr === todayStr
+
             const selected = isSelected(day)
             const inRange = isInRange(day)
             
@@ -147,14 +161,10 @@ export default function DateRangePicker({ startDate, endDate, onChange }: DateRa
             } else if (inRange) {
               bg = 'var(--color-primary-subtle)'
               borderRadius = '0'
+            } else if (isToday) {
+              bg = 'rgba(9, 30, 66, 0.08)' // Visible slight dark round background for today
+              color = 'var(--color-primary)'
             }
-
-            const d = new Date(currentYear, currentMonth, day)
-            const offset = d.getTimezoneOffset() * 60000
-            const dateStr = new Date(d.getTime() - offset).toISOString().split('T')[0]
-            
-            const isStart = dateStr === startDate
-            const isEnd = dateStr === endDate
 
             return (
               <div key={i} style={{ position: 'relative', display: 'flex', justifyContent: 'center', height: 36, alignItems: 'center' }}>
@@ -178,7 +188,7 @@ export default function DateRangePicker({ startDate, endDate, onChange }: DateRa
                     transition: 'background 0.1s', fontFamily: 'inherit'
                   }}
                   onMouseEnter={e => { if (!selected && !inRange) e.currentTarget.style.background = 'var(--color-surface-hover)' }}
-                  onMouseLeave={e => { if (!selected && !inRange) e.currentTarget.style.background = 'transparent' }}
+                  onMouseLeave={e => { if (!selected && !inRange) e.currentTarget.style.background = bg }}
                 >
                   {day}
                 </button>
