@@ -94,13 +94,14 @@ func generateSampleJSONReport(report gqtypes.Report) error { //nolint:unused // 
 }
 
 func generateReport(ctx telebot.Context, rop ReportCallbackOptions) (gqtypes.Report, error) {
-	now, startTime := time.Now(), CalculateStartTime(rop.Duration)
-
 	svc := all.GetServices()
 	user, err := svc.User.GetUserByTelegramID(ctx.Sender().ID)
 	if err != nil {
 		return gqtypes.Report{}, err
 	}
+
+	tz := pkg.LoadTimezone(user.Timezone)
+	now, startTime := time.Now().In(tz), CalculateStartTime(rop.Duration, tz)
 
 	txns, err := svc.Txn.ListTransactionsByTime(user.ID, "", startTime.Unix(), now.Unix())
 	if err != nil {
@@ -286,19 +287,22 @@ func ComputeTotals(txns []models.Transaction) (totalAmount, netBalance float64) 
 	return totalAmount, netBalance
 }
 
-func CalculateStartTime(duration SummaryDuration) time.Time {
-	now, startTime := time.Now(), pkg.StartOfMonth()
+func CalculateStartTime(duration SummaryDuration, loc *time.Location) time.Time {
+	if loc == nil {
+		loc = pkg.DefaultLocation
+	}
+	now, startTime := time.Now().In(loc), pkg.StartOfMonth(loc)
 	switch duration {
 	case DurationOneWeek:
 		startTime = now.AddDate(0, 0, -7)
 	case DurationThisMonth:
-		startTime = pkg.StartOfMonth()
+		startTime = pkg.StartOfMonth(loc)
 	case DurationOneMonth:
 		startTime = now.AddDate(0, -1, 0)
 	case DurationHalfYear:
 		startTime = now.AddDate(0, -6, 0)
 	case DurationThisYear:
-		startTime = time.Date(now.Year(), 1, 1, 0, 0, 0, 0, now.Location())
+		startTime = time.Date(now.Year(), 1, 1, 0, 0, 0, 0, loc)
 	case DurationOneYear:
 		startTime = now.AddDate(-1, 0, 0)
 	case DurationAllTime:

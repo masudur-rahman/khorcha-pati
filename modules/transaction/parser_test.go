@@ -108,7 +108,7 @@ func TestParseTransaction_destinationPreposition(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := ParseTransaction(tt.text, contacts, accounts)
+			got, err := ParseTransaction(tt.text, contacts, accounts, nil)
 			if err != nil {
 				if strings.Contains(err.Error(), "API error") || strings.Contains(err.Error(), "rate limit") {
 					t.Skipf("ParseTransaction(%q) hit AI: %v", tt.text, err)
@@ -259,7 +259,7 @@ func TestParseTransaction(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			for _, text := range tt.args.texts {
-				got, err := ParseTransaction(text, tt.args.contacts, tt.args.accounts)
+				got, err := ParseTransaction(text, tt.args.contacts, tt.args.accounts, nil)
 				if (err != nil) != tt.wantErr {
 					if strings.Contains(err.Error(), "API error") || strings.Contains(err.Error(), "rate limit") {
 						t.Logf("ParseTransaction(%q) failed due to AI API issue: %v", text, err)

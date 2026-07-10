@@ -1,3 +1,4 @@
+import { formatDate } from '../lib/formatter'
 import { useState, useMemo, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useTransactions } from '../hooks/useTransactions'
@@ -5,7 +6,7 @@ import { useSearch } from '../context/SearchContext'
 import { useWallets } from '../hooks/useWallets'
 import { useContacts } from '../hooks/useContacts'
 import { useQuery } from '@tanstack/react-query'
-import { listCategories, listSubcategories } from '../api/endpoints'
+import { listCategories, listSubcategories , getProfile } from '../api/endpoints'
 import type { Transaction } from '../types'
 import { fmt } from '../lib/formatter'
 
@@ -25,6 +26,7 @@ const typeOptions = TXN_TYPE_OPTIONS
 const PAGE_SIZE = 10
 
 export default function Transactions() {
+  const { data: profile } = useQuery({ queryKey: ['profile'], queryFn: getProfile })
   const [searchParams, setSearchParams] = useSearchParams()
   const { searchTerm } = useSearch()
   const { data: resp, isLoading } = useTransactions()
@@ -183,7 +185,7 @@ export default function Transactions() {
                   className="hover-row transition-colors"
                   onClick={() => setSelectedTxn(t)}>
                   <td style={{ padding: '14px 24px', color: 'var(--color-text-tertiary)', fontSize: 12, fontWeight: 600, whiteSpace: 'nowrap' }}>
-                    {new Date(t.timestamp * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                    {formatDate(t.timestamp * 1000, { month: 'short', day: 'numeric' }, profile?.timezone)}
                   </td>
                   <td style={{ padding: '14px 24px' }}><Badge type={t.type as any} /></td>
                   <td style={{ padding: '14px 24px', fontWeight: 600, color: 'var(--color-text-primary)' }}>

@@ -62,9 +62,13 @@ type transactionParser struct {
 	note        string
 	rawText     string
 	verbFound   bool
+	tz          *time.Location
 }
 
-func ParseTransaction(text string, isContact ContactVerifier, isAccount AccountVerifier) (models.Transaction, error) {
+func ParseTransaction(text string, isContact ContactVerifier, isAccount AccountVerifier, tz *time.Location) (models.Transaction, error) {
+	if tz == nil {
+		tz = pkg.DefaultLocation
+	}
 	// --- STEP 0: Safety Defaults ---
 	if isContact == nil {
 		isContact = func(name string) bool { return false }
@@ -73,7 +77,7 @@ func ParseTransaction(text string, isContact ContactVerifier, isAccount AccountV
 		isAccount = func(name string) bool { return false }
 	}
 
-	p := transactionParser{}
+	p := transactionParser{tz: tz}
 
 	// --- STEP 1: Find Amount ---
 	reAmount := regexp.MustCompile(`(?i)(?:(?:total|tk|taka|amount)\s*)?(\d+(?:\.\d+)?)\s*(k)?(?:\s*(?:tk|taka|bdt))?`)
@@ -265,7 +269,7 @@ func (p *transactionParser) subcategoryAIParser() error {
 			SubcategoryID: result.Subcategory,
 			Intent:        result.Intent,
 			Confidence:    result.Confidence,
-			CreatedAt:     time.Now().Unix(),
+			CreatedAt:     time.Now().In(p.tz).Unix(),
 		}); dbErr != nil {
 			logr.DefaultLogger.Errorw("Failed to persist AI cache", "error", dbErr.Error())
 		}
@@ -415,7 +419,7 @@ func (p *transactionParser) assignValue(key, value string, isAccount AccountVeri
 			p.date = value
 			return
 		}
-		if _, err := pkg.ParseDate(value); err == nil {
+		if _, err := pkg.ParseDate(value, p.tz); err == nil {
 			p.date = value
 			return
 		}
@@ -535,7 +539,7 @@ func (p *transactionParser) parseTransactionTime() error {
 	var month time.Month
 
 	if isDateKeyword(strings.ToLower(p.date)) {
-		now := time.Now()
+		now := time.Now().In(p.tz)
 		switch strings.ToLower(p.date) {
 		case "yesterday":
 			now = now.AddDate(0, 0, -1)
@@ -544,13 +548,13 @@ func (p *transactionParser) parseTransactionTime() error {
 		}
 		year, month, day = now.Date()
 	} else {
-		date, err := pkg.ParseDate(p.date)
+		date, err := pkg.ParseDate(p.date, p.tz)
 		if err != nil {
 			return err
 		}
 		year, month, day = date.Date()
 	}
-	tim, err := pkg.ParseTime(p.time)
+	tim, err := pkg.ParseTime(p.time, p.tz)
 	if err != nil {
 		return err
 	}
@@ -560,7 +564,7 @@ func (p *transactionParser) parseTransactionTime() error {
 	} else {
 		hour, minute, second = tim.Clock()
 	}
-	p.txn.Timestamp = time.Date(year, month, day, hour, minute, second, 0, time.Local).Unix()
+	p.txn.Timestamp = time.Date(year, month, day, hour, minute, second, 0, p.tz).Unix()
 	return nil
 }
 

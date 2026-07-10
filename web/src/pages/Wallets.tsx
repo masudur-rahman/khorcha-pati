@@ -1,7 +1,8 @@
+import { formatDate } from '../lib/formatter'
 import { useMemo, useState } from 'react'
 import toast from 'react-hot-toast'
 import { useQuery } from '@tanstack/react-query'
-import { listWallets, listCategories, listSubcategories } from '../api/endpoints'
+import { listWallets, listCategories, listSubcategories , getProfile } from '../api/endpoints'
 import { useCreateWallet, useUpdateWallet, useDeleteWallet } from '../hooks/useWallets'
 import { useTransactions } from '../hooks/useTransactions'
 import { useSearch } from '../context/SearchContext'
@@ -153,6 +154,7 @@ export default function Wallets() {
 }
 
 function WalletDrawer({ wallet, wallets, onEdit, onDelete, onClose }: { wallet: Wallet; wallets: Wallet[]; onEdit: (w: Wallet) => void; onDelete: (w: Wallet) => void; onClose: () => void }) {
+  const { data: profile } = useQuery({ queryKey: ['profile'], queryFn: getProfile })
   const { data: resp } = useTransactions()
   const { data: subcategories } = useQuery({ queryKey: ['subcategories'], queryFn: () => listSubcategories() })
   const { data: categories } = useQuery({ queryKey: ['categories'], queryFn: () => listCategories() })
@@ -244,7 +246,7 @@ function WalletDrawer({ wallet, wallets, onEdit, onDelete, onClose }: { wallet: 
                       <div style={{ fontSize: 11, color: 'var(--color-text-tertiary)', fontWeight: 500, marginLeft: 4, display: 'flex', gap: 6, alignItems: 'center' }}>
                         <span>{subToCatMap.get(t.subcategoryId) || 'Miscellaneous'} › {subcatMap.get(t.subcategoryId) || t.subcategoryId}</span>
                         <span>•</span>
-                        <span>{new Date(t.timestamp * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                        <span>{formatDate(t.timestamp * 1000, { month: 'short', day: 'numeric', year: 'numeric' }, profile?.timezone)}</span>
                       </div>
                     </div>
                     <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color, fontSize: 14, whiteSpace: 'nowrap' }}>

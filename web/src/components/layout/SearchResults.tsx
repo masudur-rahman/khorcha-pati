@@ -1,3 +1,4 @@
+import { formatDate } from '../../lib/formatter'
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
@@ -6,7 +7,7 @@ import { useWallets } from '../../hooks/useWallets'
 import { useContacts } from '../../hooks/useContacts'
 import { useSearch } from '../../context/SearchContext'
 import { useAuth } from '../../hooks/useAuth'
-import { getAdminUsers, listAICache, type AICacheEntry } from '../../api/endpoints'
+import { getAdminUsers, listAICache, type AICacheEntry , getProfile } from '../../api/endpoints'
 import { fmt } from '../../lib/formatter'
 import { ICONS } from '../ui/Icons'
 
@@ -18,6 +19,7 @@ interface SearchResultsProps {
 }
 
 export default function SearchResults({ anchorTop, onClose }: SearchResultsProps) {
+  const { data: profile } = useQuery({ queryKey: ['profile'], queryFn: getProfile })
   const { searchTerm, setSearchTerm } = useSearch()
   const navigate = useNavigate()
   const debounced = useDebounced(searchTerm, 200)
@@ -139,7 +141,7 @@ export default function SearchResults({ anchorTop, onClose }: SearchResultsProps
 
         <Section title="Transactions" count={txnMatches.length} icon={ICONS.transactions(13)}>
           {txnMatches.slice(0, PER_SECTION).map(t => {
-            const date = new Date(t.timestamp * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+            const date = formatDate(t.timestamp * 1000, { month: 'short', day: 'numeric' }, profile?.timezone)
             const color = t.type === 'Income' ? 'var(--color-success)' : t.type === 'Transfer' ? 'var(--color-primary)' : 'var(--color-danger)'
             const sign = t.type === 'Income' ? '+' : t.type === 'Transfer' ? '' : '-'
             return (

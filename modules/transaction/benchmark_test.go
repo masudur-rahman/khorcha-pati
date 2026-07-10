@@ -159,7 +159,7 @@ func reportAIReach(t *testing.T, fixtures []benchCase) {
 	var b strings.Builder
 	b.WriteString("\n=== AI-reach pre-pass (AI disabled) ===\n")
 	for _, fx := range fixtures {
-		txn, err := ParseTransaction(fx.Input, noVerifier, noVerifier)
+		txn, err := ParseTransaction(fx.Input, noVerifier, noVerifier, nil)
 		if err != nil {
 			fmt.Fprintf(&b, "ERROR %-58q parse failed: %v\n", fx.Input, err)
 			continue
@@ -179,7 +179,7 @@ func runModel(t *testing.T, m benchModel, fixtures []benchCase, delay time.Durat
 	res := &modelResult{provider: m.provider, model: m.model}
 	for _, fx := range fixtures {
 		start := time.Now()
-		txn, err := ParseTransaction(fx.Input, noVerifier, noVerifier)
+		txn, err := ParseTransaction(fx.Input, noVerifier, noVerifier, nil)
 		dur := time.Since(start)
 		if err != nil {
 			res.failures++

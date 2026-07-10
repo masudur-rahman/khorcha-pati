@@ -103,7 +103,7 @@ func TestParseTransaction_debtPerson(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := ParseTransaction(tt.text, debtContacts, accounts)
+			got, err := ParseTransaction(tt.text, debtContacts, accounts, nil)
 			if err != nil {
 				t.Fatalf("ParseTransaction(%q) error = %v", tt.text, err)
 			}

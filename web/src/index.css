@@ -247,6 +247,8 @@ h1, h2, h3, h4, h5, h6 {
 
 /* Modal Responsive Padding & Smooth Scrolling */
 .modal-body {
+  flex: 1;
+  min-height: 0;
   padding: 32px;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
@@ -265,4 +267,40 @@ h1, h2, h3, h4, h5, h6 {
   .modal-body {
     padding: 20px 16px !important;
   }
+  .quick-select-container {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px !important;
+  }
+  .quick-select-btn {
+    padding: 10px 12px !important;
+    font-size: 13px !important;
+  }
+  .quick-select-icon {
+    display: none;
+  }
+}
+
+.statement-modal-grid {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  gap: 32px;
+}
+@media (max-width: 640px) {
+  .statement-modal-grid {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+}
+
+.quick-select-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.quick-select-btn {
+  padding: 12px 16px;
+  border-radius: 12px;
+  text-align: left;
+  font-size: 14px;
 }

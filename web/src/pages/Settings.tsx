@@ -7,9 +7,43 @@ import TopBar from '../components/layout/TopBar'
 import Card from '../components/ui/Card'
 import Button from '../components/ui/Button'
 import Input from '../components/ui/Input'
-import Select from '../components/ui/Select'
+
 import Eyebrow from '../components/ui/Eyebrow'
 import { ICONS } from '../components/ui/Icons'
+import SearchableSelect from '../components/ui/SearchableSelect'
+
+const getTimezoneOptions = () => {
+  const defaultOptions = [
+    { value: 'Asia/Dhaka', label: '(GMT+6) Asia/Dhaka' },
+    { value: 'America/New_York', label: '(GMT-4) America/New York' },
+    { value: 'Europe/London', label: '(GMT+1) Europe/London' },
+    { value: 'UTC', label: '(GMT+0) Universal Time (UTC)' },
+  ];
+  if (typeof (Intl as any).supportedValuesOf !== 'function') return defaultOptions;
+  
+  const tzs = (Intl as any).supportedValuesOf('timeZone') as string[];
+  const d = new Date();
+  
+  const options = tzs.map(tz => {
+    try {
+      const parts = new Intl.DateTimeFormat('en-US', { timeZone: tz, timeZoneName: 'shortOffset' }).formatToParts(d);
+      const offsetPart = parts.find(p => p.type === 'timeZoneName')?.value || 'GMT+0';
+      const offsetStr = offsetPart.replace('GMT', '') || '+0';
+      return { value: tz, label: `(GMT${offsetStr}) ${tz.replace(/_/g, ' ')}`, offset: offsetStr };
+    } catch {
+      return { value: tz, label: tz, offset: '+0' };
+    }
+  });
+
+  return options.sort((a, b) => {
+    const parse = (str: string) => {
+      const sign = str.startsWith('-') ? -1 : 1;
+      const [h, m] = str.replace(/[+-]/, '').split(':');
+      return sign * (parseInt(h || '0') * 60 + parseInt(m || '0'));
+    };
+    return parse(b.offset) - parse(a.offset);
+  }).map(o => ({ value: o.value, label: o.label }));
+};
 
 export default function Settings() {
   const { theme, setTheme } = useTheme()
@@ -69,8 +103,8 @@ export default function Settings() {
 
           {/* Editable fields */}
           {matchesSearch('Contact') && (
-            <Card padding={0} style={{ overflow: 'hidden', border: isEditing ? '2px solid var(--color-primary)' : undefined }}>
-              <div style={{ padding: '18px 24px', borderBottom: '1px solid var(--color-border)', background: isEditing ? 'var(--color-primary-subtle)' : 'var(--color-bg)' }}>
+            <Card padding={0} style={{ border: isEditing ? '2px solid var(--color-primary)' : undefined }}>
+              <div style={{ borderTopLeftRadius: 'inherit', borderTopRightRadius: 'inherit', padding: '18px 24px', borderBottom: '1px solid var(--color-border)', background: isEditing ? 'var(--color-primary-subtle)' : 'var(--color-bg)' }}>
                 <h3 style={{ fontSize: 11, fontWeight: 700, color: isEditing ? 'var(--color-primary)' : 'var(--color-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.1em', margin: 0 }}>
                   Contact & Preferences {isEditing && '— EDITING'}
                 </h3>
@@ -78,13 +112,14 @@ export default function Settings() {
               <div style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 24 }}>
                 {isEditing ? (
                   <>
-                    <Input label="Mobile Number" value={mobileNumber} onChange={e => setMobileNumber(e.target.value)} placeholder="+88017..." />
-                    <Select label="Timezone" value={timezone} onChange={e => setTimezone(e.target.value)} options={[
-                      { value: 'UTC', label: 'Universal Time (UTC)' },
-                      { value: 'Asia/Dhaka', label: 'Asia/Dhaka (GMT+6)' },
-                      { value: 'America/New_York', label: 'New York (EST)' },
-                      { value: 'Europe/London', label: 'London (GMT)' },
-                    ]} />
+                    <Input label="Mobile Number" value={mobileNumber} onChange={e => setMobileNumber(e.target.value)} placeholder="+88017..." style={{ maxWidth: 300 }} />
+                    <SearchableSelect 
+                      label="Timezone" 
+                      value={timezone} 
+                      onChange={setTimezone} 
+                      options={getTimezoneOptions()} 
+                      placeholder="Search timezone..." 
+                    />
                   </>
                 ) : (
                   <>

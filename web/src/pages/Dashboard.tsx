@@ -1,7 +1,8 @@
+import { formatDate } from '../lib/formatter'
 import { useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { getChartData, listCategories, listSubcategories } from '../api/endpoints'
+import { getChartData, listCategories, listSubcategories , getProfile } from '../api/endpoints'
 import { useTransactions } from '../hooks/useTransactions'
 import { fmt } from '../lib/formatter'
 
@@ -26,6 +27,7 @@ import TxnDialog, { TxnType } from '../components/ui/TxnDialog'
 import DeleteTxnDialog from '../components/ui/DeleteTxnDialog'
 
 export default function Dashboard() {
+  const { data: profile } = useQuery({ queryKey: ['profile'], queryFn: getProfile })
   const navigate = useNavigate()
   const { data: charts, isLoading: isChartsLoading } = useQuery({
     queryKey: ['chartData'],
@@ -265,7 +267,7 @@ export default function Dashboard() {
                   onClick={() => setSelectedTxn(t)}
                 >
                   <td style={{ padding: '14px 24px', color: 'var(--color-text-tertiary)', fontSize: 12, fontWeight: 600 }}>
-                    {new Date(t.timestamp * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                    {formatDate(t.timestamp * 1000, { month: 'short', day: 'numeric' }, profile?.timezone)}
                   </td>
                   <td style={{ padding: '14px 24px' }}><Badge type={t.type as any} /></td>
                   <td style={{ padding: '14px 24px', fontWeight: 600, color: 'var(--color-text-primary)' }}>
@@ -347,57 +349,62 @@ function StatementModal({ onClose }: { onClose: () => void }) {
   }
 
   return (
-    <Modal title="Generate Statement" onClose={onClose} width={460}>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+    <Modal title="Generate Statement" onClose={onClose} width={760}>
+      <div className="statement-modal-grid">
         
-        {/* Quick Select Section */}
-        <div>
-          <h4 style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 12px 0' }}>Quick Select</h4>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+        {/* Left Column: Quick Select */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <h4 style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>Quick Select</h4>
+          <div className="quick-select-container">
             {durations.map(d => (
               <button
                 key={d.value}
+                className="quick-select-btn"
                 onClick={() => handlePreview(d.value)}
                 style={{
-                  padding: '8px 16px', borderRadius: 20,
                   border: '1px solid var(--color-border)', background: 'var(--color-surface)',
-                  cursor: 'pointer', fontSize: 13, fontWeight: 600, color: 'var(--color-text-primary)',
+                  cursor: 'pointer', fontWeight: 600, color: 'var(--color-text-primary)',
                   transition: 'all var(--transition-fast)', fontFamily: 'inherit',
+                  display: 'flex', justifyContent: 'space-between', alignItems: 'center'
                 }}
                 onMouseEnter={e => { e.currentTarget.style.background = 'var(--color-primary-subtle)'; e.currentTarget.style.borderColor = 'var(--color-primary)' }}
                 onMouseLeave={e => { e.currentTarget.style.background = 'var(--color-surface)'; e.currentTarget.style.borderColor = 'var(--color-border)' }}
               >
                 {d.label}
+                <svg className="quick-select-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.5 }}>
+                  <polyline points="9 18 15 12 9 6"></polyline>
+                </svg>
               </button>
             ))}
           </div>
         </div>
 
-        {/* Custom Range Section */}
-        <div>
-          <h4 style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 12px 0' }}>Custom Range</h4>
+        {/* Right Column: Custom Range */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <h4 style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>Custom Range</h4>
           
           <DateRangePicker 
             startDate={startDate} 
             endDate={endDate} 
             onChange={(start, end) => { setStartDate(start); setEndDate(end) }} 
           />
-        </div>
 
-        <button 
-          onClick={handleCustomPreview} 
-          disabled={!startDate || !endDate}
-          style={{ 
-            width: '100%', padding: '14px', 
-            background: (!startDate || !endDate) ? 'var(--color-border)' : 'var(--color-primary)', 
-            border: 'none', borderRadius: 8, 
-            cursor: (!startDate || !endDate) ? 'not-allowed' : 'pointer', 
-            fontWeight: 600, color: 'white', fontSize: 15, fontFamily: 'inherit',
-            transition: 'background var(--transition-fast)'
-          }}
-        >
-          Generate Custom Statement
-        </button>
+          <button 
+            onClick={handleCustomPreview} 
+            disabled={!startDate || !endDate}
+            style={{ 
+              width: '100%', padding: '14px', 
+              background: (!startDate || !endDate) ? 'var(--color-border)' : 'var(--color-primary)', 
+              border: 'none', borderRadius: 12, 
+              cursor: (!startDate || !endDate) ? 'not-allowed' : 'pointer', 
+              fontWeight: 600, color: 'white', fontSize: 14, fontFamily: 'inherit',
+              transition: 'background var(--transition-fast)',
+              marginTop: 'auto'
+            }}
+          >
+            Generate Custom Statement
+          </button>
+        </div>
 
       </div>
     </Modal>

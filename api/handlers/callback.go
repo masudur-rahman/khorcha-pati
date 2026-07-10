@@ -305,7 +305,7 @@ func handleTransactionFromRegularText(ctx telebot.Context) (string, error) {
 		return err == nil
 	}
 
-	txn, err := transaction.ParseTransaction(ctx.Text(), isContact, isAccount)
+	txn, err := transaction.ParseTransaction(ctx.Text(), isContact, isAccount, pkg.LoadTimezone(user.Timezone))
 	if err != nil {
 		return "", err
 	}
@@ -332,7 +332,8 @@ func HandleListPagination(ctx telebot.Context, callbackOpts CallbackOptions) err
 	var txns []models.Transaction
 	txnSvc := all.GetServices().Txn
 	if pag.IsExps {
-		txns, err = txnSvc.ListTransactionsByTime(user.ID, models.ExpenseTransaction, pkg.StartOfMonth().Unix(), time.Now().Unix())
+		tz := pkg.LoadTimezone(user.Timezone)
+		txns, err = txnSvc.ListTransactionsByTime(user.ID, models.ExpenseTransaction, pkg.StartOfMonth(tz).Unix(), time.Now().In(tz).Unix())
 	} else if pag.Type != "" {
 		txns, err = txnSvc.ListTransactionsByType(user.ID, pag.Type)
 	} else {

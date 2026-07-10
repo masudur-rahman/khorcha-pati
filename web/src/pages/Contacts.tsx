@@ -1,8 +1,9 @@
+import { formatDate } from '../lib/formatter'
 import { useEffect, useMemo, useState } from 'react'
 import toast from 'react-hot-toast'
 import { useQuery } from '@tanstack/react-query'
 import { useSearchParams } from 'react-router-dom'
-import { listContacts } from '../api/endpoints'
+import { listContacts , getProfile } from '../api/endpoints'
 import { useCreateContact, useUpdateContact, useDeleteContact } from '../hooks/useContacts'
 import { useTransactions } from '../hooks/useTransactions'
 import { useSearch } from '../context/SearchContext'
@@ -189,6 +190,7 @@ function CirclePanel({ label, amount, accent, icon }: { label: string; amount: n
 }
 
 function ContactRow({ contact, onClick }: { contact: Contact; onClick: () => void }) {
+  const { data: profile } = useQuery({ queryKey: ['profile'], queryFn: getProfile })
   const owesYou = contact.netBalance > 0
   const settled = contact.netBalance === 0
   const color = settled ? 'var(--color-text-tertiary)' : owesYou ? 'var(--color-success)' : 'var(--color-danger)'
@@ -235,7 +237,7 @@ function ContactRow({ contact, onClick }: { contact: Contact; onClick: () => voi
         </span>
         <span style={{ fontSize: 10, color: 'var(--color-text-tertiary)', fontWeight: 600 }}>
           {contact.lastTxnTimestamp
-            ? new Date(contact.lastTxnTimestamp * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+            ? formatDate(contact.lastTxnTimestamp * 1000, { month: 'short', day: 'numeric' }, profile?.timezone)
             : 'No activity'}
         </span>
       </div>
@@ -244,6 +246,7 @@ function ContactRow({ contact, onClick }: { contact: Contact; onClick: () => voi
 }
 
 function ContactDrawer({ contact, onEdit, onDelete, onClose }: { contact: Contact; onEdit: (c: Contact) => void; onDelete: (c: Contact) => void; onClose: () => void }) {
+  const { data: profile } = useQuery({ queryKey: ['profile'], queryFn: getProfile })
   const [add, setAdd] = useState<{ type: TxnType; sub: string } | null>(null)
   const { data: resp } = useTransactions()
 
@@ -347,7 +350,7 @@ function ContactDrawer({ contact, onEdit, onDelete, onClose }: { contact: Contac
                       <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0, gap: 2 }}>
                         <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--color-text-primary)' }}>{label}</span>
                         <span style={{ fontSize: 11, color: 'var(--color-text-tertiary)', fontWeight: 600 }}>
-                          {new Date(t.timestamp * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                          {formatDate(t.timestamp * 1000, { month: 'short', day: 'numeric', year: 'numeric' }, profile?.timezone)}
                           {t.remarks ? ` · ${t.remarks}` : ''}
                         </span>
                       </div>

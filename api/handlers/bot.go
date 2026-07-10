@@ -33,6 +33,7 @@ func StartTrackingExpenses(ctx telebot.Context) error {
 			Username:   ctx.Sender().Username,
 			FirstName:  ctx.Sender().FirstName,
 			LastName:   ctx.Sender().LastName,
+			Timezone:   "Asia/Dhaka",
 		}
 		if err = us.SignUp(user); err != nil {
 			return ctx.Send(models.ErrCommonResponse(err))

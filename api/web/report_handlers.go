@@ -11,6 +11,7 @@ import (
 	"github.com/masudur-rahman/khorcha-pati/models"
 	"github.com/masudur-rahman/khorcha-pati/models/gqtypes"
 	"github.com/masudur-rahman/khorcha-pati/modules/convert"
+	"github.com/masudur-rahman/khorcha-pati/pkg"
 	"github.com/masudur-rahman/khorcha-pati/services/all"
 )
 
@@ -37,18 +38,22 @@ func clampStartTime(startTime time.Time, registeredAt int64, txns []models.Trans
 	}
 	return startTime
 }
+
 // parseTimeRange extracts the start and end time from the request.
 // It supports explicit "start" and "end" query parameters, or falls back to "duration".
-func parseTimeRange(r *http.Request) (time.Time, time.Time, error) {
+func parseTimeRange(r *http.Request, loc *time.Location) (time.Time, time.Time, error) {
+	if loc == nil {
+		loc = pkg.DefaultLocation
+	}
 	startStr := r.URL.Query().Get("start")
 	endStr := r.URL.Query().Get("end")
 
 	if startStr != "" && endStr != "" {
-		startTime, err := time.Parse("2006-01-02", startStr)
+		startTime, err := time.ParseInLocation("2006-01-02", startStr, loc)
 		if err != nil {
 			return time.Time{}, time.Time{}, err
 		}
-		endTime, err := time.Parse("2006-01-02", endStr)
+		endTime, err := time.ParseInLocation("2006-01-02", endStr, loc)
 		if err != nil {
 			return time.Time{}, time.Time{}, err
 		}
@@ -61,8 +66,8 @@ func parseTimeRange(r *http.Request) (time.Time, time.Time, error) {
 	if duration == "" {
 		duration = handlers.DurationThisMonth
 	}
-	now := time.Now()
-	startTime := handlers.CalculateStartTime(duration)
+	now := time.Now().In(loc)
+	startTime := handlers.CalculateStartTime(duration, loc)
 	return startTime, now, nil
 }
 
@@ -74,16 +79,17 @@ func HandleGetReport(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	startTime, now, err := parseTimeRange(r)
-	if err != nil {
-		WriteError(w, http.StatusBadRequest, "invalid_date", err.Error())
-		return
-	}
-
 	svc := all.GetServices()
 	user, err := svc.User.GetUserByID(claims.UserID)
 	if err != nil {
 		WriteError(w, http.StatusInternalServerError, "profile_failed", err.Error())
+		return
+	}
+
+	tz := pkg.LoadTimezone(user.Timezone)
+	startTime, now, err := parseTimeRange(r, tz)
+	if err != nil {
+		WriteError(w, http.StatusBadRequest, "invalid_date", err.Error())
 		return
 	}
 
@@ -168,16 +174,17 @@ func HandleGetReportData(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	startTime, now, err := parseTimeRange(r)
-	if err != nil {
-		WriteError(w, http.StatusBadRequest, "invalid_date", err.Error())
-		return
-	}
-
 	svc := all.GetServices()
 	user, err := svc.User.GetUserByID(claims.UserID)
 	if err != nil {
 		WriteError(w, http.StatusInternalServerError, "profile_failed", err.Error())
+		return
+	}
+
+	tz := pkg.LoadTimezone(user.Timezone)
+	startTime, now, err := parseTimeRange(r, tz)
+	if err != nil {
+		WriteError(w, http.StatusBadRequest, "invalid_date", err.Error())
 		return
 	}
 

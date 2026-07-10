@@ -19,6 +19,25 @@ function groupBD(n: number): string {
     parts.unshift(h.slice(-2))
     h = h.slice(0, -2)
   }
-  parts.unshift(h)
-  return `${parts.join(',')},${tail}`
+	parts.unshift(h)
+	return `${parts.join(',')},${tail}`
+}
+
+// Format a date with an explicit timezone
+export const formatDate = (
+  date: Date | string | number,
+  opts: Intl.DateTimeFormatOptions = {},
+  timeZone = 'UTC'
+) => {
+  const d = new Date(date)
+  return d.toLocaleDateString('en-US', { ...opts, timeZone: timeZone || 'UTC' })
+}
+
+// Convert a UTC timestamp into a timezone-adjusted local string (YYYY-MM-DD)
+export const toTZString = (date: Date, timeZone: string) => {
+  const d = new Date(date.toLocaleString('en-US', { timeZone: timeZone || 'UTC' }))
+  const year = d.getFullYear()
+  const month = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
 }

@@ -49,7 +49,8 @@ func TransactionSummary(ctx telebot.Context) error {
 		return ctx.Send(models.ErrCommonResponse(err))
 	}
 
-	txns, err := all.GetServices().Txn.ListTransactionsByTime(user.ID, "", pkg.StartOfMonth().Unix(), time.Now().Unix())
+	tz := pkg.LoadTimezone(user.Timezone)
+	txns, err := all.GetServices().Txn.ListTransactionsByTime(user.ID, "", pkg.StartOfMonth(tz).Unix(), time.Now().In(tz).Unix())
 	if err != nil {
 		return err
 	}
@@ -122,13 +123,14 @@ func handleSummaryCallback(ctx telebot.Context, callbackOpts CallbackOptions) er
 }
 
 func processSummary(ctx telebot.Context, smop SummaryCallbackOptions) (gqtypes.SummaryGroups, error) {
-	now, startTime := time.Now(), CalculateStartTime(smop.Duration)
-
 	svc := all.GetServices()
 	user, err := svc.User.GetUserByTelegramID(ctx.Sender().ID)
 	if err != nil {
 		return gqtypes.SummaryGroups{}, err
 	}
+
+	tz := pkg.LoadTimezone(user.Timezone)
+	now, startTime := time.Now().In(tz), CalculateStartTime(smop.Duration, tz)
 
 	txns, err := svc.Txn.ListTransactionsByTime(user.ID, "", startTime.Unix(), now.Unix())
 	if err != nil {
