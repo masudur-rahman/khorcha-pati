@@ -146,8 +146,11 @@ export default function Statement() {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
-    const duration = params.get('duration') || 'this_month'
-    fetchReportData(duration).then(data => {
+    const duration = params.get('duration') || undefined
+    const start = params.get('start') || undefined
+    const end = params.get('end') || undefined
+
+    fetchReportData(duration, start, end).then(data => {
       setReport(data)
       document.title = `Khorcha-Pati Statement (${fmtShortDate(data.startDate)} — ${fmtShortDate(data.endDate)})`
     }).catch(err => setError('Failed to load statement: ' + err))

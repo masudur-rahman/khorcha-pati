@@ -96,8 +96,16 @@ export const downloadReport = (duration: string) => {
   return apiFetch<Blob>(url, { headers: { 'Accept': 'application/pdf' } })
 }
 
-export const fetchReportData = (duration: string) =>
-  apiFetch<StatementReport>(`${API}/summary/report-data?duration=${duration}`)
+export const fetchReportData = (duration?: string, start?: string, end?: string) => {
+  const qs = new URLSearchParams()
+  if (start && end) {
+    qs.set('start', start)
+    qs.set('end', end)
+  } else if (duration) {
+    qs.set('duration', duration)
+  }
+  return apiFetch<StatementReport>(`${API}/summary/report-data?${qs.toString()}`)
+}
 
 // Categories
 export const listCategories = (type?: string) => {

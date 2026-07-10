@@ -37,6 +37,34 @@ func clampStartTime(startTime time.Time, registeredAt int64, txns []models.Trans
 	}
 	return startTime
 }
+// parseTimeRange extracts the start and end time from the request.
+// It supports explicit "start" and "end" query parameters, or falls back to "duration".
+func parseTimeRange(r *http.Request) (time.Time, time.Time, error) {
+	startStr := r.URL.Query().Get("start")
+	endStr := r.URL.Query().Get("end")
+
+	if startStr != "" && endStr != "" {
+		startTime, err := time.Parse("2006-01-02", startStr)
+		if err != nil {
+			return time.Time{}, time.Time{}, err
+		}
+		endTime, err := time.Parse("2006-01-02", endStr)
+		if err != nil {
+			return time.Time{}, time.Time{}, err
+		}
+		// Include the entire end day
+		endTime = endTime.Add(24*time.Hour - time.Second)
+		return startTime, endTime, nil
+	}
+
+	duration := handlers.SummaryDuration(r.URL.Query().Get("duration"))
+	if duration == "" {
+		duration = handlers.DurationThisMonth
+	}
+	now := time.Now()
+	startTime := handlers.CalculateStartTime(duration)
+	return startTime, now, nil
+}
 
 // HandleGetReport handles GET /summary/report.
 func HandleGetReport(w http.ResponseWriter, r *http.Request) {
@@ -46,13 +74,11 @@ func HandleGetReport(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	duration := handlers.SummaryDuration(r.URL.Query().Get("duration"))
-	if duration == "" {
-		duration = handlers.DurationThisMonth
+	startTime, now, err := parseTimeRange(r)
+	if err != nil {
+		WriteError(w, http.StatusBadRequest, "invalid_date", err.Error())
+		return
 	}
-
-	now := time.Now()
-	startTime := handlers.CalculateStartTime(duration)
 
 	svc := all.GetServices()
 	user, err := svc.User.GetUserByID(claims.UserID)
@@ -142,13 +168,11 @@ func HandleGetReportData(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	duration := handlers.SummaryDuration(r.URL.Query().Get("duration"))
-	if duration == "" {
-		duration = handlers.DurationThisMonth
+	startTime, now, err := parseTimeRange(r)
+	if err != nil {
+		WriteError(w, http.StatusBadRequest, "invalid_date", err.Error())
+		return
 	}
-
-	now := time.Now()
-	startTime := handlers.CalculateStartTime(duration)
 
 	svc := all.GetServices()
 	user, err := svc.User.GetUserByID(claims.UserID)

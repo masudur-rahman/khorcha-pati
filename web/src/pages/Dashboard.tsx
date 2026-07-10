@@ -9,6 +9,7 @@ import TopBar from '../components/layout/TopBar'
 import Card from '../components/ui/Card'
 import Badge from '../components/ui/Badge'
 import Modal from '../components/ui/Modal'
+import DateRangePicker from '../components/ui/DateRangePicker'
 import MiniDonut from '../components/charts/MiniDonut'
 import MiniBarChart from '../components/charts/MiniBarChart'
 import BudgetGauge from '../components/charts/BudgetGauge'
@@ -324,13 +325,14 @@ export default function Dashboard() {
 }
 
 function StatementModal({ onClose }: { onClose: () => void }) {
+  const [startDate, setStartDate] = useState('')
+  const [endDate, setEndDate] = useState('')
+
   const durations = [
     { label: 'This Week', value: 'one_week' },
-    { label: 'Current Month', value: 'this_month' },
+    { label: 'This Month', value: 'this_month' },
     { label: 'Last 30 Days', value: 'one_month' },
-    { label: 'Last 6 Months', value: 'half_year' },
-    { label: 'Current Year', value: 'this_year' },
-    { label: 'Last 1 Year', value: 'one_year' },
+    { label: 'This Year', value: 'this_year' },
     { label: 'All Time', value: 'all_time' },
   ]
 
@@ -339,29 +341,66 @@ function StatementModal({ onClose }: { onClose: () => void }) {
     onClose()
   }
 
+  const handleCustomPreview = () => {
+    window.open(`/statement?start=${startDate}&end=${endDate}`, '_blank')
+    onClose()
+  }
+
   return (
-    <Modal title="Generate Statement" onClose={onClose} width={400}>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-        <p style={{ fontSize: 14, color: 'var(--color-text-secondary)', marginBottom: 8 }}>
-          Select a time period for your financial statement.
-        </p>
-        {durations.map(d => (
-          <button
-            key={d.value}
-            onClick={() => handlePreview(d.value)}
-            style={{
-              padding: '14px 20px', borderRadius: 'var(--radius-md)',
-              border: '1px solid var(--color-border)', background: 'var(--color-surface)',
-              cursor: 'pointer', fontSize: 14, fontWeight: 600, color: 'var(--color-text-primary)',
-              textAlign: 'left', transition: 'all var(--transition-fast)', fontFamily: 'inherit',
-            }}
-            onMouseEnter={e => { e.currentTarget.style.background = 'var(--color-primary-subtle)'; e.currentTarget.style.borderColor = 'var(--color-primary)' }}
-            onMouseLeave={e => { e.currentTarget.style.background = 'var(--color-surface)'; e.currentTarget.style.borderColor = 'var(--color-border)' }}
-          >
-            {d.label}
-          </button>
-        ))}
+    <Modal title="Generate Statement" onClose={onClose} width={460}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+        
+        {/* Quick Select Section */}
+        <div>
+          <h4 style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 12px 0' }}>Quick Select</h4>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+            {durations.map(d => (
+              <button
+                key={d.value}
+                onClick={() => handlePreview(d.value)}
+                style={{
+                  padding: '8px 16px', borderRadius: 20,
+                  border: '1px solid var(--color-border)', background: 'var(--color-surface)',
+                  cursor: 'pointer', fontSize: 13, fontWeight: 600, color: 'var(--color-text-primary)',
+                  transition: 'all var(--transition-fast)', fontFamily: 'inherit',
+                }}
+                onMouseEnter={e => { e.currentTarget.style.background = 'var(--color-primary-subtle)'; e.currentTarget.style.borderColor = 'var(--color-primary)' }}
+                onMouseLeave={e => { e.currentTarget.style.background = 'var(--color-surface)'; e.currentTarget.style.borderColor = 'var(--color-border)' }}
+              >
+                {d.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Custom Range Section */}
+        <div>
+          <h4 style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 12px 0' }}>Custom Range</h4>
+          
+          <DateRangePicker 
+            startDate={startDate} 
+            endDate={endDate} 
+            onChange={(start, end) => { setStartDate(start); setEndDate(end) }} 
+          />
+        </div>
+
+        <button 
+          onClick={handleCustomPreview} 
+          disabled={!startDate || !endDate}
+          style={{ 
+            width: '100%', padding: '14px', 
+            background: (!startDate || !endDate) ? 'var(--color-border)' : 'var(--color-primary)', 
+            border: 'none', borderRadius: 8, 
+            cursor: (!startDate || !endDate) ? 'not-allowed' : 'pointer', 
+            fontWeight: 600, color: 'white', fontSize: 15, fontFamily: 'inherit',
+            transition: 'background var(--transition-fast)'
+          }}
+        >
+          Generate Custom Statement
+        </button>
+
       </div>
     </Modal>
   )
 }
+
