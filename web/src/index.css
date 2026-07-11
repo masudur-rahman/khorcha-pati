@@ -51,6 +51,7 @@
 
   /* Gradient hero card */
   --hero-gradient: linear-gradient(135deg, #003D9B 0%, #0052CC 55%, #00B8D9 100%);
+  --hero-gradient-danger: linear-gradient(135deg, #7F1D1D 0%, #E53E3E 55%, #DD6B20 100%);
 
   /* Typography */
   --font-display: 'Geist', 'Inter', ui-sans-serif, system-ui, sans-serif;
@@ -96,6 +97,7 @@
   --color-text-tertiary: #718096;
 
   --hero-gradient: linear-gradient(135deg, #002766 0%, #0747A6 55%, #006B77 100%);
+  --hero-gradient-danger: linear-gradient(135deg, #4A0E0E 0%, #9B2C2C 55%, #9C4221 100%);
 }
 
 body {

@@ -86,14 +86,17 @@ export default function Budgets() {
           </Card>
 
           <Card style={{
-            background: 'var(--hero-gradient)', color: 'white', overflow: 'hidden',
+            background: totals.remaining < 0 ? 'var(--hero-gradient-danger)' : 'var(--hero-gradient)', color: 'white', overflow: 'hidden',
             display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center',
             position: 'relative', gap: 6, padding: 22,
+            transition: 'background var(--transition-normal)'
           }}>
-            <Eyebrow color="rgba(255,255,255,0.85)">Remaining Balance</Eyebrow>
+            <Eyebrow color="rgba(255,255,255,0.85)">
+              {totals.remaining < 0 ? 'Over Budget' : 'Remaining Balance'}
+            </Eyebrow>
             <div style={{ width: 130, height: 130, display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: 2 }}>
               <BudgetGauge
-                percent={Math.min(100, Math.max(0, totals.percent))}
+                percent={totals.percent}
                 size={130}
                 color="white"
                 textColor="white"
@@ -101,10 +104,12 @@ export default function Budgets() {
               />
             </div>
             <span style={{ fontSize: 24, fontWeight: 700, fontFamily: 'var(--font-display)', letterSpacing: '-0.02em', lineHeight: 1 }}>
-              {fmt(Math.abs(totals.remaining))}
+              {totals.remaining < 0 ? `−${fmt(Math.abs(totals.remaining))}` : fmt(totals.remaining)}
             </span>
             <span style={{ fontSize: 11, opacity: 0.85, fontWeight: 600, marginTop: 2 }}>
-              {(100 - totals.percent).toFixed(0)}% left · {daysLeft}d remaining
+              {totals.remaining < 0 
+                ? `${(totals.percent - 100).toFixed(0)}% over · ${daysLeft}d remaining`
+                : `${(100 - totals.percent).toFixed(0)}% left · ${daysLeft}d remaining`}
             </span>
           </Card>
         </div>

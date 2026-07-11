@@ -7,12 +7,13 @@ A Telegram Bot — now with a web dashboard — to track your expenses.
 
 ## Features
 
-- **Expense Tracking**: Keep track of your daily expenses, income, and balance transfers between accounts.
-- **Flexible Input**: Add transactions interactively by selecting options or simply send a text describing your transaction. The bot supports natural language parsing (e.g., "add 500", "lunch 250").
+- **Web Dashboard**: A beautiful, mobile-friendly React dashboard to visualize your spending trends, manage budgets, generate custom statements, and configure user settings.
+- **Natural Language Input**: The bot natively understands natural language phrases (e.g., "add 500", "lunch 250"). Just text it what you spent!
+- **Flexible Tracking**: Keep track of your daily expenses, income, and balance transfers between accounts.
 - **Lending and Borrowing**: Track lendings and borrowings with other individuals.
 - **Paginated Lists**: View your transactions and expenses in clean, paginated Markdown lists with easy navigation.
 - **Hierarchical Summaries**: Retrieve transaction summaries formatted with beautiful hierarchical tree connectors for better readability on mobile.
-- **Transaction Reports**: Generate transaction reports in PDF format for your chosen duration.
+- **Transaction Reports**: Download detailed PDF reports directly from the Telegram bot or generate interactive custom statements via the web dashboard.
 
 ## Premium User Experience
 
@@ -41,7 +42,7 @@ Before you start tracking your expenses
 To track your transactions interactively, send `/newtxn` command and follow the on-display suggestions.
 
 #### Regular Text Message (Natural Language)
-You can add new transactions by simply sending a text message describing what you did. The bot is smart enough to understand natural language!
+You can add new transactions by simply sending a text message describing what you did. The bot is smart enough to understand natural language and will automatically categorize your expenses!
 
 You just need to mention:
 - **What** you did (description/category)
@@ -226,13 +227,13 @@ You always can send `/cat` command to list the subcategory
 
 https://github.com/masudur-rahman/khorcha-pati/assets/13915755/83db45c8-1e84-473e-8d58-cda6ef8cc6ef
 
-## Future Work
+## Core Stack
 
-A list of possible future work:
-- [x] Add support for undoing a transaction
-- [x] Add Database backup and restore support (Google Drive sync)
-- [x] Support for multi-arch Docker builds (AMD64/ARM64)
-- [x] Add support for multiple users
+- **Backend**: Go (Golang), Telebot, Styx ORM
+- **Database**: SQLite & PostgreSQL supported
+- **Frontend**: React, TypeScript, Vite
+- **AI Integration**: Google Gemini API
+- **Deployment**: Docker (Multi-arch), Kubernetes, Terraform
 
 ## Self Hosting
 

@@ -15,8 +15,16 @@ export default function BudgetGauge({
   trackColor,
   textColor,
 }: BudgetGaugeProps) {
+  const isOverflow = percent > 100
   const clamped = Math.max(0, Math.min(100, percent))
   const percentDeg = (clamped / 100) * 360
+
+  let overflowPercent = 0
+  if (isOverflow) {
+    overflowPercent = percent % 100
+    if (overflowPercent === 0) overflowPercent = 100
+  }
+  const overflowDeg = (overflowPercent / 100) * 360
 
   const resolvedColor = color ?? (
     percent > 90 ? 'var(--color-danger)'
@@ -65,8 +73,22 @@ export default function BudgetGauge({
   const innerR = (size - ringWidth * 2) / 2
   const mask = `radial-gradient(circle, transparent ${innerR}px, #000 ${innerR + 1}px)`
 
+  // Second lap (overflow) stops
+  const overflowBase = '#991b1b' // dark red
+  const overflowTip = '#450a0a'  // darker red for 3D overlap effect
+  let stops2 = ''
+  if (isOverflow) {
+    if (overflowDeg >= 360) {
+      stops2 = `${overflowBase} 0deg 360deg`
+    } else {
+      const shadowStart = Math.max(0, overflowDeg - 5)
+      stops2 = `${overflowBase} 0deg ${shadowStart}deg, ${overflowTip} ${overflowDeg}deg, transparent ${overflowDeg}deg 360deg`
+    }
+  }
+
   return (
     <div style={{ width: size, height: size, position: 'relative', display: 'inline-block' }}>
+      {/* Base Lap */}
       <div
         style={{
           position: 'absolute',
@@ -78,6 +100,21 @@ export default function BudgetGauge({
           transition: 'background 0.4s ease',
         }}
       />
+      {/* Overflow Lap */}
+      {isOverflow && (
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            borderRadius: '50%',
+            background: `conic-gradient(from 0deg, ${stops2})`,
+            WebkitMask: mask,
+            mask: mask,
+            transition: 'background 0.4s ease',
+            zIndex: 2,
+          }}
+        />
+      )}
       <div
         style={{
           position: 'absolute',
@@ -90,9 +127,10 @@ export default function BudgetGauge({
           color: resolvedText,
           fontFamily: 'var(--font-display)',
           letterSpacing: '-0.02em',
+          zIndex: 3,
         }}
       >
-        {clamped.toFixed(0)}%
+        {percent.toFixed(0)}%
       </div>
     </div>
   )
