@@ -1,5 +1,29 @@
 @import "tailwindcss";
 
+/* Pin only the Bengali Taka sign (৳ U+09F3) to one shared system Bengali face so
+   it renders identically in every context — regardless of whether the surrounding
+   digits use Geist, Inter or Geist Mono. unicode-range restricts this face to the
+   single ৳ codepoint, so Latin glyphs/digits still fall through to their own font. */
+@font-face {
+  font-family: 'KhpTaka';
+  src: local('Kohinoor Bangla'), local('Bangla MN'), local('Bangla Sangam MN'),
+       local('Noto Sans Bengali'), local('Nirmala UI'), local('Vrinda'), local('Shonar Bangla');
+  unicode-range: U+09F3;
+  font-weight: 100 550;
+  font-display: swap;
+}
+/* Bold weights: pick the bold system Bengali face so the ৳ stays as heavy as the
+   bold digits beside it (amounts are 600–800). Falls back to synthesized weight. */
+@font-face {
+  font-family: 'KhpTaka';
+  src: local('Kohinoor Bangla Semibold'), local('Kohinoor Bangla Bold'), local('Bangla MN Bold'),
+       local('Bangla Sangam MN Bold'), local('Noto Sans Bengali'), local('Nirmala UI Bold'),
+       local('Vrinda Bold'), local('Shonar Bangla Bold');
+  unicode-range: U+09F3;
+  font-weight: 550 900;
+  font-display: swap;
+}
+
 .balance-actions {
   display: flex;
   gap: 10px;
@@ -54,9 +78,9 @@
   --hero-gradient-danger: linear-gradient(135deg, #7F1D1D 0%, #E53E3E 55%, #DD6B20 100%);
 
   /* Typography */
-  --font-display: 'Geist', 'Inter', ui-sans-serif, system-ui, sans-serif;
-  --font-body: 'Inter', ui-sans-serif, system-ui, sans-serif;
-  --font-mono: 'Geist Mono', 'Geist', ui-monospace, SFMono-Regular, monospace;
+  --font-display: 'KhpTaka', 'Geist', 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-body: 'KhpTaka', 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'KhpTaka', 'Geist Mono', 'Geist', ui-monospace, SFMono-Regular, monospace;
 
   /* Radius */
   --radius-sm: 8px;
@@ -326,11 +350,21 @@ input[type="search"]::-webkit-search-results-decoration {
   grid-template-columns: 240px 1fr;
   gap: 32px;
 }
-@media (max-width: 640px) {
+@media (max-width: 767px) {
   .statement-modal-grid {
     grid-template-columns: 1fr;
     gap: 12px;
   }
+  /* Shrink the calendar so even a 6-row month fits without scrolling to the footer. */
+  .modal-body { padding: 12px 16px !important; }
+  .drp-daterow { margin-bottom: 8px !important; }
+  .drp-panel { padding: 8px 12px !important; }
+  .drp-header { margin-bottom: 6px !important; }
+  .drp-weekdays { margin-bottom: 2px !important; }
+  /* Fixed 6-row height (6*26 + 5*2 gap) so every month is the same height — no jump. */
+  .drp-grid { min-height: 166px !important; gap: 2px 0 !important; }
+  .drp-cell { height: 26px !important; }
+  .drp-day { width: 26px !important; height: 26px !important; }
 }
 
 .quick-select-container {

@@ -69,7 +69,7 @@ export default function DateRangePicker({ startDate, endDate, onChange }: DateRa
 
   return (
     <div>
-      <div style={{ display: 'flex', gap: 12, marginBottom: 12 }}>
+      <div className="drp-daterow" style={{ display: 'flex', gap: 12, marginBottom: 12 }}>
         <div 
           onClick={() => setFocusedInput('start')}
           style={{ 
@@ -96,8 +96,8 @@ export default function DateRangePicker({ startDate, endDate, onChange }: DateRa
         </div>
       </div>
 
-      <div style={{ padding: '16px 20px', background: 'var(--color-bg)', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)', userSelect: 'none' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+      <div className="drp-panel" style={{ padding: '16px 20px', background: 'var(--color-bg)', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)', userSelect: 'none' }}>
+        <div className="drp-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
           <button onClick={handlePrevMonth} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--color-text-secondary)', padding: 4 }}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
           </button>
@@ -124,14 +124,14 @@ export default function DateRangePicker({ startDate, endDate, onChange }: DateRa
           </button>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4, marginBottom: 8, textAlign: 'center' }}>
+        <div className="drp-weekdays" style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4, marginBottom: 8, textAlign: 'center' }}>
           {days.map(d => (
             <div key={d} style={{ fontSize: 12, fontWeight: 600, color: 'var(--color-text-tertiary)' }}>{d}</div>
           ))}
         </div>
 
-        {/* Fixed height grid to prevent jumping (6 rows * 36px) */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '4px 0', textAlign: 'center', minHeight: 236 }}>
+        {/* Fixed height grid to prevent jumping (6 rows * 36px); shrinks on mobile via CSS */}
+        <div className="drp-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '4px 0', textAlign: 'center', minHeight: 236 }}>
           {Array.from({ length: 42 }).map((_, i) => {
             const day = i - firstDayOfMonth + 1
             const isCurrentMonth = day > 0 && day <= daysInMonth
@@ -167,7 +167,7 @@ export default function DateRangePicker({ startDate, endDate, onChange }: DateRa
             }
 
             return (
-              <div key={i} style={{ position: 'relative', display: 'flex', justifyContent: 'center', height: 36, alignItems: 'center' }}>
+              <div key={i} className="drp-cell" style={{ position: 'relative', display: 'flex', justifyContent: 'center', height: 36, alignItems: 'center' }}>
                 {inRange && <div style={{ position: 'absolute', top: 2, bottom: 2, left: 0, right: 0, background: 'var(--color-primary-subtle)' }} />}
                 {selected && startDate && endDate && startDate !== endDate && (
                   <div style={{ 
@@ -179,6 +179,7 @@ export default function DateRangePicker({ startDate, endDate, onChange }: DateRa
                 )}
                 <button
                   onClick={() => handleDateClick(day)}
+                  className="drp-day"
                   style={{
                     position: 'relative',
                     width: 32, height: 32,

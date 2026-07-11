@@ -10,6 +10,7 @@ import TopBar from '../components/layout/TopBar'
 import Card from '../components/ui/Card'
 import Badge from '../components/ui/Badge'
 import Modal from '../components/ui/Modal'
+import Button from '../components/ui/Button'
 import DateRangePicker from '../components/ui/DateRangePicker'
 import MiniDonut from '../components/charts/MiniDonut'
 import MiniBarChart from '../components/charts/MiniBarChart'
@@ -348,8 +349,20 @@ function StatementModal({ onClose }: { onClose: () => void }) {
     onClose()
   }
 
+  const rangeReady = !!startDate && !!endDate
+
   return (
-    <Modal title="Generate Statement" onClose={onClose} width={760}>
+    <Modal
+      title="Generate Statement"
+      onClose={onClose}
+      width={760}
+      footer={
+        <>
+          <Button variant="secondary" onClick={onClose}>Cancel</Button>
+          <Button onClick={handleCustomPreview} disabled={!rangeReady}>Generate Custom Statement</Button>
+        </>
+      }
+    >
       <div className="statement-modal-grid">
         
         {/* Left Column: Quick Select */}
@@ -383,27 +396,11 @@ function StatementModal({ onClose }: { onClose: () => void }) {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <h4 style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>Custom Range</h4>
           
-          <DateRangePicker 
-            startDate={startDate} 
-            endDate={endDate} 
-            onChange={(start, end) => { setStartDate(start); setEndDate(end) }} 
+          <DateRangePicker
+            startDate={startDate}
+            endDate={endDate}
+            onChange={(start, end) => { setStartDate(start); setEndDate(end) }}
           />
-
-          <button 
-            onClick={handleCustomPreview} 
-            disabled={!startDate || !endDate}
-            style={{ 
-              width: '100%', padding: '14px', 
-              background: (!startDate || !endDate) ? 'var(--color-border)' : 'var(--color-primary)', 
-              border: 'none', borderRadius: 12, 
-              cursor: (!startDate || !endDate) ? 'not-allowed' : 'pointer', 
-              fontWeight: 600, color: 'white', fontSize: 14, fontFamily: 'inherit',
-              transition: 'background var(--transition-fast)',
-              marginTop: 'auto'
-            }}
-          >
-            Generate Custom Statement
-          </button>
         </div>
 
       </div>
