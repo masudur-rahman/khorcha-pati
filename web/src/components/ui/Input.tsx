@@ -5,7 +5,16 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   error?: string
 }
 
-const Input = forwardRef<HTMLInputElement, InputProps>(function Input({ label, error, style, ...props }, ref) {
+const Input = forwardRef<HTMLInputElement, InputProps>(function Input({ label, error, style, type, inputMode, ...props }, ref) {
+  // A stable, non-semantic name keeps mobile browsers/password managers from
+  // guessing the field is a credit-card/credential and offering saved data.
+  const fieldName = props.name ?? label.toLowerCase().replace(/[^a-z0-9]+/g, '-')
+  // Chrome/Gboard force a card/key/location autofill strip onto text & number
+  // inputs even with autocomplete=off — but exempt type="search". Render
+  // non-sensitive fields as search while preserving the intended keypad via
+  // inputMode (e.g. decimal for amounts).
+  const resolvedType = type === undefined || type === 'text' || type === 'number' || type === 'email' ? 'search' : type
+  const resolvedInputMode = inputMode ?? (type === 'number' ? 'decimal' : type === 'email' ? 'email' : undefined)
   return (
     <label style={{ display: 'flex', flexDirection: 'column', gap: 6, width: '100%' }}>
       <span style={{ 
@@ -18,8 +27,18 @@ const Input = forwardRef<HTMLInputElement, InputProps>(function Input({ label, e
       }}>
         {label}
       </span>
-      <input 
+      <input
         ref={ref}
+        name={fieldName}
+        type={resolvedType}
+        inputMode={resolvedInputMode}
+        autoComplete="off"
+        autoCorrect="off"
+        autoCapitalize="off"
+        spellCheck={false}
+        data-lpignore="true"
+        data-1p-ignore="true"
+        data-form-type="other"
         style={{
           width: '100%',
           background: 'var(--color-bg)',
@@ -30,6 +49,8 @@ const Input = forwardRef<HTMLInputElement, InputProps>(function Input({ label, e
           fontWeight: 500,
           color: 'var(--color-text-primary)',
           outline: 'none',
+          WebkitAppearance: 'none',
+          appearance: 'none',
           transition: 'all 0.15s ease',
           ...style,
         }}

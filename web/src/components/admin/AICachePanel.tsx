@@ -107,6 +107,15 @@ export default function AICachePanel() {
           </p>
         </div>
         <input
+          type="search"
+          name="ai-cache-search"
+          autoComplete="off"
+          autoCorrect="off"
+          autoCapitalize="off"
+          spellCheck={false}
+          data-lpignore="true"
+          data-1p-ignore="true"
+          data-form-type="other"
           value={search}
           onChange={e => setSearch(e.target.value)}
           placeholder="Search input text…"

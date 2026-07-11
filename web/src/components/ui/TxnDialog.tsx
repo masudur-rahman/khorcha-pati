@@ -286,7 +286,7 @@ export default function TxnDialog({ txn, initialType, initialContact, initialSub
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
           <Select label="Type" value={type} onChange={e => setType(e.target.value as TxnType)} options={TXN_TYPE_OPTIONS.map(t => ({ value: t, label: t }))} />
-          <Input ref={amountRef} label="Amount" type="number" value={amount} onChange={e => setAmount(e.target.value)} placeholder="0.00" error={errors.amount} />
+          <Input ref={amountRef} label="Amount" type="number" inputMode="decimal" value={amount} onChange={e => setAmount(e.target.value)} placeholder="0.00" error={errors.amount} />
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
           <Select label="Category" value={catId} onChange={e => { setCatId(e.target.value); setSubcategoryId('') }} options={categories.map(c => ({ value: c.id, label: c.name }))} />

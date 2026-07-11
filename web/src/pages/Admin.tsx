@@ -696,6 +696,15 @@ function BroadcastModal({ onClose }: ModalProps) {
           </div>
 
           <input
+            type="search"
+            name="recipient-search"
+            autoComplete="off"
+            autoCorrect="off"
+            autoCapitalize="off"
+            spellCheck={false}
+            data-lpignore="true"
+            data-1p-ignore="true"
+            data-form-type="other"
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Search recipients..."
