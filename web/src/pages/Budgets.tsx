@@ -366,18 +366,24 @@ function SetBudgetDialog({ categories, existing, onClose }: { categories: import
   const [alertAt, setAlertAt] = useState(existing ? String(existing.alertAt) : '80')
 
   return (
-    <Modal title={isEdit ? 'Edit Budget' : 'Set Budget'} onClose={onClose} width={460}>
+    <Modal
+      title={isEdit ? 'Edit Budget' : 'Set Budget'}
+      onClose={onClose}
+      width={460}
+      footer={
+        <>
+          <Button variant="secondary" onClick={onClose}>Cancel</Button>
+          <Button onClick={() => setBudget.mutate({ categoryId, amount: parseFloat(amount), alertAt: parseInt(alertAt) }, { onSuccess: onClose })} disabled={!amount}>
+            {isEdit ? 'Update Budget' : 'Save Budget'}
+          </Button>
+        </>
+      }
+    >
       <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
         <Select label="Category" value={categoryId} onChange={e => setCategoryId(e.target.value)} disabled={isEdit}
           options={[{ value: '', label: 'Overall Budget' }, ...categories.map(c => ({ value: c.id, label: c.name }))]} />
         <Input label="Monthly Limit" type="number" placeholder="0.00" value={amount} onChange={e => setAmount(e.target.value)} />
         <Input label="Alert Threshold (%)" type="number" placeholder="80" value={alertAt} onChange={e => setAlertAt(e.target.value)} />
-        <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', marginTop: 12 }}>
-          <Button variant="secondary" onClick={onClose}>Cancel</Button>
-          <Button onClick={() => setBudget.mutate({ categoryId, amount: parseFloat(amount), alertAt: parseInt(alertAt) }, { onSuccess: onClose })} disabled={!amount} style={{ padding: '12px 32px' }}>
-            {isEdit ? 'Update Budget' : 'Save Budget'}
-          </Button>
-        </div>
       </div>
     </Modal>
   )

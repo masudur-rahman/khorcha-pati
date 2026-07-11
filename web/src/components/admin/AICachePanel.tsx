@@ -5,7 +5,7 @@ import {
 } from '../../api/endpoints'
 import { useSearch } from '../../context/SearchContext'
 import Card from '../ui/Card'
-import Modal from '../ui/Modal'
+import ConfirmDialog from '../ui/ConfirmDialog'
 import Button from '../ui/Button'
 import AICacheModal, { type SubMeta } from './AICacheModal'
 
@@ -195,17 +195,16 @@ export default function AICachePanel() {
         <AICacheModal entry={editing} subMeta={subMeta} subOptions={subOptions} onClose={() => setEditing(null)} onSaved={onSaved} />
       )}
       {deleting && (
-        <Modal title="Delete cache entry?" onClose={() => setDeleting(null)} width={460}>
-          <p style={{ margin: 0, color: 'var(--color-text-secondary)', lineHeight: 1.6 }}>
-            Remove the mapping for <strong style={{ color: 'var(--color-text-primary)' }}>“{deleting.inputText}”</strong>? The classifier will re-learn it next time it sees that text.
-          </p>
-          <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', marginTop: 24 }}>
-            <Button variant="secondary" onClick={() => setDeleting(null)} disabled={delMut.isPending}>Cancel</Button>
-            <Button variant="danger" onClick={() => delMut.mutate(deleting.id)} disabled={delMut.isPending}>
-              {delMut.isPending ? 'Deleting…' : 'Delete'}
-            </Button>
-          </div>
-        </Modal>
+        <ConfirmDialog
+          title="Delete cache entry?"
+          type="danger"
+          confirmText="Delete"
+          onConfirm={() => delMut.mutate(deleting.id)}
+          onClose={() => setDeleting(null)}
+          message={
+            <>Remove the mapping for <strong style={{ color: 'var(--color-text-primary)' }}>“{deleting.inputText}”</strong>? The classifier will re-learn it next time it sees that text.</>
+          }
+        />
       )}
     </Card>
   )

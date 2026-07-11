@@ -7,6 +7,7 @@ import TopBar from '../components/layout/TopBar'
 import Card from '../components/ui/Card'
 import MetricChip from '../components/ui/MetricChip'
 import Modal from '../components/ui/Modal'
+import ConfirmDialog from '../components/ui/ConfirmDialog'
 import Button from '../components/ui/Button'
 import AICachePanel from '../components/admin/AICachePanel'
 
@@ -347,31 +348,29 @@ export default function Admin() {
       )}
 
       {confirmUser && (
-        <Modal title={confirmUser.isActive ? 'Disable user?' : 'Enable user?'} onClose={() => setConfirmUser(null)} width={460}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
-            <Avatar user={confirmUser} size={44} />
-            <div>
-              <div style={{ fontWeight: 600, color: 'var(--color-text-primary)' }}>{userLabel(confirmUser)}</div>
-              <div style={{ fontSize: 12, color: 'var(--color-text-tertiary)' }}>Telegram · {confirmUser.telegramId}</div>
+        <ConfirmDialog
+          title={confirmUser.isActive ? 'Disable user?' : 'Enable user?'}
+          type={confirmUser.isActive ? 'danger' : 'info'}
+          confirmText={confirmUser.isActive ? 'Disable' : 'Enable'}
+          onConfirm={() => toggleActive.mutate({ id: confirmUser.id, isActive: !confirmUser.isActive })}
+          onClose={() => setConfirmUser(null)}
+          message={
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <Avatar user={confirmUser} size={44} />
+                <div>
+                  <div style={{ fontWeight: 600, color: 'var(--color-text-primary)' }}>{userLabel(confirmUser)}</div>
+                  <div style={{ fontSize: 12, color: 'var(--color-text-tertiary)' }}>Telegram · {confirmUser.telegramId}</div>
+                </div>
+              </div>
+              <span>
+                {confirmUser.isActive
+                  ? 'Web login and bot interaction will be blocked until re-enabled.'
+                  : 'Web login and bot interaction will be restored.'}
+              </span>
             </div>
-          </div>
-          <p style={{ margin: 0, color: 'var(--color-text-secondary)', lineHeight: 1.6 }}>
-            {confirmUser.isActive
-              ? 'Web login and bot interaction will be blocked until re-enabled.'
-              : 'Web login and bot interaction will be restored.'}
-          </p>
-          <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', marginTop: 24 }}>
-            <Button variant="secondary" onClick={() => setConfirmUser(null)} disabled={toggleActive.isPending}>
-              Cancel
-            </Button>
-            <Button
-              onClick={() => toggleActive.mutate({ id: confirmUser.id, isActive: !confirmUser.isActive })}
-              disabled={toggleActive.isPending}
-            >
-              {toggleActive.isPending ? 'Working…' : confirmUser.isActive ? 'Disable' : 'Enable'}
-            </Button>
-          </div>
-        </Modal>
+          }
+        />
       )}
     </div>
   )
@@ -649,8 +648,23 @@ function BroadcastModal({ onClose }: ModalProps) {
   }
 
   return (
-    <Modal title="Broadcast Message" onClose={onClose} width={580}>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+    <Modal
+      title="Broadcast Message"
+      onClose={onClose}
+      width={580}
+      footer={
+        <>
+          <Button variant="secondary" onClick={onClose} disabled={broadcastMut.isPending}>Cancel</Button>
+          <Button
+            onClick={handleSend}
+            disabled={!message.trim() || selectedCount === 0 || broadcastMut.isPending}
+          >
+            {broadcastMut.isPending ? 'Sending...' : 'Send Broadcast'}
+          </Button>
+        </>
+      }
+    >
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
         <p style={{ margin: 0, fontSize: 13, color: 'var(--color-text-secondary)', lineHeight: 1.5 }}>
           Send a customized Telegram message to selected active users. Supports Telegram Markdown formatting.
         </p>
@@ -783,31 +797,18 @@ function BroadcastModal({ onClose }: ModalProps) {
           </div>
         )}
 
-        <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', marginTop: 8 }}>
-          <Button variant="secondary" onClick={onClose} disabled={broadcastMut.isPending}>Cancel</Button>
-          <Button 
-            onClick={handleSend} 
-            disabled={!message.trim() || selectedCount === 0 || broadcastMut.isPending}
-          >
-            {broadcastMut.isPending ? 'Sending...' : 'Send Broadcast'}
-          </Button>
-        </div>
       </div>
 
       {confirmOpen && (
-        <Modal title="Confirm Broadcast" onClose={() => setConfirmOpen(false)} width={460}>
-          <p style={{ margin: 0, color: 'var(--color-text-secondary)', lineHeight: 1.6 }}>
-            Are you sure you want to send this broadcast to <strong style={{ color: 'var(--color-text-primary)' }}>{selectedCount}</strong> user{selectedCount !== 1 ? 's' : ''}?
-          </p>
-          <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', marginTop: 24 }}>
-            <Button variant="secondary" onClick={() => setConfirmOpen(false)}>Cancel</Button>
-            <Button 
-              onClick={triggerBroadcast}
-            >
-              Confirm & Send
-            </Button>
-          </div>
-        </Modal>
+        <ConfirmDialog
+          title="Confirm Broadcast"
+          confirmText="Confirm & Send"
+          onConfirm={triggerBroadcast}
+          onClose={() => setConfirmOpen(false)}
+          message={
+            <>Are you sure you want to send this broadcast to <strong style={{ color: 'var(--color-text-primary)' }}>{selectedCount}</strong> user{selectedCount !== 1 ? 's' : ''}?</>
+          }
+        />
       )}
     </Modal>
   )
@@ -838,8 +839,24 @@ function MessageUserModal({ user, onClose }: { user: AdminUser } & ModalProps) {
   }
 
   return (
-    <Modal title={`Message ${userLabel(user)}`} onClose={onClose} width={480}>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+    <Modal
+      title={`Message ${userLabel(user)}`}
+      onClose={onClose}
+      width={480}
+      footer={
+        <>
+          <Button variant="secondary" onClick={onClose} disabled={broadcastMut.isPending}>Cancel</Button>
+          <Button
+            onClick={handleSend}
+            disabled={!message.trim() || broadcastMut.isPending}
+            icon={<SendIcon />}
+          >
+            {broadcastMut.isPending ? 'Sending...' : 'Send Message'}
+          </Button>
+        </>
+      }
+    >
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <Avatar user={user} size={40} showStatus={false} />
           <div>
@@ -886,16 +903,6 @@ function MessageUserModal({ user, onClose }: { user: AdminUser } & ModalProps) {
           </div>
         )}
 
-        <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', marginTop: 8 }}>
-          <Button variant="secondary" onClick={onClose} disabled={broadcastMut.isPending}>Cancel</Button>
-          <Button 
-            onClick={handleSend} 
-            disabled={!message.trim() || broadcastMut.isPending}
-            icon={<SendIcon />}
-          >
-            {broadcastMut.isPending ? 'Sending...' : 'Send Message'}
-          </Button>
-        </div>
       </div>
     </Modal>
   )

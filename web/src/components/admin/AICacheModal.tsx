@@ -6,6 +6,7 @@ import Modal from '../ui/Modal'
 import Button from '../ui/Button'
 import Input from '../ui/Input'
 import Select from '../ui/Select'
+import SearchableSelect from '../ui/SearchableSelect'
 
 export interface SubMeta { name: string; catName: string; types: TxnType[] }
 
@@ -43,8 +44,20 @@ export default function AICacheModal({ entry, subMeta, subOptions, onClose, onSa
   const canSave = !!subId && !!intent && (isEdit || !!inputText.trim()) && !save.isPending
 
   return (
-    <Modal title={isEdit ? 'Edit cache entry' : 'Add cache entry'} onClose={onClose} width={520}>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+    <Modal
+      title={isEdit ? 'Edit cache entry' : 'Add cache entry'}
+      onClose={onClose}
+      width={520}
+      footer={
+        <>
+          <Button variant="secondary" onClick={onClose} disabled={save.isPending}>Cancel</Button>
+          <Button onClick={() => save.mutate()} disabled={!canSave}>
+            {save.isPending ? 'Saving…' : isEdit ? 'Save changes' : 'Add entry'}
+          </Button>
+        </>
+      }
+    >
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
         <Input
           label="Input text"
           value={inputText}
@@ -54,11 +67,12 @@ export default function AICacheModal({ entry, subMeta, subOptions, onClose, onSa
         />
         {isEdit && <Hint>Input text is the cache key and can’t be changed. Delete and re-add to fix a typo.</Hint>}
 
-        <Select
+        <SearchableSelect
           label="Subcategory"
           value={subId}
-          options={[{ value: '', label: 'Select subcategory…' }, ...subOptions]}
-          onChange={e => setSubId(e.target.value)}
+          options={subOptions}
+          onChange={setSubId}
+          placeholder="Search subcategory…"
         />
 
         <Select
@@ -82,13 +96,6 @@ export default function AICacheModal({ entry, subMeta, subOptions, onClose, onSa
         <Hint>Manually curated entries are usually 100%.</Hint>
 
         {error && <p style={{ margin: 0, color: 'var(--color-danger)', fontSize: 13 }}>{error}</p>}
-
-        <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', marginTop: 4 }}>
-          <Button variant="secondary" onClick={onClose} disabled={save.isPending}>Cancel</Button>
-          <Button onClick={() => save.mutate()} disabled={!canSave}>
-            {save.isPending ? 'Saving…' : isEdit ? 'Save changes' : 'Add entry'}
-          </Button>
-        </div>
       </div>
     </Modal>
   )

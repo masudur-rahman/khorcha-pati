@@ -26,25 +26,18 @@ export default function ConfirmDialog({
   const isDanger = type === 'danger'
 
   return (
-    <Modal title={title} onClose={onClose} width={420}>
-      <div style={{ padding: '24px 32px', display: 'flex', flexDirection: 'column', gap: 16 }}>
-        <p style={{ 
-          fontSize: 15, 
-          lineHeight: '1.5', 
-          color: 'var(--color-text-secondary)',
-          margin: 0,
-          fontWeight: 500,
-        }}>
-          {message}
-        </p>
-        
-        <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', marginTop: 8 }}>
+    <Modal
+      title={title}
+      onClose={onClose}
+      width={420}
+      footer={
+        <>
           {mode === 'confirm' && (
             <Button variant="secondary" onClick={onClose}>
               {cancelText}
             </Button>
           )}
-          <Button 
+          <Button
             variant={isDanger ? 'danger' : 'primary'}
             onClick={() => {
               if (onConfirm) onConfirm()
@@ -54,7 +47,16 @@ export default function ConfirmDialog({
           >
             {mode === 'alert' ? 'OK' : confirmText}
           </Button>
-        </div>
+        </>
+      }
+    >
+      <div style={{
+        fontSize: 15,
+        lineHeight: 1.5,
+        color: 'var(--color-text-secondary)',
+        fontWeight: 500,
+      }}>
+        {message}
       </div>
     </Modal>
   )

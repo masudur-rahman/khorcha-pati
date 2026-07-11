@@ -26,7 +26,8 @@ const palettes: Record<WalletCardVariant, string[]> = {
     'linear-gradient(135deg, #1E3A5F 0%, #2C5282 55%, #3182CE 100%)',
   ],
   Cash: [
-    'linear-gradient(135deg, #00875A 0%, #36B37E 100%)',
+    // Shared app-wide green: matches Income txn & "Owes you" contact cards.
+    'linear-gradient(135deg, #006844 0%, #2BAE66 55%, #36B37E 100%)',
     'linear-gradient(135deg, #006844 0%, #2BAE66 55%, #7BC47F 100%)',
     'linear-gradient(135deg, #1B5E20 0%, #43A047 55%, #C8E6C9 100%)',
   ],
@@ -82,7 +83,7 @@ export default function WalletCard({ variant, name, shortName, balance, paletteI
         overflow: 'hidden',
         containerType: 'inline-size',
         background: bg,
-        boxShadow: '0 10px 30px rgba(23,43,77,0.12)',
+        boxShadow: 'var(--wallet-shadow)',
         border: 'none',
         cursor: onClick ? 'pointer' : 'default',
         textAlign: 'left',
@@ -97,12 +98,12 @@ export default function WalletCard({ variant, name, shortName, balance, paletteI
       onMouseEnter={e => {
         if (!onClick) return
         e.currentTarget.style.transform = 'translateY(-4px)'
-        e.currentTarget.style.boxShadow = '0 18px 40px rgba(23,43,77,0.22)'
+        e.currentTarget.style.boxShadow = 'var(--wallet-shadow-hover)'
       }}
       onMouseLeave={e => {
         if (!onClick) return
         e.currentTarget.style.transform = 'translateY(0)'
-        e.currentTarget.style.boxShadow = '0 10px 30px rgba(23,43,77,0.12)'
+        e.currentTarget.style.boxShadow = 'var(--wallet-shadow)'
       }}
     >
       <span aria-hidden style={{ position: 'absolute', inset: 0, background: pattern, pointerEvents: 'none' }} />
@@ -174,6 +175,8 @@ export default function WalletCard({ variant, name, shortName, balance, paletteI
           display: 'flex', justifyContent: 'space-between', alignItems: 'center',
           fontSize: 'clamp(9px, 2.6cqi, 11px)', fontWeight: 700, opacity: 0.94,
           gap: 8, minWidth: 0,
+          // Reserve room so the wallet name never slides under the action icons.
+          paddingRight: (onEdit || onDelete) ? 72 : 0,
         }}>
           <span style={{
             textTransform: 'uppercase', letterSpacing: '0.08em',
@@ -185,30 +188,32 @@ export default function WalletCard({ variant, name, shortName, balance, paletteI
               {trend.days ? ` · ${trend.days}d` : ''}
             </span>
           )}
-          {(onEdit || onDelete) && (
-            <div style={{ position: 'absolute', bottom: 12, right: 12, display: 'flex', gap: 6 }}>
-              {onEdit && (
-                <ActionButton
-                  actionType="edit"
-                  variant="glass"
-                  icon={ICONS.edit(14)}
-                  onClick={(e) => { e.stopPropagation(); onEdit() }}
-                  title="Edit Wallet"
-                />
-              )}
-              {onDelete && (
-                <ActionButton
-                  actionType="delete"
-                  variant="glass"
-                  icon={ICONS.trash(14)}
-                  onClick={(e) => { e.stopPropagation(); onDelete() }}
-                  title="Delete Wallet"
-                />
-              )}
-            </div>
-          )}
         </div>
       </div>
+
+      {/* Glass actions pinned to the card's bottom-right — matches txn & contact detail cards. */}
+      {(onEdit || onDelete) && (
+        <div style={{ position: 'absolute', bottom: 14, right: 14, display: 'flex', gap: 6 }}>
+          {onEdit && (
+            <ActionButton
+              actionType="edit"
+              variant="glass"
+              icon={ICONS.edit(14)}
+              onClick={(e) => { e.stopPropagation(); onEdit() }}
+              title="Edit Wallet"
+            />
+          )}
+          {onDelete && (
+            <ActionButton
+              actionType="delete"
+              variant="glass"
+              icon={ICONS.trash(14)}
+              onClick={(e) => { e.stopPropagation(); onDelete() }}
+              title="Delete Wallet"
+            />
+          )}
+        </div>
+      )}
     </button>
   )
 }

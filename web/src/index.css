@@ -111,6 +111,17 @@ h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-display);
 }
 
+/* Wallet card depth — theme-aware so cards read on both surfaces. Dark mode adds
+   a faint light ring so the near-black Credit variant separates from the bg. */
+.khp-wallet-card {
+  --wallet-shadow: 0 10px 30px rgba(23, 43, 77, 0.12);
+  --wallet-shadow-hover: 0 18px 40px rgba(23, 43, 77, 0.22);
+}
+.dark .khp-wallet-card {
+  --wallet-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08), 0 10px 30px rgba(0, 0, 0, 0.45);
+  --wallet-shadow-hover: 0 0 0 1px rgba(255, 255, 255, 0.10), 0 18px 44px rgba(0, 0, 0, 0.6);
+}
+
 .hover-row {
   cursor: pointer;
 }
@@ -254,6 +265,12 @@ input[type="search"]::-webkit-search-results-decoration {
 }
 
 /* Modal Responsive Padding & Smooth Scrolling */
+.modal-container-resp {
+  /* dvh keeps the modal within the *visible* viewport on mobile (excludes the
+     URL bar), so it never overflows behind browser chrome. vh is the fallback. */
+  max-height: calc(100vh - 40px);
+  max-height: calc(100dvh - 40px);
+}
 .modal-body {
   flex: 1;
   min-height: 0;
@@ -261,19 +278,31 @@ input[type="search"]::-webkit-search-results-decoration {
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
 }
+.modal-body--flush {
+  padding: 0;
+}
 
-@media (max-width: 640px) {
+@media (max-width: 767px) {
+  /* Leave the bottom nav uncovered by the modal box — the overlay still blurs
+     over it (z100 > nav z95), so it stays visible-but-blurred beneath. */
   .modal-overlay-resp {
-    padding: 10px !important;
+    align-items: center;
+    padding: 12px 12px calc(72px + env(safe-area-inset-bottom, 8px)) !important;
   }
   .modal-container-resp {
-    max-height: calc(100vh - 20px) !important;
+    max-height: calc(100dvh - 84px - env(safe-area-inset-bottom, 8px)) !important;
   }
   .modal-header-resp {
     padding: 16px 20px !important;
   }
   .modal-body {
-    padding: 12px 16px !important;
+    padding: 16px 20px !important;
+  }
+  .modal-body--flush {
+    padding: 0 !important;
+  }
+  .modal-footer-resp {
+    padding: 12px 20px !important;
   }
   .quick-select-container {
     display: grid !important;

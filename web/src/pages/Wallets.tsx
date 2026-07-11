@@ -19,7 +19,6 @@ import SectionHeader from '../components/ui/SectionHeader'
 import Eyebrow from '../components/ui/Eyebrow'
 import Badge from '../components/ui/Badge'
 import WalletCard, { WalletCardGhost, inferVariant } from '../components/ui/WalletCard'
-import DrawerPanel from '../components/ui/DrawerPanel'
 import ConfirmDialog from '../components/ui/ConfirmDialog'
 import { ICONS } from '../components/ui/Icons'
 import { validateDisplayName, validateShortName } from '../utils/validators'
@@ -198,7 +197,7 @@ function WalletDrawer({ wallet, wallets, onEdit, onDelete, onClose }: { wallet: 
     .slice(0, 10)
 
   return (
-    <DrawerPanel
+    <Modal
       title={wallet.name}
       subtitle={wallet.shortName.toUpperCase()}
       onClose={onClose}
@@ -259,7 +258,7 @@ function WalletDrawer({ wallet, wallets, onEdit, onDelete, onClose }: { wallet: 
           )}
         </div>
       </div>
-    </DrawerPanel>
+    </Modal>
   )
 }
 
@@ -292,18 +291,24 @@ function AddWalletDialog({ onClose }: { onClose: () => void }) {
   }
 
   return (
-    <Modal title="Add New Wallet" onClose={onClose} width={460}>
+    <Modal
+      title="Add New Wallet"
+      onClose={onClose}
+      width={460}
+      footer={
+        <>
+          <Button variant="secondary" onClick={onClose}>Cancel</Button>
+          <Button onClick={handleSubmit} disabled={!name || !shortName || !!shortNameError || !!nameError || create.isPending}>
+            Create Wallet
+          </Button>
+        </>
+      }
+    >
       <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
         <Select label="Type" value={type} onChange={e => setType(e.target.value)} options={[{ value: 'Bank', label: 'Bank Account' }, { value: 'Cash', label: 'Cash / Other' }]} />
         <Input label="Short Name" placeholder="e.g. brac, cash" value={shortName} onChange={e => setShortName(e.target.value)} error={shortNameError || undefined} />
         <Input label="Display Name" placeholder="e.g. Personal Savings" value={name} onChange={e => setName(e.target.value)} error={nameError || undefined} />
         <Input label="Initial Balance" type="number" placeholder="0.00" value={balance} onChange={e => setBalance(e.target.value)} />
-        <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', marginTop: 12 }}>
-          <Button variant="secondary" onClick={onClose}>Cancel</Button>
-          <Button onClick={handleSubmit} disabled={!name || !shortName || !!shortNameError || !!nameError || create.isPending} style={{ padding: '12px 32px' }}>
-            Create Wallet
-          </Button>
-        </div>
       </div>
     </Modal>
   )
@@ -334,16 +339,22 @@ function EditWalletDialog({ wallet, onClose }: { wallet: Wallet; onClose: () => 
   }
 
   return (
-    <Modal title="Edit Wallet" onClose={onClose} width={460}>
+    <Modal
+      title="Edit Wallet"
+      onClose={onClose}
+      width={460}
+      footer={
+        <>
+          <Button variant="secondary" onClick={onClose}>Cancel</Button>
+          <Button onClick={handleSubmit} disabled={!name || !shortName || !!shortNameError || !!nameError || update.isPending}>
+            Save Changes
+          </Button>
+        </>
+      }
+    >
       <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
         <Input label="Short Name" placeholder="e.g. brac, cash" value={shortName} onChange={e => setShortName(e.target.value)} error={shortNameError || undefined} />
         <Input label="Display Name" placeholder="e.g. Personal Savings" value={name} onChange={e => setName(e.target.value)} error={nameError || undefined} />
-        <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', marginTop: 12 }}>
-          <Button variant="secondary" onClick={onClose}>Cancel</Button>
-          <Button onClick={handleSubmit} disabled={!name || !shortName || !!shortNameError || !!nameError || update.isPending} style={{ padding: '12px 32px' }}>
-            Save Changes
-          </Button>
-        </div>
       </div>
     </Modal>
   )

@@ -1,10 +1,9 @@
-import { useEffect } from 'react'
 import { Transaction, Wallet, Contact, TxnCategory, TxnSubcategory } from '../../types'
 import { fmt } from '../../lib/formatter'
 import { ICONS } from './Icons'
-import Badge from './Badge'
 import CategoryIcon, { categoryAccent } from './CategoryIcon'
 import ActionButton from './ActionButton'
+import Modal from './Modal'
 
 interface TransactionDetailsProps {
   txn: Transaction
@@ -27,18 +26,16 @@ export default function TransactionDetails({
   onEdit,
   onDelete,
 }: TransactionDetailsProps) {
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [onClose])
-
   const txnDate = new Date(txn.timestamp * 1000)
   const dateStr = txnDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
   const timeStr = txnDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
 
   const accentColor = txn.type === 'Income' ? 'var(--color-success)' : txn.type === 'Transfer' ? 'var(--color-primary)' : 'var(--color-danger)'
-  const heroBg = txn.type === 'Income' ? 'var(--color-success-subtle)' : txn.type === 'Transfer' ? 'var(--color-primary-subtle)' : 'var(--color-danger-subtle)'
+  const heroGradient = txn.type === 'Income'
+    ? 'linear-gradient(135deg, #006844 0%, #2BAE66 55%, #36B37E 100%)'
+    : txn.type === 'Transfer'
+      ? 'var(--hero-gradient)'
+      : 'var(--hero-gradient-danger)'
 
   const TypeIcon = txn.type === 'Income' ? ICONS.trendingUp : txn.type === 'Transfer' ? ICONS.swapHoriz : ICONS.trendingDown
   const sign = txn.type === 'Income' ? '+' : txn.type === 'Transfer' ? '' : '-'
@@ -70,92 +67,60 @@ export default function TransactionDetails({
   const subcategoryName = subcatMap.get(txn.subcategoryId) || txn.subcategoryId
 
   return (
-    <>
-      <div
-        onClick={onClose}
-        style={{
-          position: 'fixed', inset: 0,
-          background: 'rgba(9, 9, 11, 0.5)',
-          backdropFilter: 'blur(6px)',
-          zIndex: 300,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          padding: 16,
-          animation: 'fadeIn 0.2s ease-out',
-        }}
-      >
-        <div
-          onClick={e => e.stopPropagation()}
-          role="dialog"
-          aria-modal="true"
-          style={{
-            width: 'min(560px, 100%)',
-            maxHeight: '88vh',
-            background: 'var(--color-surface)',
-            borderRadius: 20,
-            boxShadow: '0 24px 64px rgba(0,0,0,0.18)',
-            display: 'flex', flexDirection: 'column',
-            overflow: 'hidden',
-            animation: 'modalIn 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
-          }}
-        >
-          <style>{`
-            @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-            @keyframes modalIn { from { opacity: 0; transform: translateY(8px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
-            .td-action-btn:hover { filter: brightness(0.95); transform: translateY(-1px); }
-            .td-action-btn:active { transform: translateY(0); }
-            .td-close:hover { background: var(--color-bg) !important; color: var(--color-text-primary) !important; }
-          `}</style>
-
-          {/* Header */}
-          <div style={{ padding: '14px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--color-border)' }}>
-            <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--color-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Transaction Details</span>
-            <button
-              onClick={onClose}
-              className="td-close"
-              aria-label="Close"
-              style={{
-                width: 30, height: 30, borderRadius: 8, border: 'none',
-                background: 'transparent', cursor: 'pointer', display: 'flex',
-                alignItems: 'center', justifyContent: 'center', color: 'var(--color-text-tertiary)',
-                transition: 'all 0.15s',
-              }}
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-            </button>
-          </div>
-
-          {/* Body */}
-          <div style={{ padding: 20, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 14 }}>
-            {/* Hero card */}
+    <Modal
+      title="Transaction Details"
+      onClose={onClose}
+    >
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            {/* Hero card — gradient with glass actions bottom-right (mirrors WalletCard) */}
             <div style={{
-              background: heroBg,
+              position: 'relative',
+              background: heroGradient,
               borderRadius: 16,
-              padding: '22px 20px',
-              display: 'flex', alignItems: 'center', gap: 18,
-              border: `1px solid ${accentColor}22`,
+              padding: '20px 20px 22px',
+              color: 'white',
+              overflow: 'hidden',
+              boxShadow: '0 10px 30px rgba(23,43,77,0.14)',
+              minHeight: 132,
+              display: 'flex', flexDirection: 'column', gap: 16,
             }}>
-              <div style={{
-                width: 56, height: 56, borderRadius: 16,
-                background: 'var(--color-surface)',
-                color: accentColor,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                boxShadow: '0 4px 12px rgba(0,0,0,0.06)',
-                flexShrink: 0,
-              }}>
-                {TypeIcon(28)}
+              <span aria-hidden style={{ position: 'absolute', top: -40, right: -40, width: 150, height: 150, borderRadius: '50%', background: 'rgba(255,255,255,0.10)' }} />
+              <span aria-hidden style={{ position: 'absolute', bottom: -56, right: 20, width: 130, height: 130, borderRadius: '50%', background: 'rgba(255,255,255,0.06)' }} />
+
+              <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 14 }}>
+                <div style={{
+                  width: 48, height: 48, borderRadius: 14,
+                  background: 'rgba(255,255,255,0.20)', backdropFilter: 'blur(4px)',
+                  border: '1px solid rgba(255,255,255,0.28)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                }}>
+                  {TypeIcon(24)}
+                </div>
+                <span style={{
+                  padding: '3px 11px', borderRadius: 999, fontSize: 10, fontWeight: 700,
+                  letterSpacing: '0.08em', textTransform: 'uppercase',
+                  background: 'rgba(255,255,255,0.22)', border: '1px solid rgba(255,255,255,0.28)',
+                  backdropFilter: 'blur(4px)',
+                }}>{txn.type}</span>
               </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 30, fontWeight: 800, color: accentColor, letterSpacing: '-0.02em', lineHeight: 1.1 }}>
+
+              <div style={{ position: 'relative' }}>
+                <div style={{
+                  fontFamily: 'var(--font-display)', fontSize: 32, fontWeight: 800,
+                  letterSpacing: '-0.02em', lineHeight: 1.05, textShadow: '0 1px 4px rgba(0,0,0,0.18)',
+                }}>
                   {sign}{fmt(txn.amount)}
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 8, flexWrap: 'wrap' }}>
-                  <Badge type={txn.type as any} />
-                  <span style={{ fontSize: 12, color: 'var(--color-text-secondary)', fontWeight: 600 }}>
-                    {dateStr}
-                    <span style={{ color: 'var(--color-text-tertiary)', margin: '0 6px' }}>·</span>
-                    {timeStr}
-                  </span>
+                <div style={{ fontSize: 12, fontWeight: 600, opacity: 0.92, marginTop: 6 }}>
+                  {dateStr}
+                  <span style={{ opacity: 0.7, margin: '0 6px' }}>·</span>
+                  {timeStr}
                 </div>
+              </div>
+
+              <div style={{ position: 'absolute', bottom: 14, right: 14, display: 'flex', gap: 6 }}>
+                <ActionButton actionType="edit" variant="glass" icon={ICONS.edit(14)} onClick={() => onEdit?.(txn)} title="Edit Transaction" />
+                <ActionButton actionType="delete" variant="glass" icon={ICONS.trash(14)} onClick={() => onDelete?.(txn)} title="Delete Transaction" />
               </div>
             </div>
 
@@ -224,29 +189,8 @@ export default function TransactionDetails({
                 {txn.remarks || 'No remarks provided'}
               </div>
             </div>
-          </div>
-
-          {/* Actions */}
-          <div style={{ padding: '14px 20px', borderTop: '1px solid var(--color-border)', display: 'flex', gap: 10, background: 'var(--color-surface)' }}>
-            <ActionButton
-              actionType="edit"
-              icon={ICONS.edit(16)}
-              onClick={() => onEdit?.(txn)}
-              style={{ flex: 1, height: 44, borderRadius: 12, fontSize: 14 }}
-            >
-              Edit
-            </ActionButton>
-            <ActionButton
-              actionType="delete"
-              icon={ICONS.trash(18)}
-              onClick={() => onDelete?.(txn)}
-              aria-label="Delete"
-              style={{ height: 44, width: 44, borderRadius: 12 }}
-            />
-          </div>
-        </div>
       </div>
-    </>
+    </Modal>
   )
 }
 

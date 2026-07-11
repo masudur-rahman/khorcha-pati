@@ -17,7 +17,6 @@ import Modal from '../components/ui/Modal'
 import Input from '../components/ui/Input'
 import Eyebrow from '../components/ui/Eyebrow'
 import SectionHeader from '../components/ui/SectionHeader'
-import DrawerPanel from '../components/ui/DrawerPanel'
 import ConfirmDialog from '../components/ui/ConfirmDialog'
 import ActionButton from '../components/ui/ActionButton'
 import TxnDialog, { TxnType } from '../components/ui/TxnDialog'
@@ -266,7 +265,13 @@ function ContactDrawer({ contact, onEdit, onDelete, onClose }: { contact: Contac
 
   const owesYou = contact.netBalance > 0
   const settled = contact.netBalance === 0
-  const color = settled ? 'var(--color-text-tertiary)' : owesYou ? 'var(--color-success)' : 'var(--color-danger)'
+  const heroGradient = settled
+    ? 'linear-gradient(135deg, #334155 0%, #475569 55%, #64748B 100%)'
+    : owesYou
+      ? 'linear-gradient(135deg, #006844 0%, #2BAE66 55%, #36B37E 100%)'
+      : 'var(--hero-gradient-danger)'
+  const initials = (contact.fullName || contact.nickName)
+    .trim().split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase()
 
   const goAdd = (type: 'Expense' | 'Income') => {
     const sub = type === 'Expense'
@@ -276,35 +281,62 @@ function ContactDrawer({ contact, onEdit, onDelete, onClose }: { contact: Contac
   }
 
   return (
-    <DrawerPanel
+    <Modal
       title={contact.fullName || contact.nickName}
       subtitle={contact.nickName.toUpperCase()}
       onClose={onClose}
       width={480}
-      headerActions={
-        <>
-          <ActionButton
-            actionType="edit"
-            icon={ICONS.edit(15)}
-            onClick={() => onEdit(contact)}
-            title="Edit Contact"
-          />
-          <ActionButton
-            actionType="delete"
-            icon={ICONS.trash(15)}
-            onClick={() => onDelete(contact)}
-            title="Delete Contact"
-          />
-        </>
-      }
     >
       <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-        <Card style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: 18, borderLeft: `4px solid ${color}`, borderRadius: 'var(--radius-md)' }}>
-          <Eyebrow>{settled ? 'Settled' : owesYou ? 'Owes you' : 'You owe'}</Eyebrow>
-          <span style={{ fontSize: 28, fontWeight: 700, color, fontFamily: 'var(--font-display)', letterSpacing: '-0.02em' }}>
-            {fmt(Math.abs(contact.netBalance))}
-          </span>
-        </Card>
+        {/* Relationship hero card — glass actions bottom-right (mirrors WalletCard) */}
+        <div style={{
+          position: 'relative',
+          background: heroGradient,
+          borderRadius: 16,
+          padding: '20px 20px 22px',
+          color: 'white',
+          overflow: 'hidden',
+          boxShadow: '0 10px 30px rgba(23,43,77,0.14)',
+          minHeight: 150,
+          display: 'flex', flexDirection: 'column', gap: 16,
+        }}>
+          <span aria-hidden style={{ position: 'absolute', top: -40, right: -40, width: 150, height: 150, borderRadius: '50%', background: 'rgba(255,255,255,0.10)' }} />
+          <span aria-hidden style={{ position: 'absolute', bottom: -56, right: 20, width: 130, height: 130, borderRadius: '50%', background: 'rgba(255,255,255,0.06)' }} />
+
+          <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 14, minWidth: 0 }}>
+            <div style={{
+              width: 48, height: 48, borderRadius: '50%',
+              background: 'rgba(255,255,255,0.20)', backdropFilter: 'blur(4px)',
+              border: '1px solid rgba(255,255,255,0.28)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+              fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 17,
+            }}>
+              {initials || '?'}
+            </div>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 16, lineHeight: 1.2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {contact.fullName || contact.nickName}
+              </div>
+              <div style={{ fontSize: 11, fontWeight: 600, opacity: 0.85, letterSpacing: '0.04em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                @{contact.nickName}
+              </div>
+            </div>
+          </div>
+
+          <div style={{ position: 'relative' }}>
+            <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', opacity: 0.85 }}>
+              {settled ? 'Settled' : owesYou ? 'Owes you' : 'You owe'}
+            </div>
+            <div style={{ fontFamily: 'var(--font-display)', fontSize: 30, fontWeight: 800, letterSpacing: '-0.02em', lineHeight: 1.05, marginTop: 4, textShadow: '0 1px 4px rgba(0,0,0,0.18)' }}>
+              {fmt(Math.abs(contact.netBalance))}
+            </div>
+          </div>
+
+          <div style={{ position: 'absolute', bottom: 14, right: 14, display: 'flex', gap: 6 }}>
+            <ActionButton actionType="edit" variant="glass" icon={ICONS.edit(14)} onClick={() => onEdit(contact)} title="Edit Contact" />
+            <ActionButton actionType="delete" variant="glass" icon={ICONS.trash(14)} onClick={() => onDelete(contact)} title="Delete Contact" />
+          </div>
+        </div>
 
         {/* Action buttons */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
@@ -380,7 +412,7 @@ function ContactDrawer({ contact, onEdit, onDelete, onClose }: { contact: Contac
           onClose={() => setAdd(null)}
         />
       )}
-    </DrawerPanel>
+    </Modal>
   )
 }
 
@@ -431,21 +463,26 @@ function AddContactDialog({ onClose }: { onClose: () => void }) {
   }
 
   return (
-    <Modal title="Add New Contact" onClose={onClose} width={460}>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-        <Input label="Nick Name (Unique)" placeholder="e.g. karim" value={nickName} onChange={e => setNickName(e.target.value)} error={nickNameError || undefined} />
-        <Input label="Full Name" placeholder="e.g. Abdul Karim" value={fullName} onChange={e => setFullName(e.target.value)} error={fullNameError || undefined} />
-        <Input label="Email Address" type="email" name="ct-addr" placeholder="karim@example.com" value={email} onChange={e => setEmail(e.target.value)} error={emailError || undefined} />
-        <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', marginTop: 12 }}>
+    <Modal
+      title="Add New Contact"
+      onClose={onClose}
+      width={460}
+      footer={
+        <>
           <Button variant="secondary" onClick={onClose}>Cancel</Button>
           <Button
             onClick={handleSubmit}
             disabled={!nickName || !!nickNameError || !!fullNameError || !!emailError || create.isPending}
-            style={{ padding: '12px 32px' }}
           >
             Create Contact
           </Button>
-        </div>
+        </>
+      }
+    >
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+        <Input label="Nick Name (Unique)" placeholder="e.g. karim" value={nickName} onChange={e => setNickName(e.target.value)} error={nickNameError || undefined} />
+        <Input label="Full Name" placeholder="e.g. Abdul Karim" value={fullName} onChange={e => setFullName(e.target.value)} error={fullNameError || undefined} />
+        <Input label="Email Address" type="email" name="ct-addr" placeholder="karim@example.com" value={email} onChange={e => setEmail(e.target.value)} error={emailError || undefined} />
       </div>
     </Modal>
   )
@@ -478,17 +515,23 @@ function EditContactDialog({ contact, onClose }: { contact: Contact; onClose: ()
   }
 
   return (
-    <Modal title="Edit Contact" onClose={onClose} width={460}>
+    <Modal
+      title="Edit Contact"
+      onClose={onClose}
+      width={460}
+      footer={
+        <>
+          <Button variant="secondary" onClick={onClose}>Cancel</Button>
+          <Button onClick={handleSubmit} disabled={!nickName || !!nickNameError || !!fullNameError || !!emailError || update.isPending}>
+            Save Changes
+          </Button>
+        </>
+      }
+    >
       <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
         <Input label="Nick Name (Unique)" placeholder="e.g. karim" value={nickName} onChange={e => setNickName(e.target.value)} error={nickNameError || undefined} />
         <Input label="Full Name" placeholder="e.g. Abdul Karim" value={fullName} onChange={e => setFullName(e.target.value)} error={fullNameError || undefined} />
         <Input label="Email Address" type="email" name="ct-addr" placeholder="karim@example.com" value={email} onChange={e => setEmail(e.target.value)} error={emailError || undefined} />
-        <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', marginTop: 12 }}>
-          <Button variant="secondary" onClick={onClose}>Cancel</Button>
-          <Button onClick={handleSubmit} disabled={!nickName || !!nickNameError || !!fullNameError || !!emailError || update.isPending} style={{ padding: '12px 32px' }}>
-            Save Changes
-          </Button>
-        </div>
       </div>
     </Modal>
   )
