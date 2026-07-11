@@ -214,31 +214,35 @@ function ContactRow({ contact, onClick }: { contact: Contact; onClick: () => voi
       }}>
         {contact.nickName.slice(0, 2).toUpperCase()}
       </div>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--color-text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-          {contact.fullName || contact.nickName}
+      <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+          <span style={{ fontSize: 15, fontWeight: 700, color: 'var(--color-text-primary)' }}>
+            {contact.fullName || contact.nickName}
+          </span>
+          {(!contact.fullName || contact.fullName !== contact.nickName || contact.email) && (
+            <span style={{ fontSize: 12, color: 'var(--color-text-tertiary)', fontWeight: 600 }}>
+              ({contact.nickName}{contact.email ? ` · ${contact.email}` : ''})
+            </span>
+          )}
         </div>
-        <div style={{ fontSize: 11, color: 'var(--color-text-tertiary)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-          {contact.nickName}{contact.email ? ` · ${contact.email}` : ''}
+        <div style={{ fontSize: 12, color: 'var(--color-text-tertiary)' }}>
+          {contact.lastTxnTimestamp
+            ? `Last activity: ${formatDate(contact.lastTxnTimestamp * 1000, { month: 'short', day: 'numeric' }, profile?.timezone)}`
+            : 'No activity'}
         </div>
       </div>
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4, flexShrink: 0 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6, flexShrink: 0 }}>
         <span style={{
-          padding: '2px 8px', borderRadius: 999, fontSize: 9, fontWeight: 800,
-          letterSpacing: '0.06em', textTransform: 'uppercase',
+          padding: '4px 10px', borderRadius: 999, fontSize: 9, fontWeight: 800,
+          letterSpacing: '0.04em', textTransform: 'uppercase',
           background: settled ? 'var(--color-bg)' : owesYou ? 'var(--color-success-subtle)' : 'var(--color-danger-subtle)',
           color,
           whiteSpace: 'nowrap',
         }}>
           {settled ? 'Settled' : owesYou ? 'Owes you' : 'You owe'}
         </span>
-        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 14, fontWeight: 700, color }}>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 15, fontWeight: 700, color }}>
           {settled ? fmt(0) : `${owesYou ? '+' : '−'}${fmt(Math.abs(contact.netBalance))}`}
-        </span>
-        <span style={{ fontSize: 10, color: 'var(--color-text-tertiary)', fontWeight: 600 }}>
-          {contact.lastTxnTimestamp
-            ? formatDate(contact.lastTxnTimestamp * 1000, { month: 'short', day: 'numeric' }, profile?.timezone)
-            : 'No activity'}
         </span>
       </div>
     </button>

@@ -53,7 +53,7 @@ func FormatSummary(sg gqtypes.SummaryGroups, title string) string {
 }
 
 // FormatTransactionList converts a slice of transactions into a concise Markdown list.
-func FormatTransactionList(txns []models.Transaction, page, pageSize int) string {
+func FormatTransactionList(txns []models.Transaction, page, pageSize int, loc *time.Location) string {
 	if len(txns) == 0 {
 		return "No transactions found."
 	}
@@ -91,7 +91,10 @@ func FormatTransactionList(txns []models.Transaction, page, pageSize int) string
 			subName = txn.SubcategoryID
 		}
 
-		dateStr := time.Unix(txn.Timestamp, 0).Format("02 Jan")
+		if loc == nil {
+			loc = time.Local
+		}
+		dateStr := time.Unix(txn.Timestamp, 0).In(loc).Format("02 Jan")
 
 		sb.WriteString(fmt.Sprintf("%d. %s *%s* | %s\n", start+i+1, emoji, models.FormatMoneySigned(txn.Amount, txn.Type), subName))
 		sb.WriteString(fmt.Sprintf("   `[%s]`", dateStr))

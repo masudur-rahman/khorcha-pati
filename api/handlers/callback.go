@@ -60,9 +60,8 @@ type CallbackOptions struct {
 }
 
 type PaginationCallbackOptions struct {
-	Page   int                    `json:"page"`
-	Type   models.TransactionType `json:"type,omitempty"`
-	IsExps bool                   `json:"isExps,omitempty"`
+	Page int                    `json:"page"`
+	Type models.TransactionType `json:"type,omitempty"`
 }
 
 type TransactionCallbackOptions struct {
@@ -189,7 +188,8 @@ func handleTransactionCallback(ctx telebot.Context, callbackOpts CallbackOptions
 		if err != nil {
 			return ctx.Send("✅ Transaction added!")
 		}
-		msg := txnParams.Summary()
+		loc := pkg.LoadTimezone(user.Timezone)
+		msg := txnParams.Summary(loc)
 		msg += FormatBudgetAlerts(user.ID, txnParams.Type, txnParams.SubcategoryID)
 		return ctx.Send(msg, telebot.ModeMarkdown)
 	default:
@@ -313,7 +313,7 @@ func handleTransactionFromRegularText(ctx telebot.Context) (string, error) {
 	if err = all.GetServices().Txn.AddTransaction(txn); err != nil {
 		return "", err
 	}
-	summary := txn.Summary() + FormatBudgetAlerts(user.ID, txn.Type, txn.SubcategoryID)
+	summary := txn.Summary(pkg.LoadTimezone(user.Timezone)) + FormatBudgetAlerts(user.ID, txn.Type, txn.SubcategoryID)
 	return summary, nil
 }
 
@@ -331,10 +331,7 @@ func HandleListPagination(ctx telebot.Context, callbackOpts CallbackOptions) err
 
 	var txns []models.Transaction
 	txnSvc := all.GetServices().Txn
-	if pag.IsExps {
-		tz := pkg.LoadTimezone(user.Timezone)
-		txns, err = txnSvc.ListTransactionsByTime(user.ID, models.ExpenseTransaction, pkg.StartOfMonth(tz).Unix(), time.Now().In(tz).Unix())
-	} else if pag.Type != "" {
+	if pag.Type != "" {
 		txns, err = txnSvc.ListTransactionsByType(user.ID, pag.Type)
 	} else {
 		// Fetch transactions from the last 30 days only
@@ -352,7 +349,7 @@ func HandleListPagination(ctx telebot.Context, callbackOpts CallbackOptions) err
 		return ctx.Respond(&telebot.CallbackResponse{Text: "No more items."})
 	}
 
-	formatted := pkgtg.FormatTransactionList(txns, pag.Page, pageSize)
+	formatted := pkgtg.FormatTransactionList(txns, pag.Page, pageSize, pkg.LoadTimezone(user.Timezone))
 
 	// Recalculate end index for navigation logic
 	end := start + pageSize

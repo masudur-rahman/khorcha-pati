@@ -138,11 +138,15 @@ export default function TopBar({ title, subtitle }: TopBarProps) {
                 <input
                   ref={searchInputRef}
                   autoFocus
+                  type="search"
                   value={searchTerm}
                   onChange={e => setSearchTerm(e.target.value)}
                   onFocus={() => setShowSearchResults(true)}
                   placeholder="Search anything..."
                   autoComplete="off"
+                  name="khorcha_search"
+                  id="khorcha_search"
+                  role="presentation"
                   autoCorrect="off"
                   spellCheck={false}
                   autoCapitalize="none"

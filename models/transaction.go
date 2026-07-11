@@ -51,7 +51,7 @@ func (Transaction) TableName() string {
 }
 
 // Summary creates a user-friendly status message
-func (t Transaction) Summary() string {
+func (t Transaction) Summary(loc *time.Location) string {
 	var sb strings.Builder
 
 	emoji := "💸"
@@ -101,7 +101,10 @@ func (t Transaction) Summary() string {
 		}
 	}
 
-	ts := time.Unix(t.Timestamp, 0)
+	if loc == nil {
+		loc = time.Local
+	}
+	ts := time.Unix(t.Timestamp, 0).In(loc)
 	sb.WriteString(fmt.Sprintf("📅 *Date:* %s\n", ts.Format("02 Jan, 2006 • 03:04 PM")))
 
 	if t.Remarks != "" && t.Remarks != t.SubcategoryID {

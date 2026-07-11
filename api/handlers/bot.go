@@ -357,6 +357,14 @@ func parseTransactionFlags(txnString string) (TransactionCallbackOptions, error)
 //}
 
 func ListTransactions(ctx telebot.Context) error {
+	return listTransactionsInternal(ctx, "")
+}
+
+func ListExpenses(ctx telebot.Context) error {
+	return listTransactionsInternal(ctx, models.ExpenseTransaction)
+}
+
+func listTransactionsInternal(ctx telebot.Context, filterType models.TransactionType) error {
 	user, err := all.GetServices().User.GetUserByTelegramID(ctx.Sender().ID)
 	if err != nil {
 		return ctx.Send(models.ErrCommonResponse(err))
@@ -364,7 +372,20 @@ func ListTransactions(ctx telebot.Context) error {
 
 	// Fetch transactions from the last 30 days only
 	startTime := time.Now().AddDate(0, 0, -30).Unix()
-	txns, err := all.GetServices().Txn.ListTransactionsByTime(user.ID, "", startTime, time.Now().Unix())
+	var txns []models.Transaction
+	if filterType != "" {
+		txns, err = all.GetServices().Txn.ListTransactionsByType(user.ID, filterType)
+		// Filter by time locally to match behavior, or rely on pagination logic
+		var filtered []models.Transaction
+		for _, t := range txns {
+			if t.Timestamp >= startTime {
+				filtered = append(filtered, t)
+			}
+		}
+		txns = filtered
+	} else {
+		txns, err = all.GetServices().Txn.ListTransactionsByTime(user.ID, "", startTime, time.Now().Unix())
+	}
 	if err != nil {
 		return err
 	}
@@ -376,46 +397,12 @@ func ListTransactions(ctx telebot.Context) error {
 	pageSize := 10
 	page := 1
 
-	formatted := pkgtg.FormatTransactionList(txns, page, pageSize)
+	formatted := pkgtg.FormatTransactionList(txns, page, pageSize, pkg.LoadTimezone(user.Timezone))
 	callbackOpts := CallbackOptions{
 		Type: ListPaginationTypeCallback,
 		Pagination: PaginationCallbackOptions{
 			Page: page,
-		},
-	}
-
-	return ctx.Send(formatted, &telebot.SendOptions{
-		ParseMode: telebot.ModeMarkdown,
-		ReplyMarkup: &telebot.ReplyMarkup{
-			InlineKeyboard: generatePaginationKeyboard(callbackOpts, page, len(txns) > pageSize),
-		},
-	})
-}
-
-func ListExpenses(ctx telebot.Context) error {
-	user, err := all.GetServices().User.GetUserByTelegramID(ctx.Sender().ID)
-	if err != nil {
-		return ctx.Send(models.ErrCommonResponse(err))
-	}
-
-	txns, err := all.GetServices().Txn.ListTransactionsByTime(user.ID, models.ExpenseTransaction, 0, time.Now().Unix())
-	if err != nil {
-		return err
-	}
-
-	if len(txns) == 0 {
-		return ctx.Send("No expenses found.")
-	}
-
-	pageSize := 10
-	page := 1
-
-	formatted := pkgtg.FormatTransactionList(txns, page, pageSize)
-	callbackOpts := CallbackOptions{
-		Type: ListPaginationTypeCallback,
-		Pagination: PaginationCallbackOptions{
-			Page:   page,
-			IsExps: true,
+			Type: filterType,
 		},
 	}
 

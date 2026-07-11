@@ -38,8 +38,6 @@ function TypeBadge({ type }: { type: string }) {
 
 const th: React.CSSProperties = { padding: '8px 10px', textAlign: 'left', fontWeight: 700, fontSize: 10, letterSpacing: '0.02em' }
 const td: React.CSSProperties = { padding: '6px 10px', fontSize: 10 }
-const SMALL_TABLE_WIDTH = '55%'
-const SMALL_TABLE_MIN_WIDTH = '280px'
 
 function RunningBalanceTable({ transactions }: { transactions: StatementTransaction[] }) {
   const sorted = [...transactions].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
@@ -55,7 +53,7 @@ function RunningBalanceTable({ transactions }: { transactions: StatementTransact
   const totalAmount = sorted.reduce((sum, t) => sum + t.amount, 0)
 
   return (
-    <table style={{ width: '100%', tableLayout: 'fixed', borderCollapse: 'collapse', fontSize: 10 }}>
+    <table style={{ width: '100%', minWidth: 800, tableLayout: 'fixed', borderCollapse: 'collapse', fontSize: 10 }}>
       <colgroup>
         <col style={{ width: '5%' }} /><col style={{ width: '9%' }} /><col style={{ width: '11%' }} />
         <col style={{ width: '10%' }} /><col style={{ width: '10%' }} /><col style={{ width: '10%' }} />
@@ -138,6 +136,22 @@ const printStyles = `
   }
   * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
   body { font-family: var(--font-body); }
+  .summary-table-container {
+    border-radius: 8px;
+    border: 1px solid #DFE1E6;
+    overflow: hidden;
+    width: 100%;
+  }
+  @media (min-width: 768px) {
+    .summary-table-container {
+      max-width: 55%;
+    }
+  }
+  @media print {
+    .summary-table-container {
+      max-width: 55%;
+    }
+  }
 `
 
 export default function Statement() {
@@ -191,7 +205,7 @@ export default function Statement() {
       </div>
 
       <div className="page-content" style={{ maxWidth: 900, margin: '0 auto', padding: '70px 20px 40px', background: 'white', minHeight: '100vh', boxShadow: '0 0 30px rgba(0,0,0,0.06)' }}>
-        <table className="print-layout" style={{ width: '100%', borderCollapse: 'collapse', border: 'none' }}>
+        <table className="print-layout" style={{ width: '100%', tableLayout: 'fixed', borderCollapse: 'collapse', border: 'none' }}>
           <thead>
             <tr><td style={{ padding: 0 }}>
               <div className="statement-header" style={{ textAlign: 'center', marginBottom: 28, borderBottom: `3px solid ${ACCENT}`, paddingBottom: 20 }}>
@@ -227,17 +241,17 @@ export default function Statement() {
           <SectionTitle>Summary</SectionTitle>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             {(report.typeSummary ?? []).length > 0 && (
-              <div style={{ border: '1px solid #DFE1E6', borderRadius: 8, padding: 12, maxWidth: SMALL_TABLE_WIDTH, minWidth: SMALL_TABLE_MIN_WIDTH }}>
+              <div className="summary-table-container">
                 <SummaryTable items={report.typeSummary ?? []} title="By Type" />
               </div>
             )}
             {(report.categorySummary ?? []).length > 0 && (
-              <div style={{ border: '1px solid #DFE1E6', borderRadius: 8, padding: 12, maxWidth: SMALL_TABLE_WIDTH, minWidth: SMALL_TABLE_MIN_WIDTH }}>
+              <div className="summary-table-container">
                 <SummaryTable items={report.categorySummary ?? []} title="By Category" showType />
               </div>
             )}
             {(report.subcategorySummary ?? []).length > 0 && (
-              <div style={{ border: '1px solid #DFE1E6', borderRadius: 8, padding: 12, maxWidth: SMALL_TABLE_WIDTH, minWidth: SMALL_TABLE_MIN_WIDTH }}>
+              <div className="summary-table-container">
                 <SummaryTable items={report.subcategorySummary ?? []} title="By Subcategory" showType />
               </div>
             )}
@@ -247,7 +261,7 @@ export default function Statement() {
         {report.wallets && report.wallets.length > 0 && (
           <section style={{ marginBottom: 36, breakInside: 'avoid' }}>
             <SectionTitle>Wallet Balances</SectionTitle>
-            <div style={{ borderRadius: 8, border: '1px solid #DFE1E6', overflow: 'hidden', maxWidth: SMALL_TABLE_WIDTH, minWidth: SMALL_TABLE_MIN_WIDTH }}>
+            <div className="summary-table-container">
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11 }}>
                 <thead><tr style={{ background: ACCENT, color: 'white' }}><th style={th}>Name</th><th style={{ ...th, textAlign: 'right' }}>Balance</th></tr></thead>
                 <tbody>
@@ -266,14 +280,16 @@ export default function Statement() {
         {report.contacts && report.contacts.length > 0 && (
           <section style={{ marginBottom: 36, breakInside: 'avoid' }}>
             <SectionTitle>Contacts</SectionTitle>
-            <div style={{ borderRadius: 8, border: '1px solid #DFE1E6', overflow: 'hidden', maxWidth: SMALL_TABLE_WIDTH, minWidth: SMALL_TABLE_MIN_WIDTH }}>
+            <div className="summary-table-container">
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11 }}>
                 <thead><tr style={{ background: ACCENT, color: 'white' }}><th style={th}>Name</th><th style={{ ...th, textAlign: 'right' }}>Net Balance</th></tr></thead>
                 <tbody>
                   {report.contacts.map((c, i) => (
                     <tr key={i} style={{ borderBottom: '1px solid #DFE1E6', background: i % 2 === 0 ? '#F4F5F7' : 'white' }}>
                       <td style={td}>{c.fullName || c.nickName}</td>
-                      <td style={{ ...td, textAlign: 'right', fontWeight: 600, color: c.netBalance >= 0 ? ACCENT : '#DE350B', whiteSpace: 'nowrap' }}>{fmt(c.netBalance)}</td>
+                      <td style={{ ...td, textAlign: 'right', fontWeight: 600, color: c.netBalance >= 0 ? ACCENT : '#DE350B', whiteSpace: 'nowrap' }}>
+                        {fmt(c.netBalance)}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -298,7 +314,7 @@ function StatCard({ label, value, bg, border, color }: { label: string; value: s
   return (
     <div style={{ background: bg, border: `1px solid ${border}`, borderRadius: 12, padding: 16, textAlign: 'center' }}>
       <p style={{ fontSize: 10, color: '#6B778C', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 4px' }}>{label}</p>
-      <p style={{ fontSize: 20, fontWeight: 800, color, margin: 0 }}>{value}</p>
+      <p style={{ fontSize: 20, fontWeight: 800, color, margin: 0, whiteSpace: 'nowrap' }}>{value}</p>
     </div>
   )
 }

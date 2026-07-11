@@ -132,31 +132,26 @@ function OTPLogin() {
     try { const data = await verifyOTP(identifier, code); login(data.accessToken, (data as any).refreshToken); navigate('/') }
     catch (e: any) { setError(e.message) } finally { setLoading(false) }
   }
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      if (!sent && identifier && !loading) handleSend()
-      else if (sent && code.length === 6 && !loading) handleVerify()
-    }
-  }
+
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       <div>
         <label style={labelStyle}>Identity</label>
-        <input style={inputStyle} placeholder="Username or phone" value={identifier} onChange={e => setIdentifier(e.target.value)} disabled={sent} onKeyDown={handleKeyDown} />
+        <input type="text" style={inputStyle} placeholder="Username or phone" value={identifier} onChange={e => setIdentifier(e.target.value)} disabled={sent} onKeyDown={e => { if (e.key === 'Enter' && !sent && identifier && !loading) handleSend(); }} autoComplete="off" autoCorrect="off" autoCapitalize="none" spellCheck={false} name="tg_identifier" id="tg_identifier" data-lpignore="true" />
       </div>
       {sent && (
         <div>
           <label style={labelStyle}>Verification Code</label>
-          <input style={{ ...inputStyle, textAlign: 'center', letterSpacing: '0.3em', fontSize: 22, fontWeight: 700 }} placeholder="000000" value={code} onChange={e => setCode(e.target.value)} maxLength={6} onKeyDown={handleKeyDown} autoFocus />
+          <input type="text" style={{ ...inputStyle, textAlign: 'center', letterSpacing: '0.3em', fontSize: 22, fontWeight: 700 }} placeholder="000000" value={code} onChange={e => setCode(e.target.value)} maxLength={6} onKeyDown={e => { if (e.key === 'Enter' && sent && code.length === 6 && !loading) handleVerify(); }} autoFocus autoComplete="one-time-code" inputMode="numeric" pattern="[0-9]*" name="tg_code" id="tg_code" />
         </div>
       )}
       {error && <p style={{ color: '#DE350B', fontSize: 12, fontWeight: 700, textAlign: 'center', margin: 0 }}>{error}</p>}
-      <button style={btnStyle} onClick={sent ? handleVerify : handleSend} disabled={loading || (!sent && !identifier) || (sent && code.length < 6)}>
+      <button type="button" style={btnStyle} onClick={sent ? handleVerify : handleSend} disabled={loading || (!sent && !identifier) || (sent && code.length < 6)}>
         {loading ? 'Please wait...' : sent ? 'Verify Code' : 'Send Code'}
       </button>
       {sent && (
-        <button style={{ background: 'none', border: 'none', fontSize: 12, color: '#6B778C', cursor: 'pointer', padding: 8, fontWeight: 600, fontFamily: 'inherit' }} onClick={() => { setSent(false); setCode('') }}>Resend code</button>
+        <button type="button" style={{ background: 'none', border: 'none', fontSize: 12, color: '#6B778C', cursor: 'pointer', padding: 8, fontWeight: 600, fontFamily: 'inherit' }} onClick={() => { setSent(false); setCode('') }}>Resend code</button>
       )}
     </div>
   )

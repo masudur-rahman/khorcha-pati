@@ -187,22 +187,17 @@ export default function TransactionDetails({
               <div style={{
                 background: 'var(--color-surface)',
                 borderRadius: 14,
-                padding: 16,
+                padding: '12px 14px',
                 border: '1px solid var(--color-border)',
                 borderLeft: `3px solid ${accentColor}`,
               }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: accentColor }}>
-                  <span style={{ display: 'flex' }}>{ICONS.swapHoriz(13)}</span>
-                  <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Movement</span>
-                </div>
                 <div className="movement-grid" style={{
-                  display: 'grid',
-                  gridTemplateColumns: from && to ? '1fr auto 1fr' : '1fr',
-                  gap: 12, alignItems: 'center', marginTop: 14,
+                  display: 'flex',
+                  gap: 12, alignItems: 'center', justifyContent: 'center'
                 }}>
                   {from && <MovementCell role="Source" party={from} />}
                   {from && to && (
-                    <div className="movement-arrow" style={{ color: 'var(--color-text-tertiary)', fontWeight: 700, fontSize: 18, lineHeight: 1, textAlign: 'center' }}>→</div>
+                    <div className="movement-arrow" style={{ color: 'var(--color-text-tertiary)', fontWeight: 700, fontSize: 16, lineHeight: 1 }}>→</div>
                   )}
                   {to && <MovementCell role="Destination" party={to} />}
                 </div>
@@ -211,12 +206,12 @@ export default function TransactionDetails({
 
             {/* Remarks card */}
             <div style={{
-              padding: 14,
+              padding: '12px 14px',
               borderRadius: 14,
               background: 'rgba(0,0,0,0.02)',
               border: '1px dashed var(--color-border)',
             }}>
-              <SectionLabel icon={ICONS.file(13)} text="Remarks" />
+              <SectionLabel icon={ICONS.file(12)} text="Remarks" />
               <div style={{
                 fontSize: 13,
                 color: txn.remarks ? 'var(--color-text-primary)' : 'var(--color-text-tertiary)',
@@ -273,8 +268,8 @@ function MovementCell({ role, party }: {
   const icon = isContact ? ICONS.user(14) : ICONS.wallet(14)
 
   return (
-    <div style={{ minWidth: 0, display: 'flex', flexDirection: 'column', gap: 8 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--color-text-tertiary)', flexWrap: 'wrap' }}>
+    <div style={{ minWidth: 0, display: 'flex', alignItems: 'center', gap: 8, flex: 1, justifyContent: role === 'Source' ? 'flex-end' : 'flex-start' }}>
+      {role === 'Destination' && (
         <span style={{
           width: 22, height: 22, borderRadius: 6,
           background: isContact ? 'var(--color-primary-subtle)' : 'var(--color-bg)',
@@ -283,25 +278,23 @@ function MovementCell({ role, party }: {
         }}>
           {icon}
         </span>
-        <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-          {role}
-        </span>
-        {isContact && (
-          <span style={{
-            fontSize: 9, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase',
-            padding: '1px 6px', borderRadius: 999,
-            background: 'var(--color-primary-subtle)', color: 'var(--color-primary)',
-          }}>
-            Contact
-          </span>
-        )}
-      </div>
+      )}
       <div style={{
-        fontSize: 15, fontWeight: 700, color: 'var(--color-text-primary)',
-        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+        fontSize: 14, fontWeight: 600, color: 'var(--color-text-primary)',
+        whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
       }}>
         {party.label}
       </div>
+      {role === 'Source' && (
+        <span style={{
+          width: 22, height: 22, borderRadius: 6,
+          background: isContact ? 'var(--color-primary-subtle)' : 'var(--color-bg)',
+          color: tone,
+          display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+        }}>
+          {icon}
+        </span>
+      )}
     </div>
   )
 }

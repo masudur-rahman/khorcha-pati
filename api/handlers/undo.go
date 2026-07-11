@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"github.com/masudur-rahman/khorcha-pati/models"
+	"github.com/masudur-rahman/khorcha-pati/pkg"
 	"github.com/masudur-rahman/khorcha-pati/services/all"
 
 	"gopkg.in/telebot.v3"
@@ -17,5 +18,6 @@ func HandleUndo(c telebot.Context) error {
 	if err != nil {
 		return c.Send("⚠️ " + models.ErrCommonResponse(err))
 	}
-	return c.Send("✅ *Transaction Undone*\n\n"+txn.Summary(), telebot.ModeMarkdown)
+	loc := pkg.LoadTimezone(user.Timezone)
+	return c.Send("✅ *Transaction Undone*\n\n"+txn.Summary(loc), telebot.ModeMarkdown)
 }

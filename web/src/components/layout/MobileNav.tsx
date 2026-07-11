@@ -20,8 +20,19 @@ export default function MobileNav() {
   const navigate = useNavigate()
   const location = useLocation()
   const [showMore, setShowMore] = useState(false)
+  const [isClosing, setIsClosing] = useState(false)
   const [startY, setStartY] = useState(0)
   const [currentY, setCurrentY] = useState(0)
+
+  const handleClose = () => {
+    setIsClosing(true)
+    setTimeout(() => {
+      setShowMore(false)
+      setIsClosing(false)
+      setStartY(0)
+      setCurrentY(0)
+    }, 200)
+  }
 
   const moreActive = useMemo(() => moreRoutes.some(r => location.pathname.startsWith(r)), [location.pathname])
 
@@ -96,10 +107,11 @@ export default function MobileNav() {
         <div
           className="md:hidden"
           style={{
-            position: 'fixed', inset: 0, background: 'rgba(15, 23, 42, 0.45)',
-            backdropFilter: 'blur(2px)', zIndex: 220, display: 'flex', alignItems: 'flex-end',
+            position: 'fixed', inset: 0, background: isClosing ? 'rgba(15, 23, 42, 0)' : 'rgba(15, 23, 42, 0.45)',
+            backdropFilter: isClosing ? 'blur(0px)' : 'blur(2px)', zIndex: 220, display: 'flex', alignItems: 'flex-end',
+            transition: 'all 0.2s ease-out',
           }}
-          onClick={() => setShowMore(false)}
+          onClick={handleClose}
         >
           <div
             onClick={e => e.stopPropagation()}
@@ -113,17 +125,19 @@ export default function MobileNav() {
             }}
             onTouchEnd={() => {
               if (currentY > 50) {
-                setShowMore(false)
+                handleClose()
+              } else {
+                setStartY(0)
+                setCurrentY(0)
               }
-              setStartY(0)
-              setCurrentY(0)
             }}
             style={{
               width: '100%', background: 'var(--color-surface)',
+              touchAction: 'none',
               borderTopLeftRadius: 20, borderTopRightRadius: 20,
               padding: '12px 16px calc(20px + env(safe-area-inset-bottom, 8px))',
               boxShadow: '0 -12px 32px rgba(0,0,0,0.18)',
-              animation: 'sheetUp 0.22s cubic-bezier(0.4, 0, 0.2, 1)',
+              animation: isClosing ? 'sheetDown 0.2s cubic-bezier(0.4, 0, 0.2, 1) forwards' : 'sheetUp 0.22s cubic-bezier(0.4, 0, 0.2, 1)',
               transform: `translateY(${currentY}px)`,
               transition: currentY === 0 ? 'transform 0.2s' : 'none',
             }}
@@ -169,7 +183,10 @@ export default function MobileNav() {
               </div>
             </div>
           </div>
-          <style>{`@keyframes sheetUp { from { transform: translateY(100%); } to { transform: translateY(0); } }`}</style>
+          <style>{`
+            @keyframes sheetUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+            @keyframes sheetDown { from { transform: translateY(0); } to { transform: translateY(100%); } }
+          `}</style>
         </div>
       )}
     </>

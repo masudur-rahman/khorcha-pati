@@ -269,7 +269,7 @@ func TestParseTransaction(t *testing.T) {
 					continue
 				}
 
-				fmt.Printf("===========>[ %s ]<===========\n%s\n\n", text, got.Summary())
+				fmt.Printf("===========>[ %s ]<===========\n%s\n\n", text, got.Summary(nil))
 			}
 
 			//if !reflect.DeepEqual(got, tt.want) {

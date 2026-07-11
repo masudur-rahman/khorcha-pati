@@ -353,7 +353,7 @@ function StatementModal({ onClose }: { onClose: () => void }) {
       <div className="statement-modal-grid">
         
         {/* Left Column: Quick Select */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <h4 style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>Quick Select</h4>
           <div className="quick-select-container">
             {durations.map(d => (
@@ -380,7 +380,7 @@ function StatementModal({ onClose }: { onClose: () => void }) {
         </div>
 
         {/* Right Column: Custom Range */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <h4 style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>Custom Range</h4>
           
           <DateRangePicker 

@@ -35,7 +35,7 @@ func TestFormatTransactionList_PaginationAndSorting(t *testing.T) {
 	}
 
 	// Page 1, Size 2 (Should show txns with timestamp 3000 and 2000)
-	formatted := FormatTransactionList(txns, 1, 2)
+	formatted := FormatTransactionList(txns, 1, 2, time.UTC)
 
 	assert.Contains(t, formatted, "Page 1")
 	assert.Contains(t, formatted, "1. 💸 *−৳30*")
@@ -43,7 +43,7 @@ func TestFormatTransactionList_PaginationAndSorting(t *testing.T) {
 	assert.NotContains(t, formatted, "3. 💸 *−৳10*")
 
 	// Page 2, Size 2 (Should show txn with timestamp 1000)
-	formatted2 := FormatTransactionList(txns, 2, 2)
+	formatted2 := FormatTransactionList(txns, 2, 2, time.UTC)
 	assert.Contains(t, formatted2, "Page 2")
 	assert.Contains(t, formatted2, "3. 💸 *−৳10*")
 }
