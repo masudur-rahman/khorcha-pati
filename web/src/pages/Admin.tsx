@@ -10,6 +10,7 @@ import MetricChip from '../components/ui/MetricChip'
 import Modal from '../components/ui/Modal'
 import ConfirmDialog from '../components/ui/ConfirmDialog'
 import Button from '../components/ui/Button'
+import Pagination from '../components/ui/Pagination'
 import AICachePanel from '../components/admin/AICachePanel'
 
 function decodeUserID(): number | null {
@@ -351,33 +352,13 @@ export default function Admin() {
           <p style={{ padding: 24, textAlign: 'center', color: 'var(--color-text-tertiary)' }}>No users found.</p>
         )}
         {totalUsers > userLimit && (
-          <div style={{
-            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-            padding: '12px 24px', borderTop: '1px solid var(--color-border)',
-            gap: 16, flexWrap: 'wrap'
-          }}>
-            <span style={{ fontSize: 13, color: 'var(--color-text-tertiary)' }}>
-              Showing {Math.min(totalUsers, (userPage - 1) * userLimit + 1)}-{Math.min(totalUsers, userPage * userLimit)} of {totalUsers} users
-            </span>
-            <div style={{ display: 'flex', gap: 8 }}>
-              <Button
-                variant="secondary"
-                disabled={userPage === 1}
-                onClick={() => setUserPage(prev => prev - 1)}
-                style={{ padding: '6px 12px', fontSize: 13 }}
-              >
-                Previous
-              </Button>
-              <Button
-                variant="secondary"
-                disabled={userPage * userLimit >= totalUsers}
-                onClick={() => setUserPage(prev => prev + 1)}
-                style={{ padding: '6px 12px', fontSize: 13 }}
-              >
-                Next
-              </Button>
-            </div>
-          </div>
+          <Pagination
+            rangeText={`Showing ${Math.min(totalUsers, (userPage - 1) * userLimit + 1)}–${Math.min(totalUsers, userPage * userLimit)} of ${totalUsers} users`}
+            canPrev={userPage > 1}
+            canNext={userPage * userLimit < totalUsers}
+            onPrev={() => setUserPage(prev => prev - 1)}
+            onNext={() => setUserPage(prev => prev + 1)}
+          />
         )}
       </Card>
 
