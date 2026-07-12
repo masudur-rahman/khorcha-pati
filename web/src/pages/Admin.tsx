@@ -4,6 +4,7 @@ import { useViewportPageSize } from '../hooks/useViewportPageSize'
 import { getAdminStats, getAdminUsers, setAdminUserActive, sendAdminBroadcast, type AdminUser } from '../api/endpoints'
 import { getAccessToken } from '../api/client'
 import { useSearch } from '../context/SearchContext'
+import { notify } from '../lib/notify'
 import TopBar from '../components/layout/TopBar'
 import Card from '../components/ui/Card'
 import MetricChip from '../components/ui/MetricChip'
@@ -145,10 +146,13 @@ export default function Admin() {
 
   const toggleActive = useMutation({
     mutationFn: ({ id, isActive }: { id: number; isActive: boolean }) => setAdminUserActive(id, isActive),
-    onSuccess: () => {
+    onSuccess: (_data, { isActive }) => {
+      const name = [confirmUser?.firstName, confirmUser?.lastName].filter(Boolean).join(' ') || confirmUser?.username
+      notify.success(`${name ? `User "${name}"` : 'User'} ${isActive ? 'activated' : 'deactivated'} successfully.`)
       queryClient.invalidateQueries({ queryKey: ['adminUsers'] })
       setConfirmUser(null)
     },
+    onError: (err) => notify.error(err, 'update user'),
   })
 
   const isLoading = statsLoading || usersLoading

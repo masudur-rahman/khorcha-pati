@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query'
 import { listCategories } from '../api/endpoints'
 import { useSearch } from '../context/SearchContext'
 import { fmt } from '../lib/formatter'
+import { notify } from '../lib/notify'
 
 import TopBar from '../components/layout/TopBar'
 import Card from '../components/ui/Card'
@@ -365,16 +366,24 @@ function SetBudgetDialog({ categories, existing, onClose }: { categories: import
   const [amount, setAmount] = useState(existing ? String(existing.amount) : '')
   const [alertAt, setAlertAt] = useState(existing ? String(existing.alertAt) : '80')
 
+  const submit = () => {
+    if (!amount) return
+    setBudget.mutate({ categoryId, amount: parseFloat(amount), alertAt: parseInt(alertAt) }, {
+      onSuccess: () => { notify.saved('Budget'); onClose() },
+      onError: (err) => notify.error(err, 'save budget'),
+    })
+  }
+
   return (
     <Modal
       title={isEdit ? 'Edit Budget' : 'Set Budget'}
       onClose={onClose}
       width={460}
-      onSubmit={() => { if (amount) setBudget.mutate({ categoryId, amount: parseFloat(amount), alertAt: parseInt(alertAt) }, { onSuccess: onClose }) }}
+      onSubmit={submit}
       footer={
         <>
           <Button variant="secondary" onClick={onClose}>Cancel</Button>
-          <Button onClick={() => setBudget.mutate({ categoryId, amount: parseFloat(amount), alertAt: parseInt(alertAt) }, { onSuccess: onClose })} disabled={!amount}>
+          <Button onClick={submit} disabled={!amount}>
             {isEdit ? 'Update Budget' : 'Save Budget'}
           </Button>
         </>

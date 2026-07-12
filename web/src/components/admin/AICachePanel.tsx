@@ -4,6 +4,7 @@ import {
   listAICache, deleteAICache, listCategories, listSubcategories, type AICacheEntry,
 } from '../../api/endpoints'
 import { useSearch } from '../../context/SearchContext'
+import { notify } from '../../lib/notify'
 import Card from '../ui/Card'
 import ConfirmDialog from '../ui/ConfirmDialog'
 import Button from '../ui/Button'
@@ -96,7 +97,8 @@ export default function AICachePanel() {
 
   const delMut = useMutation({
     mutationFn: (id: number) => deleteAICache(id),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['aiCache'] }); setDeleting(null) },
+    onSuccess: () => { notify.deleted('Cache entry'); qc.invalidateQueries({ queryKey: ['aiCache'] }); setDeleting(null) },
+    onError: (err) => notify.error(err, 'delete cache entry'),
   })
 
   const onSaved = () => { qc.invalidateQueries({ queryKey: ['aiCache'] }); setEditing(null) }

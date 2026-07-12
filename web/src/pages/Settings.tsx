@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { getProfile, updateProfile } from '../api/endpoints'
 import { useTheme } from '../context/ThemeContext'
+import { notify } from '../lib/notify'
 
 import TopBar from '../components/layout/TopBar'
 import Card from '../components/ui/Card'
@@ -51,7 +52,8 @@ export default function Settings() {
   const { data: profile, isLoading } = useQuery({ queryKey: ['profile'], queryFn: getProfile })
   const update = useMutation({
     mutationFn: updateProfile,
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['profile'] }); setIsEditing(false) },
+    onSuccess: () => { notify.updated('Profile'); qc.invalidateQueries({ queryKey: ['profile'] }); setIsEditing(false) },
+    onError: (err) => notify.error(err, 'update profile'),
   })
 
   const [isEditing, setIsEditing] = useState(false)

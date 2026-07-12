@@ -18,7 +18,7 @@ import BudgetGauge from '../components/charts/BudgetGauge'
 import { ICONS } from '../components/ui/Icons'
 import WalletFlow from '../components/ui/WalletFlow'
 import { useWallets, useDeleteWallet } from '../hooks/useWallets'
-import toast from 'react-hot-toast'
+import { notify } from '../lib/notify'
 import ConfirmDialog from '../components/ui/ConfirmDialog'
 import { WalletDrawer, EditWalletDialog } from './Wallets'
 import { useContacts } from '../hooks/useContacts'
@@ -57,11 +57,11 @@ export default function Dashboard() {
     [wallets, activeWalletId]
   )
 
-  const handleWalletDeleteConfirm = (w: { shortName: string }) => {
+  const handleWalletDeleteConfirm = (w: { shortName: string; name?: string }) => {
     delWallet.mutate(w.shortName, {
-      onSuccess: () => { toast.success('Wallet deleted successfully'); setShowDeleteWallet(null) },
+      onSuccess: () => { notify.deleted('Wallet', w.name); setShowDeleteWallet(null) },
       onError: (err: any) => {
-        toast.error(err?.message || 'Failed to delete wallet', { duration: 4000 })
+        notify.error(err, 'delete wallet')
         setShowDeleteWallet(null)
       },
     })

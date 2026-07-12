@@ -1,6 +1,6 @@
 import { formatDate } from '../lib/formatter'
 import { useEffect, useMemo, useState, useRef, forwardRef } from 'react'
-import toast from 'react-hot-toast'
+import { notify } from '../lib/notify'
 import { useQuery } from '@tanstack/react-query'
 import { useSearchParams } from 'react-router-dom'
 import { listContacts , getProfile } from '../api/endpoints'
@@ -64,17 +64,11 @@ export default function Contacts() {
   const handleDeleteConfirm = (c: Contact) => {
     del.mutate(c.id, {
       onSuccess: () => {
-        toast.success('Contact deleted successfully')
+        notify.deleted('Contact', c.nickName)
         setShowDeleteContact(null)
       },
       onError: (err: any) => {
-        toast.error(
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-            <strong style={{ fontSize: 14 }}>Failed to Delete Contact</strong>
-            <span style={{ fontSize: 13, opacity: 0.9 }}>{err.message || 'An unknown error occurred.'}</span>
-          </div>,
-          { duration: 4000 }
-        )
+        notify.error(err, 'delete contact')
         setShowDeleteContact(null)
       }
     })
@@ -475,11 +469,11 @@ function AddContactDialog({ onClose }: { onClose: () => void }) {
     if (nickNameError || fullNameError || emailError) return
     create.mutate({ nickName, fullName, email }, {
       onSuccess: () => {
-        toast.success('Contact created successfully')
+        notify.created('Contact', nickName)
         onClose()
       },
       onError: (err: any) => {
-        toast.error(err.message || 'Failed to create contact.')
+        notify.error(err, 'create contact')
       }
     })
   }
@@ -527,11 +521,11 @@ function EditContactDialog({ contact, onClose }: { contact: Contact; onClose: ()
       { id: contact.id, contact: { nickName, fullName, email } },
       {
         onSuccess: () => {
-          toast.success('Contact updated successfully')
+          notify.updated('Contact', nickName)
           onClose()
         },
         onError: (err: any) => {
-          toast.error(err.message || 'Failed to update contact.')
+          notify.error(err, 'update contact')
         }
       }
     )

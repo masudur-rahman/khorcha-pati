@@ -1,6 +1,7 @@
 import { Transaction } from '../../types'
 import { fmt } from '../../lib/formatter'
 import { useDeleteTransaction } from '../../hooks/useTransactions'
+import { notify } from '../../lib/notify'
 import ConfirmDialog from './ConfirmDialog'
 
 export default function DeleteTxnDialog({ txn, onClose }: { txn: Transaction; onClose: () => void }) {
@@ -16,7 +17,10 @@ export default function DeleteTxnDialog({ txn, onClose }: { txn: Transaction; on
         </>
       }
       confirmText="Delete"
-      onConfirm={() => del.mutate(txn.id)}
+      onConfirm={() => del.mutate(txn.id, {
+        onSuccess: () => notify.deleted('Transaction'),
+        onError: (err) => notify.error(err, 'delete transaction'),
+      })}
       onClose={onClose}
     />
   )

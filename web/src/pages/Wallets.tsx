@@ -1,6 +1,6 @@
 import { formatDate } from '../lib/formatter'
 import { useMemo, useState } from 'react'
-import toast from 'react-hot-toast'
+import { notify } from '../lib/notify'
 import { useQuery } from '@tanstack/react-query'
 import { listWallets, listCategories, listSubcategories , getProfile } from '../api/endpoints'
 import { useCreateWallet, useUpdateWallet, useDeleteWallet } from '../hooks/useWallets'
@@ -52,17 +52,11 @@ export default function Wallets() {
   const handleDeleteConfirm = (w: Wallet) => {
     del.mutate(w.shortName, {
       onSuccess: () => {
-        toast.success('Wallet deleted successfully')
+        notify.deleted('Wallet', w.name)
         setShowDeleteWallet(null)
       },
       onError: (err: any) => {
-        toast.error(
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-            <strong style={{ fontSize: 14 }}>Failed to Delete Wallet</strong>
-            <span style={{ fontSize: 13, opacity: 0.9 }}>{err.message || 'An unknown error occurred.'}</span>
-          </div>,
-          { duration: 4000 }
-        )
+        notify.error(err, 'delete wallet')
         setShowDeleteWallet(null)
       }
     })
@@ -281,11 +275,11 @@ function AddWalletDialog({ onClose }: { onClose: () => void }) {
       balance: balance === '' ? 0 : parseFloat(balance)
     }, {
       onSuccess: () => {
-        toast.success('Wallet created successfully')
+        notify.created('Wallet', name)
         onClose()
       },
       onError: (err: any) => {
-        toast.error(err.message || 'Failed to create wallet.')
+        notify.error(err, 'create wallet')
       }
     })
   }
@@ -329,11 +323,11 @@ export function EditWalletDialog({ wallet, onClose }: { wallet: Wallet; onClose:
       { id: wallet.id, wallet: { name, shortName } },
       { 
         onSuccess: () => {
-          toast.success('Wallet updated successfully')
+          notify.updated('Wallet', name)
           onClose()
         },
         onError: (err: any) => {
-          toast.error(err.message || 'Failed to update wallet.')
+          notify.error(err, 'update wallet')
         }
       }
     )

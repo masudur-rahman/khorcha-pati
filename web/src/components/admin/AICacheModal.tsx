@@ -7,6 +7,7 @@ import Button from '../ui/Button'
 import Input from '../ui/Input'
 import Select from '../ui/Select'
 import SearchableSelect from '../ui/SearchableSelect'
+import { notify } from '../../lib/notify'
 
 export interface SubMeta { name: string; catName: string; types: TxnType[] }
 
@@ -37,7 +38,7 @@ export default function AICacheModal({ entry, subMeta, subOptions, onClose, onSa
       const body: AICacheInput = { subcategoryId: subId, intent: intent.toLowerCase(), confidence: clampPct(pct) / 100 }
       return isEdit ? updateAICache(existing!.id, body) : createAICache({ ...body, inputText: inputText.trim() })
     },
-    onSuccess: onSaved,
+    onSuccess: () => { isEdit ? notify.updated('Cache entry') : notify.created('Cache entry'); onSaved() },
     onError: (e: Error) => setError(e.message || 'Failed to save'),
   })
 

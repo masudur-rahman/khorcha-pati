@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, useRef, type KeyboardEvent } from 'react'
-import toast from 'react-hot-toast'
+import { notify } from '../../lib/notify'
 import { useQuery } from '@tanstack/react-query'
 import { listCategories, listSubcategories } from '../../api/endpoints'
 import { useCreateTransaction, useUpdateTransaction } from '../../hooks/useTransactions'
@@ -223,18 +223,20 @@ export default function TxnDialog({ txn, initialType, initialContact, initialSub
       contactName: type === 'Transfer' ? '' : contactName,
     }
     if (isEdit) {
-      update.mutate({ id: txn!.id, ...payload }, { 
+      update.mutate({ id: txn!.id, ...payload }, {
         onSuccess: () => {
-          toast.success('Transaction updated successfully')
+          notify.updated('Transaction')
           onClose()
-        } 
+        },
+        onError: (err) => notify.error(err, 'update transaction'),
       })
     } else {
-      create.mutate(payload, { 
+      create.mutate(payload, {
         onSuccess: () => {
-          toast.success('Transaction recorded successfully')
+          notify.created('Transaction')
           onClose()
-        } 
+        },
+        onError: (err) => notify.error(err, 'record transaction'),
       })
     }
   }
