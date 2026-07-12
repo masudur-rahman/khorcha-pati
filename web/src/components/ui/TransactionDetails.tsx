@@ -46,7 +46,7 @@ export default function TransactionDetails({
   const contactMap = new Map(contacts.map(c => [c.nickName, c.fullName]))
 
   const catId = txn.subcategoryId?.split('-')[0] ?? ''
-  type PartyKind = 'wallet' | 'contact'
+  type PartyKind = 'wallet' | 'contact' | 'income' | 'expense'
   type Party = { label: string; kind: PartyKind }
   const resolveParty = (id: string): Party | null => {
     if (!id) return null
@@ -63,6 +63,10 @@ export default function TransactionDetails({
     if (!to && txn.type === 'Expense') to = personParty
     else if (!from && txn.type === 'Income') from = personParty
   }
+  // Fill the still-missing side with a soft "world" node so every txn reads
+  // from → to (destination wallet always right, source always left).
+  if (!from && txn.type === 'Income') from = { label: 'Income', kind: 'income' }
+  if (!to && txn.type === 'Expense') to = { label: 'Expense', kind: 'expense' }
   const categoryName = catMap.get(catId) || catId
   const subcategoryName = subcatMap.get(txn.subcategoryId) || txn.subcategoryId
 
@@ -205,40 +209,48 @@ function SectionLabel({ icon, text }: { icon: React.ReactNode; text: string }) {
 
 function MovementCell({ role, party }: {
   role: 'Source' | 'Destination'
-  party: { label: string; kind: 'wallet' | 'contact' }
+  party: { label: string; kind: 'wallet' | 'contact' | 'income' | 'expense' }
 }) {
+  // Real entities (wallet/contact) read solid; the "world" income/expense node is
+  // a soft, tinted placeholder so it stays visually secondary to the wallet.
+  const isWorld = party.kind === 'income' || party.kind === 'expense'
   const isContact = party.kind === 'contact'
-  const tone = isContact ? 'var(--color-primary)' : 'var(--color-text-tertiary)'
-  const icon = isContact ? ICONS.user(14) : ICONS.wallet(14)
+  const style = {
+    wallet: { tone: 'var(--color-text-tertiary)', bg: 'var(--color-bg)', icon: ICONS.wallet(14) },
+    contact: { tone: 'var(--color-primary)', bg: 'var(--color-primary-subtle)', icon: ICONS.user(14) },
+    income: { tone: 'var(--color-success)', bg: 'var(--color-success-subtle)', icon: ICONS.trendingUp(14) },
+    expense: { tone: 'var(--color-danger)', bg: 'var(--color-danger-subtle)', icon: ICONS.trendingDown(14) },
+  }[party.kind]
+
+  const badge = (
+    <span style={{
+      width: 22, height: 22, borderRadius: 6,
+      // On the tinted contact pill the icon chip flips to surface so it still reads.
+      background: isContact ? 'var(--color-surface)' : style.bg,
+      color: style.tone,
+      display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+    }}>
+      {style.icon}
+    </span>
+  )
 
   return (
-    <div style={{ minWidth: 0, display: 'flex', alignItems: 'center', gap: 8, flex: 1, justifyContent: role === 'Source' ? 'flex-end' : 'flex-start' }}>
-      {role === 'Destination' && (
-        <span style={{
-          width: 22, height: 22, borderRadius: 6,
-          background: isContact ? 'var(--color-primary-subtle)' : 'var(--color-bg)',
-          color: tone,
-          display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-        }}>
-          {icon}
-        </span>
-      )}
+    <div style={{ minWidth: 0, display: 'flex', flex: 1, justifyContent: role === 'Source' ? 'flex-end' : 'flex-start' }}>
+      {/* Contact node wears a tinted pill so a person stands out from plain wallet nodes. */}
       <div style={{
-        fontSize: 14, fontWeight: 600, color: 'var(--color-text-primary)',
-        whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+        minWidth: 0, display: 'flex', alignItems: 'center', gap: 8,
+        ...(isContact ? { background: 'var(--color-primary-subtle)', padding: '4px 10px', borderRadius: 999 } : {}),
       }}>
-        {party.label}
-      </div>
-      {role === 'Source' && (
-        <span style={{
-          width: 22, height: 22, borderRadius: 6,
-          background: isContact ? 'var(--color-primary-subtle)' : 'var(--color-bg)',
-          color: tone,
-          display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+        {role === 'Destination' && badge}
+        <div style={{
+          fontSize: 14, fontWeight: 600,
+          color: isWorld ? style.tone : isContact ? 'var(--color-primary)' : 'var(--color-text-primary)',
+          whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
         }}>
-          {icon}
-        </span>
-      )}
+          {party.label}
+        </div>
+        {role === 'Source' && badge}
+      </div>
     </div>
   )
 }
