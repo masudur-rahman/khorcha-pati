@@ -16,6 +16,7 @@ import Button from '../components/ui/Button'
 import Modal from '../components/ui/Modal'
 import Input from '../components/ui/Input'
 import Eyebrow from '../components/ui/Eyebrow'
+import MetricChip from '../components/ui/MetricChip'
 import SectionHeader from '../components/ui/SectionHeader'
 import ConfirmDialog from '../components/ui/ConfirmDialog'
 import ActionButton from '../components/ui/ActionButton'
@@ -93,15 +94,15 @@ export default function Contacts() {
 
       {/* Financial Circle widget */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16 }}>
-        <CirclePanel
+        <MetricChip
           label="Others owe you"
-          amount={owedToYou}
+          value={fmt(owedToYou)}
           accent="var(--color-success)"
           icon={ICONS.trendingUp(18)}
         />
-        <CirclePanel
+        <MetricChip
           label="You owe others"
-          amount={oweOthers}
+          value={fmt(oweOthers)}
           accent="var(--color-danger)"
           icon={ICONS.trendingDown(18)}
         />
@@ -186,20 +187,6 @@ export default function Contacts() {
         />
       )}
     </div>
-  )
-}
-
-function CirclePanel({ label, amount, accent, icon }: { label: string; amount: number; accent: string; icon: React.ReactNode }) {
-  return (
-    <Card style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: 18, borderLeft: `4px solid ${accent}`, borderRadius: 'var(--radius-md)' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Eyebrow>{label}</Eyebrow>
-        <span style={{ color: accent, display: 'flex' }}>{icon}</span>
-      </div>
-      <span style={{ fontSize: 24, fontWeight: 700, color: accent, fontFamily: 'var(--font-display)', letterSpacing: '-0.02em' }}>
-        {fmt(amount)}
-      </span>
-    </Card>
   )
 }
 

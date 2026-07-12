@@ -1,5 +1,6 @@
 import { ReactNode } from 'react'
 import Eyebrow from './Eyebrow'
+import { ICONS } from './Icons'
 
 interface Props {
   label: string
@@ -7,9 +8,14 @@ interface Props {
   accent: string
   icon?: ReactNode
   hint?: string
+  /** Optional delta badge, e.g. "12%". Pair with trendUp for direction/color. */
+  trend?: string
+  trendUp?: boolean
 }
 
-export default function MetricChip({ label, value, accent, icon, hint }: Props) {
+// MetricChip is the single stat-card primitive: label + accent value on a surface
+// with a left accent bar, plus an optional icon, delta badge and hint line.
+export default function MetricChip({ label, value, accent, icon, hint, trend, trendUp }: Props) {
   return (
     <div
       className="metric-chip"
@@ -47,6 +53,26 @@ export default function MetricChip({ label, value, accent, icon, hint }: Props) 
       >
         {value}
       </div>
+      {trend && (
+        <span
+          className="metric-chip-trend"
+          style={{
+            alignSelf: 'flex-start',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 2,
+            fontSize: 12,
+            fontWeight: 600,
+            color: trendUp ? 'var(--color-success)' : 'var(--color-danger)',
+            background: trendUp ? 'var(--color-success-subtle)' : 'var(--color-danger-subtle)',
+            padding: '2px 8px',
+            borderRadius: 6,
+          }}
+        >
+          {trendUp ? ICONS.arrowUp(12) : ICONS.arrowDown(12)}
+          {trend}
+        </span>
+      )}
       {hint && (
         <span className="metric-chip-hint" style={{ fontSize: 11, color: 'var(--color-text-tertiary)', fontWeight: 500 }}>{hint}</span>
       )}
