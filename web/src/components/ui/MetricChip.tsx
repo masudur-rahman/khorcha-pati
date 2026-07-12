@@ -34,7 +34,22 @@ export default function MetricChip({ label, value, accent, icon, hint, trend, tr
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <Eyebrow>{label}</Eyebrow>
         {icon && (
-          <span className="metric-chip-icon" style={{ display: 'flex', color: accent, opacity: 0.85 }}>{icon}</span>
+          <span
+            className="metric-chip-icon"
+            style={{
+              width: 28,
+              height: 28,
+              borderRadius: 8,
+              background: `color-mix(in srgb, ${accent} 14%, transparent)`,
+              color: accent,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+            }}
+          >
+            {icon}
+          </span>
         )}
       </div>
       <div
