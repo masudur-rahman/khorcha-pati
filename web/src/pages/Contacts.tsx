@@ -1,5 +1,5 @@
 import { formatDate } from '../lib/formatter'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, useRef, forwardRef } from 'react'
 import toast from 'react-hot-toast'
 import { useQuery } from '@tanstack/react-query'
 import { useSearchParams } from 'react-router-dom'
@@ -22,6 +22,7 @@ import ActionButton from '../components/ui/ActionButton'
 import TxnDialog, { TxnType } from '../components/ui/TxnDialog'
 import { ICONS } from '../components/ui/Icons'
 import { validateDisplayName, validateEmail, validateShortName } from '../utils/validators'
+import { useViewportPageSize } from '../hooks/useViewportPageSize'
 
 export default function Contacts() {
   const { searchTerm } = useSearch()
@@ -80,6 +81,15 @@ export default function Contacts() {
 
   const active = useMemo(() => (contacts ?? []).find(c => c.id === activeId) ?? null, [contacts, activeId])
 
+  // Display-oriented pagination — same measured page size as the other tables.
+  const firstRowRef = useRef<HTMLButtonElement>(null)
+  const pageSize = useViewportPageSize(firstRowRef, firstRowRef)
+  const [page, setPage] = useState(0)
+  useEffect(() => { setPage(0) }, [searchTerm])
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize))
+  const safePage = Math.min(page, totalPages - 1)
+  const paged = filtered.slice(safePage * pageSize, (safePage + 1) * pageSize)
+
   if (isLoading) return <p style={{ color: 'var(--color-text-tertiary)', padding: 40 }}>Loading...</p>
 
   return (
@@ -123,14 +133,44 @@ export default function Contacts() {
         ) : (
           <Card padding={0}>
             <div className="contact-list">
-              {filtered.map(c => (
+              {paged.map((c, i) => (
                 <ContactRow
                   key={c.id}
+                  ref={i === 0 ? firstRowRef : undefined}
                   contact={c}
                   onClick={() => setActiveId(c.id)}
                 />
               ))}
             </div>
+            {totalPages > 1 && (
+              <div style={{ padding: '16px 24px', borderTop: '1px solid var(--color-border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <p style={{ fontSize: 12, color: 'var(--color-text-tertiary)', fontWeight: 500 }}>
+                  Showing {safePage * pageSize + 1}–{Math.min((safePage + 1) * pageSize, filtered.length)} of {filtered.length}
+                </p>
+                <div style={{ display: 'flex', gap: 6 }}>
+                  <button
+                    disabled={safePage === 0}
+                    onClick={() => setPage(safePage - 1)}
+                    style={{
+                      padding: '8px 14px', borderRadius: 'var(--radius-sm)', fontSize: 12, fontWeight: 600,
+                      border: '1px solid var(--color-border)', background: 'var(--color-surface)',
+                      cursor: safePage === 0 ? 'not-allowed' : 'pointer', color: 'var(--color-text-secondary)',
+                      opacity: safePage === 0 ? 0.5 : 1, fontFamily: 'inherit',
+                    }}
+                  >Previous</button>
+                  <button
+                    disabled={safePage >= totalPages - 1}
+                    onClick={() => setPage(safePage + 1)}
+                    style={{
+                      padding: '8px 14px', borderRadius: 'var(--radius-sm)', fontSize: 12, fontWeight: 600,
+                      border: '1px solid var(--color-border)', background: 'var(--color-surface)',
+                      cursor: safePage >= totalPages - 1 ? 'not-allowed' : 'pointer', color: 'var(--color-text-secondary)',
+                      opacity: safePage >= totalPages - 1 ? 0.5 : 1, fontFamily: 'inherit',
+                    }}
+                  >Next</button>
+                </div>
+              </div>
+            )}
           </Card>
         )}
       </section>
@@ -188,13 +228,14 @@ function CirclePanel({ label, amount, accent, icon }: { label: string; amount: n
   )
 }
 
-function ContactRow({ contact, onClick }: { contact: Contact; onClick: () => void }) {
+const ContactRow = forwardRef<HTMLButtonElement, { contact: Contact; onClick: () => void }>(function ContactRow({ contact, onClick }, ref) {
   const { data: profile } = useQuery({ queryKey: ['profile'], queryFn: getProfile })
   const owesYou = contact.netBalance > 0
   const settled = contact.netBalance === 0
   const color = settled ? 'var(--color-text-tertiary)' : owesYou ? 'var(--color-success)' : 'var(--color-danger)'
   return (
     <button
+      ref={ref}
       onClick={onClick}
       className="hover-row"
       style={{
@@ -246,7 +287,7 @@ function ContactRow({ contact, onClick }: { contact: Contact; onClick: () => voi
       </div>
     </button>
   )
-}
+})
 
 function ContactDrawer({ contact, onEdit, onDelete, onClose }: { contact: Contact; onEdit: (c: Contact) => void; onDelete: (c: Contact) => void; onClose: () => void }) {
   const { data: profile } = useQuery({ queryKey: ['profile'], queryFn: getProfile })
