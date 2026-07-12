@@ -1,6 +1,6 @@
 import { formatDate } from '../lib/formatter'
 import { useMemo, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { getChartData, listCategories, listSubcategories , getProfile } from '../api/endpoints'
 import { useTransactions } from '../hooks/useTransactions'
@@ -17,7 +17,10 @@ import MiniBarChart from '../components/charts/MiniBarChart'
 import BudgetGauge from '../components/charts/BudgetGauge'
 import { ICONS } from '../components/ui/Icons'
 import WalletFlow from '../components/ui/WalletFlow'
-import { useWallets } from '../hooks/useWallets'
+import { useWallets, useDeleteWallet } from '../hooks/useWallets'
+import toast from 'react-hot-toast'
+import ConfirmDialog from '../components/ui/ConfirmDialog'
+import { WalletDrawer, EditWalletDialog } from './Wallets'
 import { useContacts } from '../hooks/useContacts'
 import TransactionDetails from '../components/ui/TransactionDetails'
 import MetricChip from '../components/ui/MetricChip'
@@ -29,7 +32,6 @@ import DeleteTxnDialog from '../components/ui/DeleteTxnDialog'
 
 export default function Dashboard() {
   const { data: profile } = useQuery({ queryKey: ['profile'], queryFn: getProfile })
-  const navigate = useNavigate()
   const { data: charts, isLoading: isChartsLoading } = useQuery({
     queryKey: ['chartData'],
     queryFn: () => getChartData(),
@@ -45,6 +47,25 @@ export default function Dashboard() {
   const [addTxnType, setAddTxnType] = useState<TxnType | null>(null)
   const [editTxn, setEditTxn] = useState<any>(null)
   const [deleteTxn, setDeleteTxn] = useState<any>(null)
+  const [activeWalletId, setActiveWalletId] = useState<number | null>(null)
+  const [showEditWallet, setShowEditWallet] = useState<any>(null)
+  const [showDeleteWallet, setShowDeleteWallet] = useState<any>(null)
+  const delWallet = useDeleteWallet()
+
+  const activeWallet = useMemo(
+    () => (wallets ?? []).find(w => w.id === activeWalletId) ?? null,
+    [wallets, activeWalletId]
+  )
+
+  const handleWalletDeleteConfirm = (w: { shortName: string }) => {
+    delWallet.mutate(w.shortName, {
+      onSuccess: () => { toast.success('Wallet deleted successfully'); setShowDeleteWallet(null) },
+      onError: (err: any) => {
+        toast.error(err?.message || 'Failed to delete wallet', { duration: 4000 })
+        setShowDeleteWallet(null)
+      },
+    })
+  }
 
   const isLoading = isChartsLoading || isCatsLoading || isSubsLoading
 
@@ -188,23 +209,24 @@ export default function Dashboard() {
           title="My Wallets"
           action={<Link to="/wallets" style={{ fontSize: 12, fontWeight: 600, color: 'var(--color-primary)', textDecoration: 'none' }}>Manage →</Link>}
         />
-        <div className="wallet-carousel" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 16 }}>
+        <div className="wallet-carousel">
           {(() => {
             const counts: Record<string, number> = {}
-            return (wallets ?? []).slice(0, 4).map(w => {
+            return (wallets ?? []).slice(0, 5).map(w => {
               const variant = inferVariant(w.type, w.name, w.shortName)
               const idx = counts[variant] ?? 0
               counts[variant] = idx + 1
               return (
-                <WalletCard
-                  key={w.id}
-                  variant={variant}
-                  paletteIndex={idx}
-                  name={w.name}
-                  shortName={w.shortName}
-                  balance={w.balance}
-                  onClick={() => navigate('/wallets')}
-                />
+                <div key={w.id} className="wallet-carousel-item">
+                  <WalletCard
+                    variant={variant}
+                    paletteIndex={idx}
+                    name={w.name}
+                    shortName={w.shortName}
+                    balance={w.balance}
+                    onClick={() => setActiveWalletId(w.id)}
+                  />
+                </div>
               )
             })
           })()}
@@ -346,6 +368,31 @@ export default function Dashboard() {
       )}
 
       {deleteTxn && <DeleteTxnDialog txn={deleteTxn} onClose={() => setDeleteTxn(null)} />}
+
+      {activeWallet && (
+        <WalletDrawer
+          wallet={activeWallet}
+          wallets={wallets ?? []}
+          onEdit={(w) => { setShowEditWallet(w); setActiveWalletId(null) }}
+          onDelete={(w) => { setShowDeleteWallet(w); setActiveWalletId(null) }}
+          onClose={() => setActiveWalletId(null)}
+        />
+      )}
+      {showEditWallet && <EditWalletDialog wallet={showEditWallet} onClose={() => setShowEditWallet(null)} />}
+      {showDeleteWallet && (
+        <ConfirmDialog
+          title="Delete Wallet"
+          message={<>
+            Delete <strong>"{showDeleteWallet.name}"</strong>?
+            <br />
+            <span style={{ fontSize: 13, opacity: 0.7 }}>This action cannot be undone.</span>
+          </>}
+          confirmText="Delete"
+          type="danger"
+          onConfirm={() => handleWalletDeleteConfirm(showDeleteWallet)}
+          onClose={() => setShowDeleteWallet(null)}
+        />
+      )}
 
       {showStatementModal && <StatementModal onClose={() => setShowStatementModal(false)} />}
 

@@ -400,22 +400,30 @@ input[type="search"]::-webkit-search-results-decoration {
   }
 }
 
-/* Wallet carousel — scroll-snap on mobile */
+/* Wallet carousel — horizontal scroll at all widths; scroll sideways to reach
+   more cards instead of shrinking/wrapping them. */
+.wallet-carousel {
+  display: flex;
+  gap: 16px;
+  overflow-x: auto;
+  padding-bottom: 6px;
+  scroll-snap-type: x proximity;
+  -webkit-overflow-scrolling: touch;
+}
+.wallet-carousel-item {
+  flex: 0 0 300px;
+  scroll-snap-align: start;
+}
 @media (max-width: 640px) {
   .wallet-carousel {
-    grid-template-columns: none !important;
-    display: flex !important;
-    overflow-x: auto;
-    scroll-snap-type: x mandatory;
     gap: 14px;
-    padding-bottom: 6px;
+    scroll-snap-type: x mandatory;
     scrollbar-width: none;
   }
   .wallet-carousel::-webkit-scrollbar { display: none; }
-  .wallet-carousel > * {
-    scroll-snap-align: start;
-    flex: 0 0 80%;
-    max-width: 320px;
+  .wallet-carousel-item {
+    flex: 0 0 82%;
+    max-width: 340px;
   }
 }
 

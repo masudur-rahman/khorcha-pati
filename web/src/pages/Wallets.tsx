@@ -152,7 +152,7 @@ export default function Wallets() {
   )
 }
 
-function WalletDrawer({ wallet, wallets, onEdit, onDelete, onClose }: { wallet: Wallet; wallets: Wallet[]; onEdit: (w: Wallet) => void; onDelete: (w: Wallet) => void; onClose: () => void }) {
+export function WalletDrawer({ wallet, wallets, onEdit, onDelete, onClose }: { wallet: Wallet; wallets: Wallet[]; onEdit: (w: Wallet) => void; onDelete: (w: Wallet) => void; onClose: () => void }) {
   const { data: profile } = useQuery({ queryKey: ['profile'], queryFn: getProfile })
   const { data: resp } = useTransactions()
   const { data: subcategories } = useQuery({ queryKey: ['subcategories'], queryFn: () => listSubcategories() })
@@ -314,7 +314,7 @@ function AddWalletDialog({ onClose }: { onClose: () => void }) {
   )
 }
 
-function EditWalletDialog({ wallet, onClose }: { wallet: Wallet; onClose: () => void }) {
+export function EditWalletDialog({ wallet, onClose }: { wallet: Wallet; onClose: () => void }) {
   const update = useUpdateWallet()
   const [name, setName] = useState(wallet.name)
   const [shortName, setShortName] = useState(wallet.shortName)
