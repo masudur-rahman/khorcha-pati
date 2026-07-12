@@ -50,7 +50,7 @@ export default function Transactions() {
   const firstRowRef = useRef<HTMLTableRowElement>(null)
   const tableWrapRef = useRef<HTMLDivElement>(null)
   const paginationRef = useRef<HTMLDivElement>(null)
-  const pageSize = useFitPageSize({ topRef: filterBarRef, cardRef: firstCardRef, rowRef: firstRowRef, wrapRef: tableWrapRef, paginationRef })
+  const { size: pageSize, frameHeight } = useFitPageSize({ topRef: filterBarRef, cardRef: firstCardRef, rowRef: firstRowRef, wrapRef: tableWrapRef, paginationRef })
 
   useEffect(() => {
     const addType = searchParams.get('add') as TxnType
@@ -111,6 +111,7 @@ export default function Transactions() {
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize))
   const safePage = Math.min(page, totalPages - 1)
   const paginated = filtered.slice(safePage * pageSize, (safePage + 1) * pageSize)
+  const isLastPage = safePage >= totalPages - 1
 
   const totals = {
     income: txns.filter(t => t.type === 'Income').reduce((s, t) => s + t.amount, 0),
@@ -119,7 +120,7 @@ export default function Transactions() {
   }
 
   return (
-    <div className="txn-page" style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
+    <div className="txn-page" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
       <TopBar title="Transactions" subtitle="Detailed history of your financial movements" />
 
       {/* Summary chips */}
@@ -147,7 +148,7 @@ export default function Transactions() {
         />
       </div>
 
-      {/* Filter Bar — sticks to the top on mobile so it never scrolls away */}
+      {/* Filter Bar — in-flow (never floats); also the anchor for row-fit measurement */}
       <div ref={filterBarRef} className="txn-filter-bar" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
         <div style={{ display: 'flex', background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', padding: 4, gap: 2 }}>
           {['', ...typeOptions].map(f => (
@@ -173,9 +174,11 @@ export default function Transactions() {
 
       {/* Table */}
       <Card padding={0}>
-        {/* Desktop: zebra table with tinted sticky header; frame is bounded to the
-            measured height so the header/pagination stay fixed (page doesn't scroll) */}
-        <div ref={tableWrapRef} className="zebra-table-wrap hidden md:block">
+        {/* Desktop: zebra table with tinted sticky header. Non-last pages reserve a
+            fixed row-area height so the header and pagination sit at the same Y on
+            every page switch; the last page uses natural height (pagination hugs the
+            last row, no dead space). */}
+        <div ref={tableWrapRef} className="zebra-table-wrap hidden md:block" style={{ height: isLastPage ? undefined : frameHeight || undefined }}>
           <table className="zebra-table zebra-table--sticky" style={{ width: '100%', minWidth: 720, tableLayout: 'fixed', borderCollapse: 'collapse', fontSize: 13 }}>
             <thead>
               <tr>

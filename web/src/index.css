@@ -211,16 +211,13 @@ h1, h2, h3, h4, h5, h6 {
   background: var(--color-hover);
 }
 
-/* Mobile: pin the filter tabs to the top so they never scroll away, and give a
-   stable anchor for measuring how many rows fit. */
+/* Type switcher + Add button: a normal in-flow block (never floats). The row area
+   below fills one screenful, so it can't be scrolled off the top anyway. */
+.txn-filter-bar {
+  padding: 8px 0;
+}
+
 @media (max-width: 767px) {
-  .txn-filter-bar {
-    position: sticky;
-    top: 0;
-    z-index: 20;
-    background: var(--color-bg);
-    padding: 8px 0;
-  }
   /* Tighter vertical rhythm on mobile reclaims space for one more row. */
   .txn-page { gap: 14px !important; }
   .txn-card-list { padding: 6px 12px !important; }
