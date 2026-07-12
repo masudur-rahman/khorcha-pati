@@ -250,10 +250,11 @@ export default function Dashboard() {
           <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--color-text-primary)', margin: 0 }}>Recent Transactions</h3>
           <Link to="/transactions" style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-primary)', textDecoration: 'none' }}>View All</Link>
         </div>
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', minWidth: 640, borderCollapse: 'collapse', fontSize: 13 }}>
+        {/* Desktop: zebra table */}
+        <div className="zebra-table-wrap hidden md:block">
+          <table className="zebra-table" style={{ width: '100%', minWidth: 640, borderCollapse: 'collapse', fontSize: 13 }}>
             <thead>
-              <tr style={{ borderBottom: '1px solid var(--color-border)' }}>
+              <tr>
                 {['Date', 'Type', 'Category', 'Amount', 'Wallet'].map(h => (
                   <th key={h} style={{ padding: '12px 24px', textAlign: h === 'Amount' ? 'right' : h === 'Wallet' ? 'center' : 'left', fontSize: 10, fontWeight: 700, color: 'var(--color-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{h}</th>
                 ))}
@@ -263,8 +264,7 @@ export default function Dashboard() {
               {recentTxns.map(t => (
                 <tr
                   key={t.id}
-                  style={{ borderBottom: '1px solid var(--color-border)', cursor: 'pointer' }}
-                  className="hover-row transition-colors"
+                  style={{ borderBottom: '1px solid var(--color-border)' }}
                   onClick={() => setSelectedTxn(t)}
                 >
                   <td style={{ padding: '14px 24px', color: 'var(--color-text-tertiary)', fontSize: 12, fontWeight: 600 }}>
@@ -295,6 +295,39 @@ export default function Dashboard() {
               )}
             </tbody>
           </table>
+        </div>
+
+        {/* Mobile: stacked, tappable summary cards */}
+        <div className="txn-card-list flex flex-col md:hidden">
+          {recentTxns.map(t => (
+            <button key={t.id} className="txn-card" onClick={() => setSelectedTxn(t)}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+                  <Badge type={t.type as any} />
+                  <span style={{ fontWeight: 700, fontSize: 14, color: 'var(--color-text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {subcatMap.get(t.subcategoryId) || t.subcategoryId}
+                  </span>
+                </div>
+                <span style={{
+                  fontWeight: 700, fontSize: 15, whiteSpace: 'nowrap', flexShrink: 0,
+                  color: t.type === 'Income' ? 'var(--color-success)' : t.type === 'Transfer' ? 'var(--color-primary)' : 'var(--color-danger)',
+                }}>
+                  {t.type === 'Income' ? '+' : t.type === 'Transfer' ? '' : '−'}{fmt(t.amount)}
+                </span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+                <div style={{ minWidth: 0, overflow: 'hidden' }}>
+                  <WalletFlow srcId={t.srcId} dstId={t.dstId} contactName={t.contactName} type={t.type as any} />
+                </div>
+                <span style={{ fontSize: 12, color: 'var(--color-text-tertiary)', fontWeight: 600, whiteSpace: 'nowrap', flexShrink: 0 }}>
+                  {formatDate(t.timestamp * 1000, { month: 'short', day: 'numeric' }, profile?.timezone)}
+                </span>
+              </div>
+            </button>
+          ))}
+          {recentTxns.length === 0 && (
+            <div style={{ padding: 40, textAlign: 'center', color: 'var(--color-text-tertiary)' }}>No recent transactions found</div>
+          )}
         </div>
       </Card>
 

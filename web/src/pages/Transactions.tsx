@@ -175,7 +175,7 @@ export default function Transactions() {
         {/* Desktop: zebra table with tinted sticky header; frame is bounded to the
             measured height so the header/pagination stay fixed (page doesn't scroll) */}
         <div ref={tableWrapRef} className="zebra-table-wrap hidden md:block">
-          <table className="zebra-table" style={{ width: '100%', minWidth: 720, tableLayout: 'fixed', borderCollapse: 'collapse', fontSize: 13 }}>
+          <table className="zebra-table zebra-table--sticky" style={{ width: '100%', minWidth: 720, tableLayout: 'fixed', borderCollapse: 'collapse', fontSize: 13 }}>
             <thead>
               <tr>
                 {[

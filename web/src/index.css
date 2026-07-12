@@ -158,13 +158,17 @@ h1, h2, h3, h4, h5, h6 {
   background-color: var(--color-hover);
 }
 
-/* Zebra table: tinted sticky header + alternating rows + distinct hover. */
+/* Zebra table: tinted header + alternating rows + distinct hover. The header
+   only sticks inside a bounded frame (--sticky), used by the standalone
+   transactions table; embedded panels keep a normal header. */
 .zebra-table thead th {
+  background: var(--color-table-header);
+  box-shadow: inset 0 -1px 0 var(--color-border);
+}
+.zebra-table--sticky thead th {
   position: sticky;
   top: 0;
   z-index: 2;
-  background: var(--color-table-header);
-  box-shadow: inset 0 -1px 0 var(--color-border);
 }
 .zebra-table tbody tr {
   cursor: pointer;
@@ -328,6 +332,64 @@ input[type="search"]::-webkit-search-results-decoration {
 }
 
 /* Contact list — divider between rows */
+/* Admin user detail header: stack cleanly on mobile so pills and action buttons
+   never collide. */
+@media (max-width: 767px) {
+  .user-detail-header {
+    flex-direction: column;
+    align-items: stretch !important;
+    gap: 14px !important;
+    padding: 20px !important;
+  }
+  .user-detail-actions {
+    width: 100%;
+    margin-left: 0 !important;
+  }
+  .user-detail-actions > *:first-child {
+    flex: 1;
+  }
+  /* Compact the user detail card on mobile. */
+  .detail-section {
+    padding: 14px 16px !important;
+  }
+  .detail-activity {
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 8px !important;
+  }
+  .detail-tile {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 6px !important;
+    padding: 10px !important;
+  }
+  .detail-tile-icon {
+    display: none !important;
+  }
+  .detail-tile-value {
+    font-size: 18px !important;
+  }
+  .detail-account {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 12px !important;
+  }
+  /* Compact the AI cache panel header on mobile: drop the description, put the
+     search + Add button on one row. */
+  .aicache-header {
+    padding: 12px 16px !important;
+    gap: 10px !important;
+  }
+  .aicache-desc {
+    display: none !important;
+  }
+  .aicache-actions {
+    width: 100%;
+  }
+  .aicache-actions input {
+    flex: 1;
+    min-width: 0 !important;
+  }
+}
+
 .contact-list { display: flex; flex-direction: column; }
 .contact-list > * + * { border-top: 1px solid var(--color-border) !important; }
 

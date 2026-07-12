@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useViewportPageSize } from '../hooks/useViewportPageSize'
 import { getAdminStats, getAdminUsers, setAdminUserActive, sendAdminBroadcast, type AdminUser } from '../api/endpoints'
 import { getAccessToken } from '../api/client'
 import { useSearch } from '../context/SearchContext'
@@ -114,10 +115,12 @@ export default function Admin() {
     queryFn: getAdminStats,
   })
   const [userPage, setUserPage] = useState(1)
-  const userLimit = 10
+  const firstUserRowRef = useRef<HTMLTableRowElement>(null)
+  const firstUserCardRef = useRef<HTMLDivElement>(null)
+  const userLimit = useViewportPageSize(firstUserRowRef, firstUserCardRef)
 
   const { data: usersData, isLoading: usersLoading } = useQuery({
-    queryKey: ['adminUsers', userPage],
+    queryKey: ['adminUsers', userPage, userLimit],
     queryFn: () => getAdminUsers(userPage, userLimit),
   })
   const { searchTerm } = useSearch()
@@ -190,40 +193,33 @@ export default function Admin() {
             Broadcast Message
           </Button>
         </div>
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
+        <div className="zebra-table-wrap hidden md:block">
+          <table className="zebra-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
             <thead>
-              <tr style={{ borderBottom: '1px solid var(--color-border)' }}>
-                {['User', 'Registered', 'Last txn', 'Wallets', 'Txns', 'Contacts', 'Role', 'Status'].map(h => (
+              <tr>
+                {['User', 'Registered', 'Last txn', 'Activity', 'Role', 'Status'].map(h => (
                   <th key={h} style={{
-                    padding: '12px 16px', textAlign: 'left', fontWeight: 600,
+                    padding: '10px 12px', textAlign: 'left', fontWeight: 600,
                     color: 'var(--color-text-secondary)', fontSize: 12,
-                    textTransform: 'uppercase', letterSpacing: '0.05em',
+                    textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap',
                   }}>{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
-              {(users ?? []).map(u => (
+              {(users ?? []).map((u, i) => (
                 <tr
                   key={u.id}
+                  ref={i === 0 ? firstUserRowRef : undefined}
                   onClick={() => setSelectedUser(selectedUser?.id === u.id ? null : u)}
                   style={{
                     borderBottom: '1px solid var(--color-border)',
-                    cursor: 'pointer',
-                    background: selectedUser?.id === u.id ? 'var(--color-primary-subtle)' : 'transparent',
-                    transition: 'background var(--transition-fast)',
-                  }}
-                  onMouseEnter={e => {
-                    if (selectedUser?.id !== u.id) e.currentTarget.style.background = 'var(--color-hover)'
-                  }}
-                  onMouseLeave={e => {
-                    if (selectedUser?.id !== u.id) e.currentTarget.style.background = 'transparent'
+                    background: selectedUser?.id === u.id ? 'var(--color-primary-subtle)' : undefined,
                   }}
                 >
-                  <td style={{ padding: '12px 16px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
-                      <Avatar user={u} size={40} />
+                  <td style={{ padding: '10px 12px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+                      <Avatar user={u} size={36} />
                       <div style={{ minWidth: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column', gap: 1 }}>
                         <Field
                           value={fullName(u)}
@@ -235,20 +231,15 @@ export default function Admin() {
                           missingLabel="@ username not set"
                           style={{ fontSize: 12, color: 'var(--color-text-tertiary)' }}
                         />
-                        <Field
-                          value={u.telegramId ? `Telegram · ${u.telegramId}` : ''}
-                          missingLabel="Telegram ID missing"
-                          style={{ fontSize: 12, color: 'var(--color-text-tertiary)' }}
-                        />
                       </div>
                     </div>
                   </td>
-                  <td style={{ padding: '12px 16px', color: 'var(--color-text-tertiary)', fontSize: 13 }}>{relativeTime(u.createdAt)}</td>
-                  <td style={{ padding: '12px 16px', color: 'var(--color-text-tertiary)', fontSize: 13 }}>{relativeTime(u.lastTxnAt)}</td>
-                  <td style={{ padding: '12px 16px' }}>{u.walletCount}</td>
-                  <td style={{ padding: '12px 16px' }}>{u.txnCount}</td>
-                  <td style={{ padding: '12px 16px' }}>{u.contactCount}</td>
-                  <td style={{ padding: '12px 16px' }}>
+                  <td style={{ padding: '10px 12px', color: 'var(--color-text-tertiary)', fontSize: 13, whiteSpace: 'nowrap' }}>{relativeTime(u.createdAt)}</td>
+                  <td style={{ padding: '10px 12px', color: 'var(--color-text-tertiary)', fontSize: 13, whiteSpace: 'nowrap' }}>{relativeTime(u.lastTxnAt)}</td>
+                  <td style={{ padding: '10px 12px', color: 'var(--color-text-tertiary)', fontSize: 13, whiteSpace: 'nowrap' }} title={`${u.txnCount} transactions · ${u.walletCount} wallets · ${u.contactCount} contacts`}>
+                    {u.txnCount}T · {u.walletCount}W · {u.contactCount}C
+                  </td>
+                  <td style={{ padding: '10px 12px' }}>
                     <span style={{
                       display: 'inline-block', padding: '2px 8px', borderRadius: 6, fontSize: 11, fontWeight: 600,
                       background: u.isAdmin ? 'var(--color-primary-subtle)' : 'var(--color-hover)',
@@ -257,7 +248,7 @@ export default function Admin() {
                       {u.isAdmin ? 'Admin' : 'User'}
                     </span>
                   </td>
-                  <td style={{ padding: '12px 16px', whiteSpace: 'nowrap' }} onClick={e => e.stopPropagation()}>
+                  <td style={{ padding: '10px 12px', whiteSpace: 'nowrap' }} onClick={e => e.stopPropagation()}>
                     <button
                       disabled={u.id === currentUserID || toggleActive.isPending}
                       onClick={() => setConfirmUser(u)}
@@ -296,6 +287,66 @@ export default function Admin() {
             </tbody>
           </table>
         </div>
+
+        {/* Mobile: stacked user cards */}
+        <div className="txn-card-list flex flex-col md:hidden">
+          {(users ?? []).map((u, i) => (
+            <div
+              key={u.id}
+              ref={i === 0 ? firstUserCardRef : undefined}
+              className="txn-card"
+              style={{ cursor: 'pointer', background: selectedUser?.id === u.id ? 'var(--color-primary-subtle)' : undefined }}
+              onClick={() => setSelectedUser(selectedUser?.id === u.id ? null : u)}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <Avatar user={u} size={36} />
+                <div style={{ minWidth: 0, flex: 1 }}>
+                  <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--color-text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{fullName(u) || 'Name not set'}</div>
+                  <div style={{ fontSize: 12, color: 'var(--color-text-tertiary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{u.username ? `@${u.username}` : '@ username not set'}</div>
+                </div>
+                <span style={{
+                  flexShrink: 0, padding: '2px 8px', borderRadius: 6, fontSize: 11, fontWeight: 600,
+                  background: u.isAdmin ? 'var(--color-primary-subtle)' : 'var(--color-hover)',
+                  color: u.isAdmin ? 'var(--color-primary)' : 'var(--color-text-tertiary)',
+                }}>{u.isAdmin ? 'Admin' : 'User'}</span>
+              </div>
+              <div style={{ display: 'flex', gap: 12, fontSize: 12, color: 'var(--color-text-tertiary)', flexWrap: 'wrap' }}>
+                <span>{u.walletCount} wallets</span>
+                <span>{u.txnCount} txns</span>
+                <span>{u.contactCount} contacts</span>
+              </div>
+              <div style={{ display: 'flex', gap: 12, fontSize: 12, color: 'var(--color-text-tertiary)', flexWrap: 'wrap' }}>
+                <span>Registered {relativeTime(u.createdAt)}</span>
+                <span>Last txn {relativeTime(u.lastTxnAt)}</span>
+              </div>
+              <div style={{ display: 'flex', gap: 8 }} onClick={e => e.stopPropagation()}>
+                <button
+                  disabled={u.id === currentUserID || toggleActive.isPending}
+                  onClick={() => setConfirmUser(u)}
+                  style={{
+                    padding: '4px 10px', borderRadius: 6, fontSize: 11, fontWeight: 600,
+                    border: '1px solid var(--color-border)',
+                    background: u.isActive ? 'var(--color-success-subtle, var(--color-hover))' : 'var(--color-danger-subtle, var(--color-hover))',
+                    color: u.isActive ? 'var(--color-success, var(--color-text))' : 'var(--color-danger, var(--color-text))',
+                    cursor: u.id === currentUserID ? 'not-allowed' : 'pointer',
+                    opacity: u.id === currentUserID ? 0.5 : 1,
+                  }}
+                >{u.isActive ? 'Active' : 'Disabled'}</button>
+                {u.telegramId > 0 && (
+                  <button
+                    onClick={() => setMessageUser(u)}
+                    style={{
+                      padding: '4px 10px', borderRadius: 6, fontSize: 11, fontWeight: 600,
+                      border: '1px solid var(--color-border)', background: 'transparent',
+                      color: 'var(--color-text-secondary)', cursor: 'pointer',
+                    }}
+                  >Message</button>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+
         {(!users || users.length === 0) && (
           <p style={{ padding: 24, textAlign: 'center', color: 'var(--color-text-tertiary)' }}>No users found.</p>
         )}
@@ -379,12 +430,12 @@ export default function Admin() {
 function UserDetailCard({ user, isSelf, onClose, onToggle }: { user: AdminUser; isSelf: boolean; onClose: () => void; onToggle: () => void }) {
   return (
     <Card padding={0}>
-      <div style={{
+      <div className="user-detail-header" style={{
         padding: '24px 28px', borderBottom: '1px solid var(--color-border)',
-        display: 'flex', alignItems: 'center', gap: 20, flexWrap: 'wrap',
+        display: 'flex', alignItems: 'flex-start', gap: 20, flexWrap: 'wrap',
       }}>
         <Avatar user={user} size={64} showStatus={false} />
-        <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ flex: 1, minWidth: 160 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', minWidth: 0, marginBottom: 6 }}>
             <Field
               value={fullName(user)}
@@ -411,7 +462,7 @@ function UserDetailCard({ user, isSelf, onClose, onToggle }: { user: AdminUser; 
             />
           </div>
         </div>
-        <div style={{ display: 'flex', gap: 8 }}>
+        <div className="user-detail-actions" style={{ display: 'flex', gap: 8, marginLeft: 'auto' }}>
           <Button
             variant="secondary"
             disabled={isSelf}
@@ -442,7 +493,7 @@ function UserDetailCard({ user, isSelf, onClose, onToggle }: { user: AdminUser; 
       </div>
 
       <Section title="Activity">
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16 }}>
+        <div className="detail-activity" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16 }}>
           <Tile
             icon={<TileIcon path="M3 7l2-2 7 4 7-4 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z" />}
             label="Wallets"
@@ -480,7 +531,7 @@ function UserDetailCard({ user, isSelf, onClose, onToggle }: { user: AdminUser; 
       </Section>
 
       <Section title="Account">
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 16 }}>
+        <div className="detail-account" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 16 }}>
           <DetailRow label="User ID" primary={String(user.id)} />
           <DetailRow label="Username" primary={user.username ? `@${user.username}` : '—'} />
           <DetailRow label="Full name" primary={fullName(user) || '—'} />
@@ -493,7 +544,7 @@ function UserDetailCard({ user, isSelf, onClose, onToggle }: { user: AdminUser; 
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div style={{ padding: '20px 28px', borderBottom: '1px solid var(--color-border)' }}>
+    <div className="detail-section" style={{ padding: '20px 28px', borderBottom: '1px solid var(--color-border)' }}>
       <h4 style={{
         fontSize: 11, fontWeight: 700, color: 'var(--color-text-tertiary)',
         textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 14px',
@@ -507,12 +558,12 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 function Tile({ icon, label, value, accent }: { icon: React.ReactNode; label: string; value: string; accent: string }) {
   return (
-    <div style={{
+    <div className="detail-tile" style={{
       padding: 16, borderRadius: 12, border: '1px solid var(--color-border)',
       background: 'var(--color-surface-elevated, var(--color-surface))',
       display: 'flex', alignItems: 'center', gap: 14,
     }}>
-      <div style={{
+      <div className="detail-tile-icon" style={{
         width: 40, height: 40, borderRadius: 10,
         background: `${accent}1a`, color: accent,
         display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
@@ -521,7 +572,7 @@ function Tile({ icon, label, value, accent }: { icon: React.ReactNode; label: st
       </div>
       <div>
         <div style={{ fontSize: 11, color: 'var(--color-text-tertiary)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{label}</div>
-        <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--color-text-primary)', letterSpacing: '-0.02em', lineHeight: 1.1 }}>{value}</div>
+        <div className="detail-tile-value" style={{ fontSize: 22, fontWeight: 700, color: 'var(--color-text-primary)', letterSpacing: '-0.02em', lineHeight: 1.1 }}>{value}</div>
       </div>
     </div>
   )
