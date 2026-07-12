@@ -12,6 +12,8 @@ interface ModalProps {
   width?: number | string
   /** Apply the standard body padding. Turn off when the body manages its own. */
   padded?: boolean
+  /** When set, the body becomes a form so Enter in a text field submits. */
+  onSubmit?: () => void
 }
 
 export default function Modal({
@@ -23,6 +25,7 @@ export default function Modal({
   footer,
   width = 560,
   padded = true,
+  onSubmit,
 }: ModalProps) {
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
@@ -116,9 +119,26 @@ export default function Modal({
             </div>
           </div>
         )}
-        <div className={padded ? 'modal-body' : 'modal-body modal-body--flush'}>
-          {children}
-        </div>
+        {onSubmit ? (
+          <form
+            className={padded ? 'modal-body' : 'modal-body modal-body--flush'}
+            onSubmit={e => { e.preventDefault(); onSubmit() }}
+          >
+            {children}
+            {/* Hidden submit gives the form a default button so Enter submits
+                even when it has multiple fields (implicit submission needs one). */}
+            <button
+              type="submit"
+              aria-hidden="true"
+              tabIndex={-1}
+              style={{ position: 'absolute', width: 1, height: 1, padding: 0, margin: -1, overflow: 'hidden', border: 0, clip: 'rect(0 0 0 0)' }}
+            />
+          </form>
+        ) : (
+          <div className={padded ? 'modal-body' : 'modal-body modal-body--flush'}>
+            {children}
+          </div>
+        )}
         {footer && (
           <div className="modal-footer-resp" style={{
             padding: '16px 32px',

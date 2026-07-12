@@ -508,6 +508,7 @@ function AddContactDialog({ onClose }: { onClose: () => void }) {
       title="Add New Contact"
       onClose={onClose}
       width={460}
+      onSubmit={() => { if (nickName && !nickNameError && !fullNameError && !emailError && !create.isPending) handleSubmit() }}
       footer={
         <>
           <Button variant="secondary" onClick={onClose}>Cancel</Button>
@@ -560,6 +561,7 @@ function EditContactDialog({ contact, onClose }: { contact: Contact; onClose: ()
       title="Edit Contact"
       onClose={onClose}
       width={460}
+      onSubmit={() => { if (nickName && !nickNameError && !fullNameError && !emailError && !update.isPending) handleSubmit() }}
       footer={
         <>
           <Button variant="secondary" onClick={onClose}>Cancel</Button>

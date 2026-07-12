@@ -21,7 +21,7 @@ import Badge from '../components/ui/Badge'
 import WalletCard, { WalletCardGhost, inferVariant } from '../components/ui/WalletCard'
 import ConfirmDialog from '../components/ui/ConfirmDialog'
 import { ICONS } from '../components/ui/Icons'
-import { validateDisplayName, validateShortName } from '../utils/validators'
+import { validateWalletName, validateShortName } from '../utils/validators'
 
 function variantOf(w: Wallet) {
   return inferVariant(w.type, w.name, w.shortName)
@@ -270,7 +270,7 @@ function AddWalletDialog({ onClose }: { onClose: () => void }) {
   const [balance, setBalance] = useState('')
 
   const shortNameError = shortName ? validateShortName(shortName) : null
-  const nameError = name ? validateDisplayName(name) : null
+  const nameError = name ? validateWalletName(name) : null
 
   const handleSubmit = () => {
     if (shortNameError || nameError) return
@@ -295,6 +295,7 @@ function AddWalletDialog({ onClose }: { onClose: () => void }) {
       title="Add New Wallet"
       onClose={onClose}
       width={460}
+      onSubmit={() => { if (name && shortName && !shortNameError && !nameError && !create.isPending) handleSubmit() }}
       footer={
         <>
           <Button variant="secondary" onClick={onClose}>Cancel</Button>
@@ -320,7 +321,7 @@ export function EditWalletDialog({ wallet, onClose }: { wallet: Wallet; onClose:
   const [shortName, setShortName] = useState(wallet.shortName)
 
   const shortNameError = shortName ? validateShortName(shortName) : null
-  const nameError = name ? validateDisplayName(name) : null
+  const nameError = name ? validateWalletName(name) : null
 
   const handleSubmit = () => {
     if (shortNameError || nameError) return
@@ -343,6 +344,7 @@ export function EditWalletDialog({ wallet, onClose }: { wallet: Wallet; onClose:
       title="Edit Wallet"
       onClose={onClose}
       width={460}
+      onSubmit={() => { if (name && shortName && !shortNameError && !nameError && !update.isPending) handleSubmit() }}
       footer={
         <>
           <Button variant="secondary" onClick={onClose}>Cancel</Button>

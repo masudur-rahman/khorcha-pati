@@ -16,7 +16,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(function Input({ label, e
   const resolvedType = type === undefined || type === 'text' || type === 'number' || type === 'email' ? 'search' : type
   const resolvedInputMode = inputMode ?? (type === 'number' ? 'decimal' : type === 'email' ? 'email' : undefined)
   return (
-    <label style={{ display: 'flex', flexDirection: 'column', gap: 6, width: '100%' }}>
+    <label style={{ display: 'flex', flexDirection: 'column', gap: 6, width: '100%', position: 'relative' }}>
       <span style={{ 
         fontSize: 10, 
         fontWeight: 700, 
@@ -64,7 +64,19 @@ const Input = forwardRef<HTMLInputElement, InputProps>(function Input({ label, e
         }}
         {...props}
       />
-      {error && <span style={{ fontSize: 11, color: 'var(--color-danger)', marginLeft: 4 }}>{error}</span>}
+      {/* Absolute so showing/hiding it never changes the field height (modal won't resize). */}
+      {error && (
+        <span style={{
+          position: 'absolute',
+          top: '100%',
+          left: 4,
+          marginTop: 3,
+          fontSize: 11,
+          lineHeight: 1.2,
+          color: 'var(--color-danger)',
+          whiteSpace: 'nowrap',
+        }}>{error}</span>
+      )}
     </label>
   )
 })

@@ -370,6 +370,7 @@ function SetBudgetDialog({ categories, existing, onClose }: { categories: import
       title={isEdit ? 'Edit Budget' : 'Set Budget'}
       onClose={onClose}
       width={460}
+      onSubmit={() => { if (amount) setBudget.mutate({ categoryId, amount: parseFloat(amount), alertAt: parseInt(alertAt) }, { onSuccess: onClose }) }}
       footer={
         <>
           <Button variant="secondary" onClick={onClose}>Cancel</Button>

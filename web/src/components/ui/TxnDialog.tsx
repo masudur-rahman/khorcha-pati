@@ -246,6 +246,7 @@ export default function TxnDialog({ txn, initialType, initialContact, initialSub
     <Modal
       title={isEdit ? 'Edit Transaction' : 'Add Transaction'}
       onClose={onClose}
+      onSubmit={() => { if (!create.isPending && !update.isPending) handleSubmit() }}
       footer={
         <>
           <Button variant="secondary" onClick={onClose}>Cancel</Button>
@@ -326,12 +327,15 @@ export default function TxnDialog({ txn, initialType, initialContact, initialSub
           </div>
         )}
 
-        <Input label="Remarks" value={remarks} onChange={e => setRemarks(e.target.value)} placeholder="Any notes..." />
-        {mutationError && (
-          <span style={{ fontSize: 12, color: 'var(--color-danger)' }}>
-            Couldn't save the transaction. Please try again.
-          </span>
-        )}
+        {/* Relative wrapper so the server error can float below without resizing the modal. */}
+        <div style={{ position: 'relative' }}>
+          <Input label="Remarks" value={remarks} onChange={e => setRemarks(e.target.value)} placeholder="Any notes..." />
+          {mutationError && (
+            <span style={{ position: 'absolute', top: '100%', left: 0, marginTop: 6, fontSize: 12, lineHeight: 1.2, color: 'var(--color-danger)', whiteSpace: 'nowrap' }}>
+              Couldn't save the transaction. Please try again.
+            </span>
+          )}
+        </div>
       </div>
     </Modal>
   )

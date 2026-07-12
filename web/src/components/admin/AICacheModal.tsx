@@ -48,6 +48,7 @@ export default function AICacheModal({ entry, subMeta, subOptions, onClose, onSa
       title={isEdit ? 'Edit cache entry' : 'Add cache entry'}
       onClose={onClose}
       width={520}
+      onSubmit={() => { if (canSave) save.mutate() }}
       footer={
         <>
           <Button variant="secondary" onClick={onClose} disabled={save.isPending}>Cancel</Button>
@@ -93,9 +94,11 @@ export default function AICacheModal({ entry, subMeta, subOptions, onClose, onSa
           value={pct}
           onChange={e => setPct(Number(e.target.value))}
         />
-        <Hint>Manually curated entries are usually 100%.</Hint>
-
-        {error && <p style={{ margin: 0, color: 'var(--color-danger)', fontSize: 13 }}>{error}</p>}
+        {/* Wrapper carries the hint's hug-margin and floats the server error below it (no modal resize). */}
+        <div style={{ position: 'relative', marginTop: -8 }}>
+          <p style={{ margin: '0 0 0 4px', fontSize: 12, color: 'var(--color-text-tertiary)' }}>Manually curated entries are usually 100%.</p>
+          {error && <p style={{ position: 'absolute', top: '100%', left: 4, right: 4, margin: '6px 0 0', color: 'var(--color-danger)', fontSize: 13, lineHeight: 1.2 }}>{error}</p>}
+        </div>
       </div>
     </Modal>
   )
