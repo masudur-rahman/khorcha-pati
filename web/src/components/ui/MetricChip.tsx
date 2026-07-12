@@ -12,6 +12,7 @@ interface Props {
 export default function MetricChip({ label, value, accent, icon, hint }: Props) {
   return (
     <div
+      className="metric-chip"
       style={{
         background: 'var(--color-surface)',
         border: '1px solid var(--color-border)',
@@ -27,10 +28,11 @@ export default function MetricChip({ label, value, accent, icon, hint }: Props) 
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <Eyebrow>{label}</Eyebrow>
         {icon && (
-          <span style={{ display: 'flex', color: accent, opacity: 0.85 }}>{icon}</span>
+          <span className="metric-chip-icon" style={{ display: 'flex', color: accent, opacity: 0.85 }}>{icon}</span>
         )}
       </div>
       <div
+        className="metric-chip-value"
         style={{
           fontSize: 22,
           fontWeight: 700,
@@ -46,7 +48,7 @@ export default function MetricChip({ label, value, accent, icon, hint }: Props) 
         {value}
       </div>
       {hint && (
-        <span style={{ fontSize: 11, color: 'var(--color-text-tertiary)', fontWeight: 500 }}>{hint}</span>
+        <span className="metric-chip-hint" style={{ fontSize: 11, color: 'var(--color-text-tertiary)', fontWeight: 500 }}>{hint}</span>
       )}
     </div>
   )

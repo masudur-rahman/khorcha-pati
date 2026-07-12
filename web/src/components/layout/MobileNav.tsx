@@ -69,6 +69,7 @@ export default function MobileNav() {
   return (
     <>
       <nav
+        id="khp-mobile-nav"
         style={{
           position: 'fixed',
           bottom: 0,

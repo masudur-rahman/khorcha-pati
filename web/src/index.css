@@ -67,6 +67,8 @@
   --color-sidebar-bg: #FFFFFF;
   --color-border: #DFE1E6;
   --color-hover: #F4F5F7;
+  --color-table-header: #EEF1F5;
+  --color-table-zebra: #FAFBFC;
 
   /* Text */
   --color-text-primary: #172B4D;
@@ -115,6 +117,8 @@
   --color-sidebar-bg: #161B22;
   --color-border: #2D3748;
   --color-hover: #1E293B;
+  --color-table-header: #141C2B;
+  --color-table-zebra: rgba(255, 255, 255, 0.03);
 
   --color-text-primary: #E2E8F0;
   --color-text-secondary: #A0AEC0;
@@ -152,6 +156,89 @@ h1, h2, h3, h4, h5, h6 {
 
 .hover-row:hover {
   background-color: var(--color-hover);
+}
+
+/* Zebra table: tinted sticky header + alternating rows + distinct hover. */
+.zebra-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--color-table-header);
+  box-shadow: inset 0 -1px 0 var(--color-border);
+}
+.zebra-table tbody tr {
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+.zebra-table tbody tr:nth-child(even) {
+  background: var(--color-table-zebra);
+}
+.zebra-table tbody tr:hover {
+  background: var(--color-primary-subtle);
+}
+
+/* Natural height — the adaptive (once-computed) page size keeps a page within
+   reach, so no fixed-height container / nested scrollbar is needed. Full pages
+   share the same height (buttons stay put); only x-scroll for wide tables. */
+.zebra-table-wrap {
+  overflow-x: auto;
+}
+
+/* Mobile: transactions render as stacked, tappable summary cards (vertical scroll). */
+.txn-card-list {
+  gap: 8px;
+  padding: 10px 12px;
+}
+.txn-card {
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  font-family: inherit;
+  transition: background var(--transition-fast);
+}
+.txn-card:active {
+  background: var(--color-hover);
+}
+
+/* Mobile: pin the filter tabs to the top so they never scroll away, and give a
+   stable anchor for measuring how many rows fit. */
+@media (max-width: 767px) {
+  .txn-filter-bar {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    background: var(--color-bg);
+    padding: 8px 0;
+  }
+  /* Tighter vertical rhythm on mobile reclaims space for one more row. */
+  .txn-page { gap: 14px !important; }
+  .txn-card-list { padding: 6px 12px !important; }
+}
+
+/* Mobile: keep the summary chips in one compact row (no stacking). */
+@media (max-width: 767px) {
+  .txn-metrics {
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 8px !important;
+  }
+  .txn-metrics .metric-chip {
+    padding: 10px 8px !important;
+    gap: 3px !important;
+  }
+  .txn-metrics .metric-chip-icon,
+  .txn-metrics .metric-chip-hint {
+    display: none !important;
+  }
+  .txn-metrics .metric-chip-value {
+    font-size: clamp(13px, 4.3vw, 22px) !important;
+  }
 }
 
 /* Scrollbar styling */
