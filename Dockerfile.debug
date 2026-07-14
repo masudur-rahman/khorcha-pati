@@ -56,11 +56,11 @@ COPY --from=debug-builder /bin/khorcha-pati /app/khorcha-pati
 
 RUN mkdir -p /app/configs /app/.sqlite
 
-# Port 8080: application HTTP, Port 2345: Delve remote debug
-EXPOSE 8080 2345
+# Port 6336: application HTTP, Port 2345: Delve remote debug
+EXPOSE 6336 2345
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
-  CMD ["wget", "-q", "--spider", "http://localhost:8080/healthz"] || exit 1
+  CMD wget -q --spider "http://localhost:${SERVER_PORT:-6336}/healthz" || exit 1
 
 # Delve listens on :2345, runs the app binary, forwards -- args to the binary
 ENTRYPOINT ["dlv", \

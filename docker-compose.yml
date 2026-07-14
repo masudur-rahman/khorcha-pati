@@ -4,8 +4,7 @@ services:
       context: .
       dockerfile: Dockerfile
     ports:
-      - "8080:8080"
-      - "8081:8081"
+      - "6336:6336"
     env_file: .env
     volumes:
       - ./.configs/.khorcha-pati-docker.yaml:/app/.configs/.khorcha-pati.yaml

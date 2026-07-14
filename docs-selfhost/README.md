@@ -259,7 +259,7 @@ To deploy `Khorcha-Pati` application in production environment, the preferred wa
 
 The bot exposes a health check endpoint:
 
-- **Endpoint:** `GET /healthz` on port `8080`
+- **Endpoint:** `GET /healthz` on port `6336` (override with `SERVER_PORT`)
 - **Response:** JSON with database connectivity status
 - **Docker:** The Docker image includes a built-in `HEALTHCHECK` directive
 

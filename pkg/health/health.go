@@ -1,5 +1,5 @@
 // Package health exposes a minimal HTTP health-check endpoint.
-// Wire it into a lightweight http.ServeMux running on port 8080
+// Wire it into a lightweight http.ServeMux running on port 6336
 // so Railway, Docker HEALTHCHECK, and any monitoring system can
 // verify the process is alive and initialized.
 //
@@ -8,7 +8,7 @@
 //	go func() {
 //	    mux := http.NewServeMux()
 //	    mux.Handle("/health", health.Handler(cmd.Version))
-//	    log.Fatal(http.ListenAndServe(":8080", mux))
+//	    log.Fatal(http.ListenAndServe(":6336", mux))
 //	}()
 package health
 
