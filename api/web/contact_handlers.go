@@ -23,6 +23,14 @@ func HandleListContacts(w http.ResponseWriter, r *http.Request) {
 		WriteError(w, http.StatusInternalServerError, "list_failed", err.Error())
 		return
 	}
+	// Back-compat: only wrap in the paginated envelope when a limit is requested;
+	// otherwise return the legacy bare array the frontend still reads.
+	page, limit := parsePageLimit(r)
+	if limit > 0 {
+		items, total := slicePage(contacts, page, limit)
+		writePaged(w, http.StatusOK, items, page, limit, total)
+		return
+	}
 	WriteJSON(w, http.StatusOK, contacts)
 }
 

@@ -342,6 +342,10 @@ func (ts *txnService) ListTransactionsByTime(userID int64, txnType models.Transa
 	return ts.txnRepo.ListTransactionsByTime(userID, txnType, startTime, endTime)
 }
 
+func (ts *txnService) ListTransactionsPaged(q models.TxnListQuery) ([]models.Transaction, int64, error) {
+	return ts.txnRepo.ListTransactionsPaged(q)
+}
+
 func (ts *txnService) ListTransactionsBySourceID(userID int64, srcID string) ([]models.Transaction, error) {
 	return ts.txnRepo.ListTransactions(models.Transaction{UserID: userID, SrcID: srcID})
 }

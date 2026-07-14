@@ -41,8 +41,8 @@ func toAICacheResponse(e models.AICache) aiCacheResponse {
 
 // HandleAdminListAICache returns AI-cache entries, optionally filtered by ?q= and capped by ?limit=.
 func HandleAdminListAICache(w http.ResponseWriter, r *http.Request) {
-	limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
-	rows, err := configs.ListAICache(r.URL.Query().Get("q"), limit)
+	page, limit := parsePageLimit(r)
+	rows, err := configs.ListAICache(r.URL.Query().Get("q"), 0)
 	if err != nil {
 		WriteError(w, http.StatusInternalServerError, "ai_cache_error", err.Error())
 		return
@@ -50,6 +50,12 @@ func HandleAdminListAICache(w http.ResponseWriter, r *http.Request) {
 	out := make([]aiCacheResponse, 0, len(rows))
 	for _, e := range rows {
 		out = append(out, toAICacheResponse(e))
+	}
+	// Back-compat: envelope only when a limit is requested; else the legacy array.
+	if limit > 0 {
+		items, total := slicePage(out, page, limit)
+		writePaged(w, http.StatusOK, items, page, limit, total)
+		return
 	}
 	WriteJSON(w, http.StatusOK, out)
 }

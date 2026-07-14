@@ -13,6 +13,7 @@ type TransactionService interface {
 	ListTransactionsByCategory(userID int64, catID string) ([]models.Transaction, error)
 	ListTransactionsBySubcategory(userID int64, subcatID string) ([]models.Transaction, error)
 	ListTransactionsByTime(userID int64, txnType models.TransactionType, startTime, endTime int64) ([]models.Transaction, error)
+	ListTransactionsPaged(q models.TxnListQuery) (txns []models.Transaction, total int64, err error)
 	ListTransactionsBySourceID(userID int64, srcID string) ([]models.Transaction, error)
 	ListTransactionsByDestinationID(userID int64, dstID string) ([]models.Transaction, error)
 	ListTransactionsByContactName(userID int64, name string) ([]models.Transaction, error)
