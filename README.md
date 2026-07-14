@@ -9,6 +9,7 @@ A Telegram Bot — now with a web dashboard — to track your expenses.
 
 - **Web Dashboard**: A beautiful, mobile-friendly React dashboard to visualize your spending trends, manage budgets, generate custom statements, and configure user settings.
 - **Natural Language Input**: The bot natively understands natural language phrases (e.g., "add 500", "lunch 250"). Just text it what you spent!
+- **AI-Powered Categorization**: Natural-language transactions are automatically sorted into the right category and subcategory using Google Gemini, and results are cached so repeats are instant.
 - **Flexible Tracking**: Keep track of your daily expenses, income, and balance transfers between accounts.
 - **Lending and Borrowing**: Track lendings and borrowings with other individuals.
 - **Paginated Lists**: View your transactions and expenses in clean, paginated Markdown lists with easy navigation.
