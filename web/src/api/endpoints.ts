@@ -150,10 +150,15 @@ export interface PaginatedUsers {
   total: number
 }
 
-export const getAdminUsers = (page?: number, limit?: number) => {
+export type AdminUserSort = 'registered' | 'last_txn'
+export type SortOrder = 'asc' | 'desc'
+
+export const getAdminUsers = (page?: number, limit?: number, sort?: AdminUserSort, order?: SortOrder) => {
   const params = new URLSearchParams()
   if (page !== undefined) params.set('page', String(page))
   if (limit !== undefined) params.set('limit', String(limit))
+  if (sort) params.set('sort', sort)
+  if (order) params.set('order', order)
   const qs = params.toString() ? `?${params.toString()}` : ''
   return apiFetch<PaginatedUsers>(`${API}/admin/users${qs}`)
 }

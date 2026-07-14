@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -37,6 +38,12 @@ type adminUserResponse struct {
 	LastTxnAt    int64  `json:"lastTxnAt"`
 }
 
+// Sort keys accepted by the admin users listing.
+const (
+	userSortRegistered = "registered"
+	userSortLastTxn    = "last_txn"
+)
+
 // lastTxnTime returns the most recent CreatedAt across a user's transactions, or 0 if none.
 func lastTxnTime(txns []models.Transaction) int64 {
 	var last int64
@@ -46,6 +53,17 @@ func lastTxnTime(txns []models.Transaction) int64 {
 		}
 	}
 	return last
+}
+
+// sortAdminUsers orders users in-place by the value returned by sortVal, descending unless desc is false.
+func sortAdminUsers(users []models.Profile, sortVal func(models.Profile) int64, desc bool) {
+	sort.SliceStable(users, func(i, j int) bool {
+		a, b := sortVal(users[i]), sortVal(users[j])
+		if desc {
+			return a > b
+		}
+		return a < b
+	})
 }
 
 // HandleAdminStats returns system-wide statistics.
@@ -95,6 +113,20 @@ func HandleAdminUsers(w http.ResponseWriter, r *http.Request) {
 		if l, err := strconv.Atoi(limitStr); err == nil && l > 0 {
 			limit = l
 		}
+	}
+
+	switch r.URL.Query().Get("sort") {
+	case userSortRegistered:
+		desc := r.URL.Query().Get("order") != "asc"
+		sortAdminUsers(users, func(u models.Profile) int64 { return u.CreatedAt }, desc)
+	case userSortLastTxn:
+		desc := r.URL.Query().Get("order") != "asc"
+		lastByUser := make(map[int64]int64, len(users))
+		for _, u := range users {
+			txns, _ := svc.Txn.ListTransactions(u.ID)
+			lastByUser[u.ID] = lastTxnTime(txns)
+		}
+		sortAdminUsers(users, func(u models.Profile) int64 { return lastByUser[u.ID] }, desc)
 	}
 
 	total := len(users)

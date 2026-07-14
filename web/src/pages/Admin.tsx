@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, useRef } from 'react'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query'
 import { useViewportPageSize } from '../hooks/useViewportPageSize'
-import { getAdminStats, getAdminUsers, setAdminUserActive, sendAdminBroadcast, type AdminUser } from '../api/endpoints'
+import { getAdminStats, getAdminUsers, setAdminUserActive, sendAdminBroadcast, type AdminUser, type AdminUserSort, type SortOrder } from '../api/endpoints'
 import { getAccessToken } from '../api/client'
 import { useSearch } from '../context/SearchContext'
 import { notify } from '../lib/notify'
@@ -121,9 +121,23 @@ export default function Admin() {
   const firstUserCardRef = useRef<HTMLDivElement>(null)
   const userLimit = useViewportPageSize(firstUserRowRef, firstUserCardRef)
 
+  const [sortKey, setSortKey] = useState<AdminUserSort | null>(null)
+  const [sortOrder, setSortOrder] = useState<SortOrder>('desc')
+
+  const toggleSort = (key: AdminUserSort) => {
+    if (sortKey === key) {
+      setSortOrder(o => (o === 'desc' ? 'asc' : 'desc'))
+    } else {
+      setSortKey(key)
+      setSortOrder('desc')
+    }
+    setUserPage(1)
+  }
+
   const { data: usersData, isLoading: usersLoading } = useQuery({
-    queryKey: ['adminUsers', userPage, userLimit],
-    queryFn: () => getAdminUsers(userPage, userLimit),
+    queryKey: ['adminUsers', userPage, userLimit, sortKey, sortOrder],
+    queryFn: () => getAdminUsers(userPage, userLimit, sortKey ?? undefined, sortKey ? sortOrder : undefined),
+    placeholderData: keepPreviousData,
   })
   const { searchTerm } = useSearch()
   const usersRaw = usersData?.users ?? []
@@ -202,13 +216,33 @@ export default function Admin() {
           <table className="zebra-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
             <thead>
               <tr>
-                {['User', 'Registered', 'Last txn', 'Activity', 'Role', 'Status'].map(h => (
-                  <th key={h} style={{
-                    padding: '10px 12px', textAlign: 'left', fontWeight: 600,
-                    color: 'var(--color-text-secondary)', fontSize: 12,
-                    textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap',
-                  }}>{h}</th>
-                ))}
+                {([
+                  { label: 'User' },
+                  { label: 'Registered', sort: 'registered' as AdminUserSort },
+                  { label: 'Last txn', sort: 'last_txn' as AdminUserSort },
+                  { label: 'Activity' },
+                  { label: 'Role' },
+                  { label: 'Status' },
+                ]).map(col => {
+                  const active = col.sort && sortKey === col.sort
+                  return (
+                    <th key={col.label} style={{
+                      padding: '10px 12px', textAlign: 'left', fontWeight: 600,
+                      color: active ? 'var(--color-text-primary)' : 'var(--color-text-secondary)', fontSize: 12,
+                      textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap',
+                      cursor: col.sort ? 'pointer' : 'default', userSelect: 'none',
+                    }}
+                      onClick={col.sort ? () => toggleSort(col.sort!) : undefined}
+                    >
+                      {col.label}
+                      {col.sort && (
+                        <span style={{ marginLeft: 4, opacity: active ? 1 : 0.35 }}>
+                          {active ? (sortOrder === 'desc' ? '▼' : '▲') : '⇅'}
+                        </span>
+                      )}
+                    </th>
+                  )
+                })}
               </tr>
             </thead>
             <tbody>
