@@ -28,6 +28,19 @@ type aiCacheRequest struct {
 	Confidence    *float64 `json:"confidence"`
 }
 
+// aiCacheExportEntry is the portable shape for export/import (no server-local id/createdAt).
+type aiCacheExportEntry struct {
+	InputText     string  `json:"inputText"`
+	SubcategoryID string  `json:"subcategoryId"`
+	Intent        string  `json:"intent"`
+	Confidence    float64 `json:"confidence"`
+}
+
+type aiCacheImportRequest struct {
+	Mode    string               `json:"mode"`
+	Entries []aiCacheExportEntry `json:"entries"`
+}
+
 func toAICacheResponse(e models.AICache) aiCacheResponse {
 	return aiCacheResponse{
 		ID:            e.ID,
@@ -41,8 +54,8 @@ func toAICacheResponse(e models.AICache) aiCacheResponse {
 
 // HandleAdminListAICache returns AI-cache entries, optionally filtered by ?q= and capped by ?limit=.
 func HandleAdminListAICache(w http.ResponseWriter, r *http.Request) {
-	limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
-	rows, err := configs.ListAICache(r.URL.Query().Get("q"), limit)
+	page, limit := parsePageLimit(r)
+	rows, err := configs.ListAICache(r.URL.Query().Get("q"), 0)
 	if err != nil {
 		WriteError(w, http.StatusInternalServerError, "ai_cache_error", err.Error())
 		return
@@ -51,7 +64,78 @@ func HandleAdminListAICache(w http.ResponseWriter, r *http.Request) {
 	for _, e := range rows {
 		out = append(out, toAICacheResponse(e))
 	}
+	// Back-compat: envelope only when a limit is requested; else the legacy array.
+	if limit > 0 {
+		items, total := slicePage(out, page, limit)
+		writePaged(w, http.StatusOK, items, page, limit, total)
+		return
+	}
 	WriteJSON(w, http.StatusOK, out)
+}
+
+// HandleAdminExportAICache returns every AI-cache entry in the portable shape so
+// the admin can sync learnings between servers.
+func HandleAdminExportAICache(w http.ResponseWriter, r *http.Request) {
+	rows, err := configs.ExportAICache()
+	if err != nil {
+		WriteError(w, http.StatusInternalServerError, "ai_cache_error", err.Error())
+		return
+	}
+	out := make([]aiCacheExportEntry, 0, len(rows))
+	for _, e := range rows {
+		out = append(out, aiCacheExportEntry{
+			InputText:     e.InputText,
+			SubcategoryID: e.SubcategoryID,
+			Intent:        e.Intent,
+			Confidence:    e.Confidence,
+		})
+	}
+	WriteJSON(w, http.StatusOK, out)
+}
+
+// HandleAdminImportAICache upserts a batch of entries using the requested conflict
+// mode, validating each classification and reporting per-entry outcomes.
+func HandleAdminImportAICache(w http.ResponseWriter, r *http.Request) {
+	var body aiCacheImportRequest
+	if err := ReadJSON(r, &body); err != nil {
+		WriteError(w, http.StatusBadRequest, "bad_request", "invalid request body")
+		return
+	}
+	if !configs.IsValidImportMode(body.Mode) {
+		WriteError(w, http.StatusBadRequest, "invalid_mode", "mode must be skip, overwrite or confidence")
+		return
+	}
+
+	valid := make([]models.AICache, 0, len(body.Entries))
+	invalid := 0
+	for _, e := range body.Entries {
+		e.InputText = strings.TrimSpace(e.InputText)
+		e.Intent = strings.ToLower(strings.TrimSpace(e.Intent))
+		if e.InputText == "" || validateClassification(e.SubcategoryID, e.Intent) != nil {
+			invalid++
+			continue
+		}
+		conf := e.Confidence
+		if conf <= 0 {
+			conf = 1.0
+		} else if conf > 1 {
+			conf = 1.0
+		}
+		valid = append(valid, models.AICache{
+			InputText:     e.InputText,
+			SubcategoryID: e.SubcategoryID,
+			Intent:        e.Intent,
+			Confidence:    conf,
+		})
+	}
+
+	summary, err := configs.ImportAICacheEntries(valid, body.Mode)
+	if err != nil {
+		WriteError(w, http.StatusInternalServerError, "import_failed", err.Error())
+		return
+	}
+	summary.Invalid += invalid
+	WriteJSON(w, http.StatusOK, summary)
 }
 
 // HandleAdminCreateAICache adds a curated AI-cache entry. Confidence defaults to 1.0 (100%).

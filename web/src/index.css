@@ -1,5 +1,29 @@
 @import "tailwindcss";
 
+/* Pin only the Bengali Taka sign (৳ U+09F3) to one shared system Bengali face so
+   it renders identically in every context — regardless of whether the surrounding
+   digits use Geist, Inter or Geist Mono. unicode-range restricts this face to the
+   single ৳ codepoint, so Latin glyphs/digits still fall through to their own font. */
+@font-face {
+  font-family: 'KhpTaka';
+  src: local('Kohinoor Bangla'), local('Bangla MN'), local('Bangla Sangam MN'),
+       local('Noto Sans Bengali'), local('Nirmala UI'), local('Vrinda'), local('Shonar Bangla');
+  unicode-range: U+09F3;
+  font-weight: 100 550;
+  font-display: swap;
+}
+/* Bold weights: pick the bold system Bengali face so the ৳ stays as heavy as the
+   bold digits beside it (amounts are 600–800). Falls back to synthesized weight. */
+@font-face {
+  font-family: 'KhpTaka';
+  src: local('Kohinoor Bangla Semibold'), local('Kohinoor Bangla Bold'), local('Bangla MN Bold'),
+       local('Bangla Sangam MN Bold'), local('Noto Sans Bengali'), local('Nirmala UI Bold'),
+       local('Vrinda Bold'), local('Shonar Bangla Bold');
+  unicode-range: U+09F3;
+  font-weight: 550 900;
+  font-display: swap;
+}
+
 .balance-actions {
   display: flex;
   gap: 10px;
@@ -43,6 +67,8 @@
   --color-sidebar-bg: #FFFFFF;
   --color-border: #DFE1E6;
   --color-hover: #F4F5F7;
+  --color-table-header: #EEF1F5;
+  --color-table-zebra: #FAFBFC;
 
   /* Text */
   --color-text-primary: #172B4D;
@@ -54,9 +80,9 @@
   --hero-gradient-danger: linear-gradient(135deg, #7F1D1D 0%, #E53E3E 55%, #DD6B20 100%);
 
   /* Typography */
-  --font-display: 'Geist', 'Inter', ui-sans-serif, system-ui, sans-serif;
-  --font-body: 'Inter', ui-sans-serif, system-ui, sans-serif;
-  --font-mono: 'Geist Mono', 'Geist', ui-monospace, SFMono-Regular, monospace;
+  --font-display: 'KhpTaka', 'Geist', 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-body: 'KhpTaka', 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'KhpTaka', 'Geist Mono', 'Geist', ui-monospace, SFMono-Regular, monospace;
 
   /* Radius */
   --radius-sm: 8px;
@@ -91,6 +117,8 @@
   --color-sidebar-bg: #161B22;
   --color-border: #2D3748;
   --color-hover: #1E293B;
+  --color-table-header: #141C2B;
+  --color-table-zebra: rgba(255, 255, 255, 0.03);
 
   --color-text-primary: #E2E8F0;
   --color-text-secondary: #A0AEC0;
@@ -111,12 +139,107 @@ h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-display);
 }
 
+/* Wallet card depth — theme-aware so cards read on both surfaces. Dark mode adds
+   a faint light ring so the near-black Credit variant separates from the bg. */
+.khp-wallet-card {
+  --wallet-shadow: 0 10px 30px rgba(23, 43, 77, 0.12);
+  --wallet-shadow-hover: 0 18px 40px rgba(23, 43, 77, 0.22);
+}
+.dark .khp-wallet-card {
+  --wallet-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08), 0 10px 30px rgba(0, 0, 0, 0.45);
+  --wallet-shadow-hover: 0 0 0 1px rgba(255, 255, 255, 0.10), 0 18px 44px rgba(0, 0, 0, 0.6);
+}
+
 .hover-row {
   cursor: pointer;
 }
 
 .hover-row:hover {
   background-color: var(--color-hover);
+}
+
+/* Zebra table: tinted header + alternating rows + distinct hover. The header
+   only sticks inside a bounded frame (--sticky), used by the standalone
+   transactions table; embedded panels keep a normal header. */
+.zebra-table thead th {
+  background: var(--color-table-header);
+  box-shadow: inset 0 -1px 0 var(--color-border);
+}
+.zebra-table--sticky thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+.zebra-table tbody tr {
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+.zebra-table tbody tr:nth-child(even) {
+  background: var(--color-table-zebra);
+}
+.zebra-table tbody tr:hover {
+  background: var(--color-primary-subtle);
+}
+
+/* Natural height — the adaptive (once-computed) page size keeps a page within
+   reach, so no fixed-height container / nested scrollbar is needed. Full pages
+   share the same height (buttons stay put); only x-scroll for wide tables. */
+.zebra-table-wrap {
+  overflow-x: auto;
+}
+
+/* Mobile: transactions render as stacked, tappable summary cards (vertical scroll). */
+.txn-card-list {
+  gap: 8px;
+  padding: 10px 12px;
+}
+.txn-card {
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  font-family: inherit;
+  transition: background var(--transition-fast);
+}
+.txn-card:active {
+  background: var(--color-hover);
+}
+
+/* Type switcher + Add button: a normal in-flow block (never floats). The row area
+   below fills one screenful, so it can't be scrolled off the top anyway. */
+.txn-filter-bar {
+  padding: 8px 0;
+}
+
+@media (max-width: 767px) {
+  /* Tighter vertical rhythm on mobile reclaims space for one more row. */
+  .txn-page { gap: 14px !important; }
+  .txn-card-list { padding: 6px 12px !important; }
+}
+
+/* Mobile: keep the summary chips in one compact row (no stacking). */
+@media (max-width: 767px) {
+  .txn-metrics {
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 8px !important;
+  }
+  .txn-metrics .metric-chip {
+    padding: 10px 8px !important;
+    gap: 3px !important;
+  }
+  .txn-metrics .metric-chip-icon,
+  .txn-metrics .metric-chip-hint {
+    display: none !important;
+  }
+  .txn-metrics .metric-chip-value {
+    font-size: clamp(13px, 4.3vw, 22px) !important;
+  }
 }
 
 /* Scrollbar styling */
@@ -139,6 +262,22 @@ h1, h2, h3, h4, h5, h6 {
 *:focus-visible {
   outline: 2px solid var(--color-primary);
   outline-offset: 2px;
+}
+
+/* Non-sensitive fields render as type="search" to suppress Chrome/Gboard's
+   card/key/location autofill strip. Strip the native search chrome so they
+   look identical to a normal text input. */
+input[type="search"] {
+  -webkit-appearance: none;
+  appearance: none;
+}
+input[type="search"]::-webkit-search-cancel-button,
+input[type="search"]::-webkit-search-decoration,
+input[type="search"]::-webkit-search-results-button,
+input[type="search"]::-webkit-search-results-decoration {
+  -webkit-appearance: none;
+  appearance: none;
+  display: none;
 }
 
 /* Selection */
@@ -190,6 +329,68 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 /* Contact list — divider between rows */
+/* Admin user detail header: stack cleanly on mobile so pills and action buttons
+   never collide. */
+@media (max-width: 767px) {
+  .user-detail-header {
+    flex-direction: column;
+    align-items: stretch !important;
+    gap: 14px !important;
+    padding: 20px !important;
+  }
+  .user-detail-actions {
+    width: 100%;
+    margin-left: 0 !important;
+  }
+  .user-detail-actions > *:first-child {
+    flex: 1;
+  }
+  /* Compact the user detail card on mobile. */
+  .detail-section {
+    padding: 14px 16px !important;
+  }
+  .detail-activity {
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 8px !important;
+  }
+  .detail-tile {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 6px !important;
+    padding: 10px !important;
+  }
+  .detail-tile-icon {
+    display: none !important;
+  }
+  .detail-tile-value {
+    font-size: 18px !important;
+  }
+  .detail-account {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 12px !important;
+  }
+  /* Compact the AI cache panel header on mobile: drop the description, put the
+     search + Add button on one row. */
+  .aicache-header {
+    padding: 12px 16px !important;
+    gap: 10px !important;
+  }
+  .aicache-desc {
+    display: none !important;
+  }
+  .aicache-actions {
+    width: 100%;
+  }
+  .aicache-actions input {
+    flex: 1;
+    min-width: 0 !important;
+  }
+  /* Icon-only buttons on mobile — shrink them so the search box keeps its width. */
+  .aicache-actions .aicache-btn {
+    padding: 9px 11px !important;
+  }
+}
+
 .contact-list { display: flex; flex-direction: column; }
 .contact-list > * + * { border-top: 1px solid var(--color-border) !important; }
 
@@ -200,22 +401,30 @@ h1, h2, h3, h4, h5, h6 {
   }
 }
 
-/* Wallet carousel — scroll-snap on mobile */
+/* Wallet carousel — horizontal scroll at all widths; scroll sideways to reach
+   more cards instead of shrinking/wrapping them. */
+.wallet-carousel {
+  display: flex;
+  gap: 16px;
+  overflow-x: auto;
+  padding-bottom: 6px;
+  scroll-snap-type: x proximity;
+  -webkit-overflow-scrolling: touch;
+}
+.wallet-carousel-item {
+  flex: 0 0 300px;
+  scroll-snap-align: start;
+}
 @media (max-width: 640px) {
   .wallet-carousel {
-    grid-template-columns: none !important;
-    display: flex !important;
-    overflow-x: auto;
-    scroll-snap-type: x mandatory;
     gap: 14px;
-    padding-bottom: 6px;
+    scroll-snap-type: x mandatory;
     scrollbar-width: none;
   }
   .wallet-carousel::-webkit-scrollbar { display: none; }
-  .wallet-carousel > * {
-    scroll-snap-align: start;
-    flex: 0 0 80%;
-    max-width: 320px;
+  .wallet-carousel-item {
+    flex: 0 0 82%;
+    max-width: 340px;
   }
 }
 
@@ -238,6 +447,12 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 /* Modal Responsive Padding & Smooth Scrolling */
+.modal-container-resp {
+  /* dvh keeps the modal within the *visible* viewport on mobile (excludes the
+     URL bar), so it never overflows behind browser chrome. vh is the fallback. */
+  max-height: calc(100vh - 40px);
+  max-height: calc(100dvh - 40px);
+}
 .modal-body {
   flex: 1;
   min-height: 0;
@@ -245,19 +460,31 @@ h1, h2, h3, h4, h5, h6 {
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
 }
+.modal-body--flush {
+  padding: 0;
+}
 
-@media (max-width: 640px) {
+@media (max-width: 767px) {
+  /* Leave the bottom nav uncovered by the modal box — the overlay still blurs
+     over it (z100 > nav z95), so it stays visible-but-blurred beneath. */
   .modal-overlay-resp {
-    padding: 10px !important;
+    align-items: center;
+    padding: 12px 12px calc(72px + env(safe-area-inset-bottom, 8px)) !important;
   }
   .modal-container-resp {
-    max-height: calc(100vh - 20px) !important;
+    max-height: calc(100dvh - 84px - env(safe-area-inset-bottom, 8px)) !important;
   }
   .modal-header-resp {
     padding: 16px 20px !important;
   }
   .modal-body {
-    padding: 12px 16px !important;
+    padding: 16px 20px !important;
+  }
+  .modal-body--flush {
+    padding: 0 !important;
+  }
+  .modal-footer-resp {
+    padding: 12px 20px !important;
   }
   .quick-select-container {
     display: grid !important;
@@ -281,11 +508,21 @@ h1, h2, h3, h4, h5, h6 {
   grid-template-columns: 240px 1fr;
   gap: 32px;
 }
-@media (max-width: 640px) {
+@media (max-width: 767px) {
   .statement-modal-grid {
     grid-template-columns: 1fr;
     gap: 12px;
   }
+  /* Shrink the calendar so even a 6-row month fits without scrolling to the footer. */
+  .modal-body { padding: 12px 16px !important; }
+  .drp-daterow { margin-bottom: 8px !important; }
+  .drp-panel { padding: 8px 12px !important; }
+  .drp-header { margin-bottom: 6px !important; }
+  .drp-weekdays { margin-bottom: 2px !important; }
+  /* Fixed 6-row height (6*26 + 5*2 gap) so every month is the same height — no jump. */
+  .drp-grid { min-height: 166px !important; gap: 2px 0 !important; }
+  .drp-cell { height: 26px !important; }
+  .drp-day { width: 26px !important; height: 26px !important; }
 }
 
 .quick-select-container {

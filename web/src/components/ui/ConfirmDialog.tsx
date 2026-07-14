@@ -1,4 +1,4 @@
-import { ReactNode } from 'react'
+import { ReactNode, useEffect } from 'react'
 import Modal from './Modal'
 import Button from './Button'
 
@@ -25,26 +25,32 @@ export default function ConfirmDialog({
 }: ConfirmDialogProps) {
   const isDanger = type === 'danger'
 
+  // Enter confirms non-danger dialogs; danger actions still require a click.
+  useEffect(() => {
+    if (isDanger) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Enter') return
+      e.preventDefault()
+      if (onConfirm) onConfirm()
+      onClose()
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [isDanger, onConfirm, onClose])
+
   return (
-    <Modal title={title} onClose={onClose} width={420}>
-      <div style={{ padding: '24px 32px', display: 'flex', flexDirection: 'column', gap: 16 }}>
-        <p style={{ 
-          fontSize: 15, 
-          lineHeight: '1.5', 
-          color: 'var(--color-text-secondary)',
-          margin: 0,
-          fontWeight: 500,
-        }}>
-          {message}
-        </p>
-        
-        <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', marginTop: 8 }}>
+    <Modal
+      title={title}
+      onClose={onClose}
+      width={420}
+      footer={
+        <>
           {mode === 'confirm' && (
             <Button variant="secondary" onClick={onClose}>
               {cancelText}
             </Button>
           )}
-          <Button 
+          <Button
             variant={isDanger ? 'danger' : 'primary'}
             onClick={() => {
               if (onConfirm) onConfirm()
@@ -54,7 +60,16 @@ export default function ConfirmDialog({
           >
             {mode === 'alert' ? 'OK' : confirmText}
           </Button>
-        </div>
+        </>
+      }
+    >
+      <div style={{
+        fontSize: 15,
+        lineHeight: 1.5,
+        color: 'var(--color-text-secondary)',
+        fontWeight: 500,
+      }}>
+        {message}
       </div>
     </Modal>
   )

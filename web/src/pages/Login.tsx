@@ -113,18 +113,31 @@ export default function Login() {
   )
 }
 
+const IDENTITY_HISTORY_KEY = 'khp_login_ids'
+
 function OTPLogin() {
   const [identifier, setIdentifier] = useState('')
   const [code, setCode] = useState('')
   const [sent, setSent] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  // Previously used identifiers, surfaced via a datalist so the field can suggest
+  // past usernames without inviting the browser's card/credential autofill.
+  const [history, setHistory] = useState<string[]>(() => {
+    try { return JSON.parse(localStorage.getItem(IDENTITY_HISTORY_KEY) || '[]') } catch { return [] }
+  })
   const { login } = useAuth()
   const navigate = useNavigate()
 
+  const rememberIdentifier = (id: string) => {
+    const next = [id, ...history.filter(h => h !== id)].slice(0, 5)
+    setHistory(next)
+    localStorage.setItem(IDENTITY_HISTORY_KEY, JSON.stringify(next))
+  }
+
   const handleSend = async () => {
     setError(''); setLoading(true)
-    try { await requestOTP(identifier); setSent(true) }
+    try { await requestOTP(identifier); rememberIdentifier(identifier.trim()); setSent(true) }
     catch (e: any) { setError(e.message) } finally { setLoading(false) }
   }
   const handleVerify = async () => {
@@ -135,15 +148,20 @@ function OTPLogin() {
 
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+    <form style={{ display: 'flex', flexDirection: 'column', gap: 16 }} autoComplete="off" onSubmit={e => e.preventDefault()}>
       <div>
         <label style={labelStyle}>Identity</label>
-        <input type="text" style={inputStyle} placeholder="Username or phone" value={identifier} onChange={e => setIdentifier(e.target.value)} disabled={sent} onKeyDown={e => { if (e.key === 'Enter' && !sent && identifier && !loading) handleSend(); }} autoComplete="off" autoCorrect="off" autoCapitalize="none" spellCheck={false} name="tg_identifier" id="tg_identifier" data-lpignore="true" />
+        <input type="search" style={inputStyle} placeholder="Username or phone" value={identifier} onChange={e => setIdentifier(e.target.value)} disabled={sent} onKeyDown={e => { if (e.key === 'Enter' && !sent && identifier && !loading) handleSend(); }} autoComplete="off" autoCorrect="off" autoCapitalize="none" spellCheck={false} name="tg_identifier" id="tg_identifier" list="khp-identity-history" data-lpignore="true" data-1p-ignore="true" data-form-type="other" />
+        {history.length > 0 && (
+          <datalist id="khp-identity-history">
+            {history.map(h => <option key={h} value={h} />)}
+          </datalist>
+        )}
       </div>
       {sent && (
         <div>
           <label style={labelStyle}>Verification Code</label>
-          <input type="text" style={{ ...inputStyle, textAlign: 'center', letterSpacing: '0.3em', fontSize: 22, fontWeight: 700 }} placeholder="000000" value={code} onChange={e => setCode(e.target.value)} maxLength={6} onKeyDown={e => { if (e.key === 'Enter' && sent && code.length === 6 && !loading) handleVerify(); }} autoFocus autoComplete="one-time-code" inputMode="numeric" pattern="[0-9]*" name="tg_code" id="tg_code" />
+          <input type="search" style={{ ...inputStyle, textAlign: 'center', letterSpacing: '0.3em', fontSize: 22, fontWeight: 700 }} placeholder="000000" value={code} onChange={e => setCode(e.target.value)} maxLength={6} onKeyDown={e => { if (e.key === 'Enter' && sent && code.length === 6 && !loading) handleVerify(); }} autoFocus autoComplete="off" inputMode="numeric" pattern="[0-9]*" name="tg_code" id="tg_code" data-lpignore="true" data-1p-ignore="true" data-form-type="other" />
         </div>
       )}
       {error && <p style={{ color: '#DE350B', fontSize: 12, fontWeight: 700, textAlign: 'center', margin: 0 }}>{error}</p>}
@@ -153,7 +171,7 @@ function OTPLogin() {
       {sent && (
         <button type="button" style={{ background: 'none', border: 'none', fontSize: 12, color: '#6B778C', cursor: 'pointer', padding: 8, fontWeight: 600, fontFamily: 'inherit' }} onClick={() => { setSent(false); setCode('') }}>Resend code</button>
       )}
-    </div>
+    </form>
   )
 }
 
@@ -233,6 +251,7 @@ const inputStyle: React.CSSProperties = {
   width: '100%', padding: '14px 16px', borderRadius: 12, fontSize: 14,
   border: '1px solid #DFE1E6', background: '#F4F5F7', color: '#172B4D',
   outline: 'none', transition: 'border 0.2s', boxSizing: 'border-box', fontFamily: 'inherit',
+  WebkitAppearance: 'none', appearance: 'none',
 }
 const labelStyle: React.CSSProperties = {
   fontSize: 11, fontWeight: 700, color: '#6B778C', textTransform: 'uppercase',

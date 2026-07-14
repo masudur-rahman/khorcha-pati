@@ -152,6 +152,17 @@ const printStyles = `
       max-width: 55%;
     }
   }
+  @media screen and (max-width: 767px) {
+    /* Keep the toolbar on one row without spilling the Close button off-screen. */
+    .stmt-toolbar { padding: 10px 12px !important; gap: 8px !important; }
+    .stmt-toolbar-title { font-size: 12px !important; }
+    .stmt-btn { padding: 7px 12px !important; font-size: 11px !important; }
+    /* Keep the summary stats in one row; shrink type/padding so amounts fit. */
+    .statement-stats { gap: 8px !important; }
+    .stmt-stat { padding: 10px 6px !important; }
+    .stmt-stat-label { font-size: 8px !important; letter-spacing: 0.02em !important; }
+    .stmt-stat-value { font-size: clamp(12px, 4.3vw, 20px) !important; }
+  }
 `
 
 export default function Statement() {
@@ -191,16 +202,16 @@ export default function Statement() {
     <div id="statement-root" style={{ background: '#F4F5F7', minHeight: '100vh' }}>
       <style>{printStyles}</style>
 
-      <div id="print-controls" style={{
+      <div id="print-controls" className="stmt-toolbar" style={{
         position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100,
         background: ACCENT, padding: '10px 24px',
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10,
         boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
       }}>
-        <span style={{ color: 'white', fontWeight: 700, fontSize: 13, fontFamily: "var(--font-display)" }}>Khorcha-Pati — Statement Preview</span>
-        <div style={{ display: 'flex', gap: 10 }}>
-          <button onClick={() => window.print()} style={{ padding: '8px 20px', background: 'white', color: ACCENT, border: 'none', borderRadius: 8, fontWeight: 700, cursor: 'pointer', fontSize: 12, fontFamily: 'inherit' }}>Save as PDF / Print</button>
-          <button onClick={() => window.close()} style={{ padding: '8px 16px', background: 'transparent', color: 'white', border: '1px solid rgba(255,255,255,0.4)', borderRadius: 8, cursor: 'pointer', fontSize: 12, fontFamily: 'inherit' }}>Close</button>
+        <span className="stmt-toolbar-title" style={{ color: 'white', fontWeight: 700, fontSize: 13, fontFamily: "var(--font-display)", flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>Khorcha-Pati — Statement Preview</span>
+        <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+          <button onClick={() => window.print()} className="stmt-btn" style={{ padding: '8px 20px', background: 'white', color: ACCENT, border: 'none', borderRadius: 8, fontWeight: 700, cursor: 'pointer', fontSize: 12, fontFamily: 'inherit', whiteSpace: 'nowrap' }}>Save as PDF / Print</button>
+          <button onClick={() => window.close()} className="stmt-btn" style={{ padding: '8px 16px', background: 'transparent', color: 'white', border: '1px solid rgba(255,255,255,0.4)', borderRadius: 8, cursor: 'pointer', fontSize: 12, fontFamily: 'inherit', whiteSpace: 'nowrap' }}>Close</button>
         </div>
       </div>
 
@@ -218,7 +229,7 @@ export default function Statement() {
           <tbody>
             <tr><td style={{ padding: 0 }}>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 28 }}>
+        <div className="statement-stats" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 28 }}>
           <StatCard label="Total Amount" value={fmt(report.totalAmount)} bg="#F3F0FF" border="#D9CFFC" color="#5138ED" />
           <StatCard 
             label="Net Balance" 
@@ -312,9 +323,9 @@ export default function Statement() {
 
 function StatCard({ label, value, bg, border, color }: { label: string; value: string; bg: string; border: string; color: string }) {
   return (
-    <div style={{ background: bg, border: `1px solid ${border}`, borderRadius: 12, padding: 16, textAlign: 'center' }}>
-      <p style={{ fontSize: 10, color: '#6B778C', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 4px' }}>{label}</p>
-      <p style={{ fontSize: 20, fontWeight: 800, color, margin: 0, whiteSpace: 'nowrap' }}>{value}</p>
+    <div className="stmt-stat" style={{ background: bg, border: `1px solid ${border}`, borderRadius: 12, padding: 16, textAlign: 'center' }}>
+      <p className="stmt-stat-label" style={{ fontSize: 10, color: '#6B778C', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 4px' }}>{label}</p>
+      <p className="stmt-stat-value" style={{ fontSize: 20, fontWeight: 800, color, margin: 0, whiteSpace: 'nowrap' }}>{value}</p>
     </div>
   )
 }

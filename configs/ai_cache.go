@@ -20,6 +20,26 @@ var (
 
 const defaultAICacheListLimit = 200
 
+// AI-cache import conflict modes (keyed on input_text).
+const (
+	ImportSkip             = "skip"       // keep existing entry untouched
+	ImportOverwrite        = "overwrite"  // incoming replaces existing classification
+	ImportHigherConfidence = "confidence" // replace only when incoming confidence is higher
+)
+
+// AICacheImportSummary reports the outcome of an import run.
+type AICacheImportSummary struct {
+	Imported    int `json:"imported"`
+	Overwritten int `json:"overwritten"`
+	Skipped     int `json:"skipped"`
+	Invalid     int `json:"invalid"`
+}
+
+// IsValidImportMode reports whether mode is a supported conflict mode.
+func IsValidImportMode(mode string) bool {
+	return mode == ImportSkip || mode == ImportOverwrite || mode == ImportHigherConfidence
+}
+
 // setAICacheMemory writes an entry into the in-memory classifier cache under its input text.
 func setAICacheMemory(entry models.AICache) {
 	resultJSON, _ := json.Marshal(map[string]any{
@@ -50,6 +70,79 @@ func ListAICache(q string, limit int) ([]models.AICache, error) {
 		return nil, err
 	}
 	return rows, nil
+}
+
+// ExportAICache returns every AI-cache entry, newest first (no limit) — the source
+// for the admin export/sync.
+func ExportAICache() ([]models.AICache, error) {
+	if sqlDB == nil {
+		return nil, fmt.Errorf("database not initialized")
+	}
+	var rows []models.AICache
+	if err := GetUnitOfWork().SQL.Table(models.AICache{}.TableName()).
+		OrderBy("created_at", "DESC").FindMany(context.Background(), &rows); err != nil {
+		return nil, err
+	}
+	return rows, nil
+}
+
+// ImportAICacheEntries upserts pre-validated entries using the given conflict mode
+// (keyed on input_text). It reuses Create/Update so the in-memory cache stays in
+// sync, and reports per-entry outcomes.
+func ImportAICacheEntries(entries []models.AICache, mode string) (AICacheImportSummary, error) {
+	var s AICacheImportSummary
+	if sqlDB == nil {
+		return s, fmt.Errorf("database not initialized")
+	}
+	ctx := context.Background()
+
+	for _, e := range entries {
+		e.InputText = strings.TrimSpace(e.InputText)
+		if e.InputText == "" {
+			s.Invalid++
+			continue
+		}
+
+		existing, found, err := getAICacheByInputText(ctx, e.InputText)
+		if err != nil {
+			return s, err
+		}
+		if !found {
+			if _, err := CreateAICache(e.InputText, e.SubcategoryID, e.Intent, e.Confidence); err != nil {
+				return s, err
+			}
+			s.Imported++
+			continue
+		}
+
+		switch mode {
+		case ImportOverwrite:
+			if _, err := UpdateAICacheClassification(existing.ID, e.SubcategoryID, e.Intent, e.Confidence); err != nil {
+				return s, err
+			}
+			s.Overwritten++
+		case ImportHigherConfidence:
+			if e.Confidence > existing.Confidence {
+				if _, err := UpdateAICacheClassification(existing.ID, e.SubcategoryID, e.Intent, e.Confidence); err != nil {
+					return s, err
+				}
+				s.Overwritten++
+			} else {
+				s.Skipped++
+			}
+		default: // ImportSkip
+			s.Skipped++
+		}
+	}
+	return s, nil
+}
+
+// getAICacheByInputText loads an entry by its unique input text.
+func getAICacheByInputText(ctx context.Context, inputText string) (models.AICache, bool, error) {
+	var entry models.AICache
+	found, err := GetUnitOfWork().SQL.Table(models.AICache{}.TableName()).
+		FindOne(ctx, &entry, models.AICache{InputText: inputText})
+	return entry, found, err
 }
 
 // CreateAICache validates input-text uniqueness, persists the entry, and updates the in-memory cache.

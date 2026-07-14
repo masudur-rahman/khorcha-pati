@@ -128,6 +128,53 @@ func (t *SQLTransactionRepository) ListTransactionsByTime(userID int64, txnType 
 	return txns, err
 }
 
+// applyTxnScope adds the ad-hoc WHERE clauses shared by the count and page
+// queries. Engine chaining copies the statement (value receiver), so the source
+// engine stays pristine and each call returns an independent builder.
+func applyTxnScope(e isql.Engine, q models.TxnListQuery) isql.Engine {
+	if q.Start > 0 {
+		e = e.Where("timestamp >= ?", q.Start)
+	}
+	if q.End > 0 {
+		e = e.Where("timestamp <= ?", q.End)
+	}
+	if q.Wallet != "" {
+		e = e.Where("(src_id = ? OR dst_id = ?)", q.Wallet, q.Wallet)
+	}
+	if q.Contact != "" {
+		e = e.Where("contact_name = ?", q.Contact)
+	}
+	return e
+}
+
+func (t *SQLTransactionRepository) ListTransactionsPaged(q models.TxnListQuery) ([]models.Transaction, int64, error) {
+	t.logger.Infow("list transactions paged")
+	ctx := context.Background()
+	// Base filter carries user_id (+ deleted_at=0 via the req tag) and optional type.
+	filter := models.Transaction{UserID: q.UserID, Type: q.Type}
+
+	var count struct {
+		Total int64 `db:"total"`
+	}
+	if _, err := applyTxnScope(t.db, q).Count("*", "total").FindOne(ctx, &count, filter); err != nil {
+		return nil, 0, err
+	}
+
+	txns := make([]models.Transaction, 0)
+	list := applyTxnScope(t.db, q).OrderBy("timestamp", "DESC")
+	if q.Limit > 0 {
+		page := q.Page
+		if page < 1 {
+			page = 1
+		}
+		list = list.Paginate(page, q.Limit)
+	}
+	if err := list.FindMany(ctx, &txns, filter); err != nil {
+		return nil, 0, err
+	}
+	return txns, count.Total, nil
+}
+
 func (t *SQLTransactionRepository) GetTxnCategoryName(catID string) (string, error) {
 	ctx := context.Background()
 	cat := models.TxnCategory{}

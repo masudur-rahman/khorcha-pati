@@ -108,6 +108,15 @@ export default function ContactCombobox({ label, contacts, value, onChange, erro
     <label style={{ display: 'flex', flexDirection: 'column', gap: 6, width: '100%', position: 'relative' }}>
       <span style={labelStyle}>{label}</span>
       <input
+        type="search"
+        name="contact-search"
+        autoComplete="off"
+        autoCorrect="off"
+        autoCapitalize="off"
+        spellCheck={false}
+        data-lpignore="true"
+        data-1p-ignore="true"
+        data-form-type="other"
         value={query}
         onChange={e => { setQuery(e.target.value); setOpen(true); setHighlight(0) }}
         onKeyDown={onKeyDown}

@@ -1,5 +1,5 @@
 import { formatDate } from '../lib/formatter'
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useTransactions } from '../hooks/useTransactions'
 import { useSearch } from '../context/SearchContext'
@@ -15,15 +15,16 @@ import Card from '../components/ui/Card'
 import Badge from '../components/ui/Badge'
 import Button from '../components/ui/Button'
 import ActionButton from '../components/ui/ActionButton'
+import Pagination from '../components/ui/Pagination'
 import DeleteTxnDialog from '../components/ui/DeleteTxnDialog'
 import { ICONS } from '../components/ui/Icons'
 import WalletFlow from '../components/ui/WalletFlow'
 import TransactionDetails from '../components/ui/TransactionDetails'
 import MetricChip from '../components/ui/MetricChip'
 import TxnDialog, { TXN_TYPE_OPTIONS, TxnType } from '../components/ui/TxnDialog'
+import { useFitPageSize } from '../hooks/useFitPageSize'
 
 const typeOptions = TXN_TYPE_OPTIONS
-const PAGE_SIZE = 10
 
 export default function Transactions() {
   const { data: profile } = useQuery({ queryKey: ['profile'], queryFn: getProfile })
@@ -44,6 +45,12 @@ export default function Transactions() {
   const [deleteTxn, setDeleteTxn] = useState<Transaction | null>(null)
   const [selectedTxn, setSelectedTxn] = useState<Transaction | null>(null)
   const [page, setPage] = useState(0)
+  const filterBarRef = useRef<HTMLDivElement>(null)
+  const firstCardRef = useRef<HTMLButtonElement>(null)
+  const firstRowRef = useRef<HTMLTableRowElement>(null)
+  const tableWrapRef = useRef<HTMLDivElement>(null)
+  const paginationRef = useRef<HTMLDivElement>(null)
+  const { size: pageSize, frameHeight } = useFitPageSize({ topRef: filterBarRef, cardRef: firstCardRef, rowRef: firstRowRef, wrapRef: tableWrapRef, paginationRef })
 
   useEffect(() => {
     const addType = searchParams.get('add') as TxnType
@@ -101,8 +108,10 @@ export default function Transactions() {
     })
     .sort((a, b) => b.timestamp - a.timestamp)
 
-  const totalPages = Math.ceil(filtered.length / PAGE_SIZE)
-  const paginated = filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize))
+  const safePage = Math.min(page, totalPages - 1)
+  const paginated = filtered.slice(safePage * pageSize, (safePage + 1) * pageSize)
+  const isLastPage = safePage >= totalPages - 1
 
   const totals = {
     income: txns.filter(t => t.type === 'Income').reduce((s, t) => s + t.amount, 0),
@@ -111,11 +120,11 @@ export default function Transactions() {
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
+    <div className="txn-page" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
       <TopBar title="Transactions" subtitle="Detailed history of your financial movements" />
 
       {/* Summary chips */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16 }}>
+      <div className="txn-metrics" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16 }}>
         <MetricChip
           label="Total Income"
           value={`+${fmt(totals.income)}`}
@@ -139,8 +148,8 @@ export default function Transactions() {
         />
       </div>
 
-      {/* Filter Bar */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
+      {/* Filter Bar — in-flow (never floats); also the anchor for row-fit measurement */}
+      <div ref={filterBarRef} className="txn-filter-bar" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
         <div style={{ display: 'flex', background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', padding: 4, gap: 2 }}>
           {['', ...typeOptions].map(f => (
             <button
@@ -157,15 +166,22 @@ export default function Transactions() {
             </button>
           ))}
         </div>
-        <Button onClick={() => setShowAdd(true)} icon={ICONS.addCircle(16)}>Add Transaction</Button>
+        {/* Hidden on mobile — the floating + button covers this there */}
+        <span className="hidden md:inline-flex">
+          <Button onClick={() => setShowAdd(true)} icon={ICONS.addCircle(16)}>Add Transaction</Button>
+        </span>
       </div>
 
       {/* Table */}
       <Card padding={0}>
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', minWidth: 720, tableLayout: 'fixed', borderCollapse: 'collapse', fontSize: 13 }}>
+        {/* Desktop: zebra table with tinted sticky header. Non-last pages reserve a
+            fixed row-area height so the header and pagination sit at the same Y on
+            every page switch; the last page uses natural height (pagination hugs the
+            last row, no dead space). */}
+        <div ref={tableWrapRef} className="zebra-table-wrap hidden md:block" style={{ height: isLastPage ? undefined : frameHeight || undefined }}>
+          <table className="zebra-table zebra-table--sticky" style={{ width: '100%', minWidth: 720, tableLayout: 'fixed', borderCollapse: 'collapse', fontSize: 13 }}>
             <thead>
-              <tr style={{ borderBottom: '1px solid var(--color-border)' }}>
+              <tr>
                 {[
                   { h: 'Date', cls: '', w: 96 },
                   { h: 'Type', cls: '', w: 120 },
@@ -180,9 +196,8 @@ export default function Transactions() {
               </tr>
             </thead>
             <tbody>
-              {paginated.map(t => (
-                <tr key={t.id} style={{ borderBottom: '1px solid var(--color-border)' }}
-                  className="hover-row transition-colors"
+              {paginated.map((t, i) => (
+                <tr key={t.id} ref={i === 0 ? firstRowRef : undefined} style={{ borderBottom: '1px solid var(--color-border)' }}
                   onClick={() => setSelectedTxn(t)}>
                   <td style={{ padding: '14px 24px', color: 'var(--color-text-tertiary)', fontSize: 12, fontWeight: 600, whiteSpace: 'nowrap' }}>
                     {formatDate(t.timestamp * 1000, { month: 'short', day: 'numeric' }, profile?.timezone)}
@@ -227,35 +242,49 @@ export default function Transactions() {
           </table>
         </div>
 
-        {/* Pagination */}
+        {/* Mobile: stacked, tappable summary cards (natural height, vertical scroll) */}
+        <div className="txn-card-list flex flex-col md:hidden">
+          {paginated.map((t, i) => (
+            <button key={t.id} ref={i === 0 ? firstCardRef : undefined} className="txn-card" onClick={() => setSelectedTxn(t)}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+                  <Badge type={t.type as any} />
+                  <span style={{ fontWeight: 700, fontSize: 14, color: 'var(--color-text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {subcatMap.get(t.subcategoryId) || t.subcategoryId}
+                  </span>
+                </div>
+                <span style={{
+                  fontWeight: 700, fontSize: 15, fontFamily: 'var(--font-mono)', whiteSpace: 'nowrap', flexShrink: 0,
+                  color: t.type === 'Income' ? 'var(--color-success)' : t.type === 'Transfer' ? 'var(--color-primary)' : 'var(--color-danger)',
+                }}>
+                  {t.type === 'Income' ? '+' : t.type === 'Transfer' ? '' : '−'}{fmt(t.amount)}
+                </span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+                <div style={{ minWidth: 0, overflow: 'hidden' }}>
+                  <WalletFlow srcId={t.srcId} dstId={t.dstId} contactName={t.contactName} type={t.type as any} />
+                </div>
+                <span style={{ fontSize: 12, color: 'var(--color-text-tertiary)', fontWeight: 600, whiteSpace: 'nowrap', flexShrink: 0 }}>
+                  {formatDate(t.timestamp * 1000, { month: 'short', day: 'numeric' }, profile?.timezone)}
+                </span>
+              </div>
+            </button>
+          ))}
+          {filtered.length === 0 && (
+            <div style={{ padding: 40, textAlign: 'center', color: 'var(--color-text-tertiary)' }}>No transactions found</div>
+          )}
+        </div>
+
+        {/* Pagination — measured as the bottom boundary of the row area */}
         {totalPages > 1 && (
-          <div style={{ padding: '16px 24px', borderTop: '1px solid var(--color-border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <p style={{ fontSize: 12, color: 'var(--color-text-tertiary)', fontWeight: 500 }}>
-              Showing {page * PAGE_SIZE + 1}–{Math.min((page + 1) * PAGE_SIZE, filtered.length)} of {filtered.length}
-            </p>
-            <div style={{ display: 'flex', gap: 6 }}>
-              <button
-                disabled={page === 0}
-                onClick={() => setPage(p => p - 1)}
-                style={{
-                  padding: '8px 14px', borderRadius: 'var(--radius-sm)', fontSize: 12, fontWeight: 600,
-                  border: '1px solid var(--color-border)', background: 'var(--color-surface)',
-                  cursor: page === 0 ? 'not-allowed' : 'pointer', color: 'var(--color-text-secondary)',
-                  opacity: page === 0 ? 0.5 : 1, fontFamily: 'inherit',
-                }}
-              >Previous</button>
-              <button
-                disabled={page >= totalPages - 1}
-                onClick={() => setPage(p => p + 1)}
-                style={{
-                  padding: '8px 14px', borderRadius: 'var(--radius-sm)', fontSize: 12, fontWeight: 600,
-                  border: '1px solid var(--color-border)', background: 'var(--color-surface)',
-                  cursor: page >= totalPages - 1 ? 'not-allowed' : 'pointer', color: 'var(--color-text-secondary)',
-                  opacity: page >= totalPages - 1 ? 0.5 : 1, fontFamily: 'inherit',
-                }}
-              >Next</button>
-            </div>
-          </div>
+          <Pagination
+            ref={paginationRef}
+            rangeText={`Showing ${safePage * pageSize + 1}–${Math.min((safePage + 1) * pageSize, filtered.length)} of ${filtered.length}`}
+            canPrev={safePage > 0}
+            canNext={safePage < totalPages - 1}
+            onPrev={() => setPage(safePage - 1)}
+            onNext={() => setPage(safePage + 1)}
+          />
         )}
       </Card>
 

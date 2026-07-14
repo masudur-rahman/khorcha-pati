@@ -1,6 +1,6 @@
 import { formatDate } from '../lib/formatter'
 import { useMemo, useState } from 'react'
-import toast from 'react-hot-toast'
+import { notify } from '../lib/notify'
 import { useQuery } from '@tanstack/react-query'
 import { listWallets, listCategories, listSubcategories , getProfile } from '../api/endpoints'
 import { useCreateWallet, useUpdateWallet, useDeleteWallet } from '../hooks/useWallets'
@@ -19,10 +19,9 @@ import SectionHeader from '../components/ui/SectionHeader'
 import Eyebrow from '../components/ui/Eyebrow'
 import Badge from '../components/ui/Badge'
 import WalletCard, { WalletCardGhost, inferVariant } from '../components/ui/WalletCard'
-import DrawerPanel from '../components/ui/DrawerPanel'
 import ConfirmDialog from '../components/ui/ConfirmDialog'
 import { ICONS } from '../components/ui/Icons'
-import { validateDisplayName, validateShortName } from '../utils/validators'
+import { validateWalletName, validateShortName } from '../utils/validators'
 
 function variantOf(w: Wallet) {
   return inferVariant(w.type, w.name, w.shortName)
@@ -53,17 +52,11 @@ export default function Wallets() {
   const handleDeleteConfirm = (w: Wallet) => {
     del.mutate(w.shortName, {
       onSuccess: () => {
-        toast.success('Wallet deleted successfully')
+        notify.deleted('Wallet', w.name)
         setShowDeleteWallet(null)
       },
       onError: (err: any) => {
-        toast.error(
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-            <strong style={{ fontSize: 14 }}>Failed to Delete Wallet</strong>
-            <span style={{ fontSize: 13, opacity: 0.9 }}>{err.message || 'An unknown error occurred.'}</span>
-          </div>,
-          { duration: 4000 }
-        )
+        notify.error(err, 'delete wallet')
         setShowDeleteWallet(null)
       }
     })
@@ -153,9 +146,9 @@ export default function Wallets() {
   )
 }
 
-function WalletDrawer({ wallet, wallets, onEdit, onDelete, onClose }: { wallet: Wallet; wallets: Wallet[]; onEdit: (w: Wallet) => void; onDelete: (w: Wallet) => void; onClose: () => void }) {
+export function WalletDrawer({ wallet, wallets, onEdit, onDelete, onClose }: { wallet: Wallet; wallets: Wallet[]; onEdit: (w: Wallet) => void; onDelete: (w: Wallet) => void; onClose: () => void }) {
   const { data: profile } = useQuery({ queryKey: ['profile'], queryFn: getProfile })
-  const { data: resp } = useTransactions()
+  const { data: resp } = useTransactions({ wallet: wallet.shortName, limit: '10' })
   const { data: subcategories } = useQuery({ queryKey: ['subcategories'], queryFn: () => listSubcategories() })
   const { data: categories } = useQuery({ queryKey: ['categories'], queryFn: () => listCategories() })
 
@@ -192,13 +185,10 @@ function WalletDrawer({ wallet, wallets, onEdit, onDelete, onClose }: { wallet: 
     return 0
   }, [wallets, wallet.id])
 
-  const txns = (resp?.data ?? [])
-    .filter(t => t.srcId === wallet.shortName || t.dstId === wallet.shortName)
-    .sort((a, b) => b.timestamp - a.timestamp)
-    .slice(0, 10)
+  const txns = resp?.data ?? []
 
   return (
-    <DrawerPanel
+    <Modal
       title={wallet.name}
       subtitle={wallet.shortName.toUpperCase()}
       onClose={onClose}
@@ -259,7 +249,7 @@ function WalletDrawer({ wallet, wallets, onEdit, onDelete, onClose }: { wallet: 
           )}
         </div>
       </div>
-    </DrawerPanel>
+    </Modal>
   )
 }
 
@@ -271,7 +261,7 @@ function AddWalletDialog({ onClose }: { onClose: () => void }) {
   const [balance, setBalance] = useState('')
 
   const shortNameError = shortName ? validateShortName(shortName) : null
-  const nameError = name ? validateDisplayName(name) : null
+  const nameError = name ? validateWalletName(name) : null
 
   const handleSubmit = () => {
     if (shortNameError || nameError) return
@@ -282,40 +272,47 @@ function AddWalletDialog({ onClose }: { onClose: () => void }) {
       balance: balance === '' ? 0 : parseFloat(balance)
     }, {
       onSuccess: () => {
-        toast.success('Wallet created successfully')
+        notify.created('Wallet', name)
         onClose()
       },
       onError: (err: any) => {
-        toast.error(err.message || 'Failed to create wallet.')
+        notify.error(err, 'create wallet')
       }
     })
   }
 
   return (
-    <Modal title="Add New Wallet" onClose={onClose} width={460}>
+    <Modal
+      title="Add New Wallet"
+      onClose={onClose}
+      width={460}
+      onSubmit={() => { if (name && shortName && !shortNameError && !nameError && !create.isPending) handleSubmit() }}
+      footer={
+        <>
+          <Button variant="secondary" onClick={onClose}>Cancel</Button>
+          <Button onClick={handleSubmit} disabled={!name || !shortName || !!shortNameError || !!nameError || create.isPending}>
+            Create Wallet
+          </Button>
+        </>
+      }
+    >
       <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
         <Select label="Type" value={type} onChange={e => setType(e.target.value)} options={[{ value: 'Bank', label: 'Bank Account' }, { value: 'Cash', label: 'Cash / Other' }]} />
         <Input label="Short Name" placeholder="e.g. brac, cash" value={shortName} onChange={e => setShortName(e.target.value)} error={shortNameError || undefined} />
         <Input label="Display Name" placeholder="e.g. Personal Savings" value={name} onChange={e => setName(e.target.value)} error={nameError || undefined} />
         <Input label="Initial Balance" type="number" placeholder="0.00" value={balance} onChange={e => setBalance(e.target.value)} />
-        <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', marginTop: 12 }}>
-          <Button variant="secondary" onClick={onClose}>Cancel</Button>
-          <Button onClick={handleSubmit} disabled={!name || !shortName || !!shortNameError || !!nameError || create.isPending} style={{ padding: '12px 32px' }}>
-            Create Wallet
-          </Button>
-        </div>
       </div>
     </Modal>
   )
 }
 
-function EditWalletDialog({ wallet, onClose }: { wallet: Wallet; onClose: () => void }) {
+export function EditWalletDialog({ wallet, onClose }: { wallet: Wallet; onClose: () => void }) {
   const update = useUpdateWallet()
   const [name, setName] = useState(wallet.name)
   const [shortName, setShortName] = useState(wallet.shortName)
 
   const shortNameError = shortName ? validateShortName(shortName) : null
-  const nameError = name ? validateDisplayName(name) : null
+  const nameError = name ? validateWalletName(name) : null
 
   const handleSubmit = () => {
     if (shortNameError || nameError) return
@@ -323,27 +320,34 @@ function EditWalletDialog({ wallet, onClose }: { wallet: Wallet; onClose: () => 
       { id: wallet.id, wallet: { name, shortName } },
       { 
         onSuccess: () => {
-          toast.success('Wallet updated successfully')
+          notify.updated('Wallet', name)
           onClose()
         },
         onError: (err: any) => {
-          toast.error(err.message || 'Failed to update wallet.')
+          notify.error(err, 'update wallet')
         }
       }
     )
   }
 
   return (
-    <Modal title="Edit Wallet" onClose={onClose} width={460}>
+    <Modal
+      title="Edit Wallet"
+      onClose={onClose}
+      width={460}
+      onSubmit={() => { if (name && shortName && !shortNameError && !nameError && !update.isPending) handleSubmit() }}
+      footer={
+        <>
+          <Button variant="secondary" onClick={onClose}>Cancel</Button>
+          <Button onClick={handleSubmit} disabled={!name || !shortName || !!shortNameError || !!nameError || update.isPending}>
+            Save Changes
+          </Button>
+        </>
+      }
+    >
       <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
         <Input label="Short Name" placeholder="e.g. brac, cash" value={shortName} onChange={e => setShortName(e.target.value)} error={shortNameError || undefined} />
         <Input label="Display Name" placeholder="e.g. Personal Savings" value={name} onChange={e => setName(e.target.value)} error={nameError || undefined} />
-        <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', marginTop: 12 }}>
-          <Button variant="secondary" onClick={onClose}>Cancel</Button>
-          <Button onClick={handleSubmit} disabled={!name || !shortName || !!shortNameError || !!nameError || update.isPending} style={{ padding: '12px 32px' }}>
-            Save Changes
-          </Button>
-        </div>
       </div>
     </Modal>
   )

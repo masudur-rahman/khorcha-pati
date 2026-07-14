@@ -63,6 +63,11 @@ func (m *TransactionRepo) ListTransactionsByTime(userID int64, txnType models.Tr
 	return args.Get(0).([]models.Transaction), args.Error(1)
 }
 
+func (m *TransactionRepo) ListTransactionsPaged(q models.TxnListQuery) ([]models.Transaction, int64, error) {
+	args := m.Called(q)
+	return args.Get(0).([]models.Transaction), args.Get(1).(int64), args.Error(2)
+}
+
 func (m *TransactionRepo) GetTxnCategoryName(catID string) (string, error) {
 	args := m.Called(catID)
 	return args.String(0), args.Error(1)

@@ -150,6 +150,9 @@ export default function TopBar({ title, subtitle }: TopBarProps) {
                   autoCorrect="off"
                   spellCheck={false}
                   autoCapitalize="none"
+                  data-lpignore="true"
+                  data-1p-ignore="true"
+                  data-form-type="other"
                   style={{
                     background: 'transparent',
                     border: 'none',

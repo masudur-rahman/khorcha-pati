@@ -24,6 +24,8 @@ A Telegram Bot to track your expenses. This guide covers everything you need to 
     allsummary - Transaction summary based on Type, Category, Subcategory
     report - Transaction Report
     cat - List Transaction categories
+    budget - View and manage spending budgets
+    dashboard - Open the web dashboard
     sync - Sync database to Google Drive
     help - Show Usage page
     ```

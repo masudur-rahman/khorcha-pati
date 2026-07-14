@@ -1,13 +1,17 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useViewportPageSize } from '../hooks/useViewportPageSize'
 import { getAdminStats, getAdminUsers, setAdminUserActive, sendAdminBroadcast, type AdminUser } from '../api/endpoints'
 import { getAccessToken } from '../api/client'
 import { useSearch } from '../context/SearchContext'
+import { notify } from '../lib/notify'
 import TopBar from '../components/layout/TopBar'
 import Card from '../components/ui/Card'
 import MetricChip from '../components/ui/MetricChip'
 import Modal from '../components/ui/Modal'
+import ConfirmDialog from '../components/ui/ConfirmDialog'
 import Button from '../components/ui/Button'
+import Pagination from '../components/ui/Pagination'
 import AICachePanel from '../components/admin/AICachePanel'
 
 function decodeUserID(): number | null {
@@ -113,10 +117,12 @@ export default function Admin() {
     queryFn: getAdminStats,
   })
   const [userPage, setUserPage] = useState(1)
-  const userLimit = 10
+  const firstUserRowRef = useRef<HTMLTableRowElement>(null)
+  const firstUserCardRef = useRef<HTMLDivElement>(null)
+  const userLimit = useViewportPageSize(firstUserRowRef, firstUserCardRef)
 
   const { data: usersData, isLoading: usersLoading } = useQuery({
-    queryKey: ['adminUsers', userPage],
+    queryKey: ['adminUsers', userPage, userLimit],
     queryFn: () => getAdminUsers(userPage, userLimit),
   })
   const { searchTerm } = useSearch()
@@ -140,10 +146,13 @@ export default function Admin() {
 
   const toggleActive = useMutation({
     mutationFn: ({ id, isActive }: { id: number; isActive: boolean }) => setAdminUserActive(id, isActive),
-    onSuccess: () => {
+    onSuccess: (_data, { isActive }) => {
+      const name = [confirmUser?.firstName, confirmUser?.lastName].filter(Boolean).join(' ') || confirmUser?.username
+      notify.success(`${name ? `User "${name}"` : 'User'} ${isActive ? 'activated' : 'deactivated'} successfully.`)
       queryClient.invalidateQueries({ queryKey: ['adminUsers'] })
       setConfirmUser(null)
     },
+    onError: (err) => notify.error(err, 'update user'),
   })
 
   const isLoading = statsLoading || usersLoading
@@ -189,40 +198,33 @@ export default function Admin() {
             Broadcast Message
           </Button>
         </div>
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
+        <div className="zebra-table-wrap hidden md:block">
+          <table className="zebra-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
             <thead>
-              <tr style={{ borderBottom: '1px solid var(--color-border)' }}>
-                {['User', 'Registered', 'Last txn', 'Wallets', 'Txns', 'Contacts', 'Role', 'Status'].map(h => (
+              <tr>
+                {['User', 'Registered', 'Last txn', 'Activity', 'Role', 'Status'].map(h => (
                   <th key={h} style={{
-                    padding: '12px 16px', textAlign: 'left', fontWeight: 600,
+                    padding: '10px 12px', textAlign: 'left', fontWeight: 600,
                     color: 'var(--color-text-secondary)', fontSize: 12,
-                    textTransform: 'uppercase', letterSpacing: '0.05em',
+                    textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap',
                   }}>{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
-              {(users ?? []).map(u => (
+              {(users ?? []).map((u, i) => (
                 <tr
                   key={u.id}
+                  ref={i === 0 ? firstUserRowRef : undefined}
                   onClick={() => setSelectedUser(selectedUser?.id === u.id ? null : u)}
                   style={{
                     borderBottom: '1px solid var(--color-border)',
-                    cursor: 'pointer',
-                    background: selectedUser?.id === u.id ? 'var(--color-primary-subtle)' : 'transparent',
-                    transition: 'background var(--transition-fast)',
-                  }}
-                  onMouseEnter={e => {
-                    if (selectedUser?.id !== u.id) e.currentTarget.style.background = 'var(--color-hover)'
-                  }}
-                  onMouseLeave={e => {
-                    if (selectedUser?.id !== u.id) e.currentTarget.style.background = 'transparent'
+                    background: selectedUser?.id === u.id ? 'var(--color-primary-subtle)' : undefined,
                   }}
                 >
-                  <td style={{ padding: '12px 16px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
-                      <Avatar user={u} size={40} />
+                  <td style={{ padding: '10px 12px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+                      <Avatar user={u} size={36} />
                       <div style={{ minWidth: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column', gap: 1 }}>
                         <Field
                           value={fullName(u)}
@@ -234,20 +236,15 @@ export default function Admin() {
                           missingLabel="@ username not set"
                           style={{ fontSize: 12, color: 'var(--color-text-tertiary)' }}
                         />
-                        <Field
-                          value={u.telegramId ? `Telegram · ${u.telegramId}` : ''}
-                          missingLabel="Telegram ID missing"
-                          style={{ fontSize: 12, color: 'var(--color-text-tertiary)' }}
-                        />
                       </div>
                     </div>
                   </td>
-                  <td style={{ padding: '12px 16px', color: 'var(--color-text-tertiary)', fontSize: 13 }}>{relativeTime(u.createdAt)}</td>
-                  <td style={{ padding: '12px 16px', color: 'var(--color-text-tertiary)', fontSize: 13 }}>{relativeTime(u.lastTxnAt)}</td>
-                  <td style={{ padding: '12px 16px' }}>{u.walletCount}</td>
-                  <td style={{ padding: '12px 16px' }}>{u.txnCount}</td>
-                  <td style={{ padding: '12px 16px' }}>{u.contactCount}</td>
-                  <td style={{ padding: '12px 16px' }}>
+                  <td style={{ padding: '10px 12px', color: 'var(--color-text-tertiary)', fontSize: 13, whiteSpace: 'nowrap' }}>{relativeTime(u.createdAt)}</td>
+                  <td style={{ padding: '10px 12px', color: 'var(--color-text-tertiary)', fontSize: 13, whiteSpace: 'nowrap' }}>{relativeTime(u.lastTxnAt)}</td>
+                  <td style={{ padding: '10px 12px', color: 'var(--color-text-tertiary)', fontSize: 13, whiteSpace: 'nowrap' }} title={`${u.txnCount} transactions · ${u.walletCount} wallets · ${u.contactCount} contacts`}>
+                    {u.txnCount}T · {u.walletCount}W · {u.contactCount}C
+                  </td>
+                  <td style={{ padding: '10px 12px' }}>
                     <span style={{
                       display: 'inline-block', padding: '2px 8px', borderRadius: 6, fontSize: 11, fontWeight: 600,
                       background: u.isAdmin ? 'var(--color-primary-subtle)' : 'var(--color-hover)',
@@ -256,7 +253,7 @@ export default function Admin() {
                       {u.isAdmin ? 'Admin' : 'User'}
                     </span>
                   </td>
-                  <td style={{ padding: '12px 16px', whiteSpace: 'nowrap' }} onClick={e => e.stopPropagation()}>
+                  <td style={{ padding: '10px 12px', whiteSpace: 'nowrap' }} onClick={e => e.stopPropagation()}>
                     <button
                       disabled={u.id === currentUserID || toggleActive.isPending}
                       onClick={() => setConfirmUser(u)}
@@ -295,37 +292,77 @@ export default function Admin() {
             </tbody>
           </table>
         </div>
+
+        {/* Mobile: stacked user cards */}
+        <div className="txn-card-list flex flex-col md:hidden">
+          {(users ?? []).map((u, i) => (
+            <div
+              key={u.id}
+              ref={i === 0 ? firstUserCardRef : undefined}
+              className="txn-card"
+              style={{ cursor: 'pointer', background: selectedUser?.id === u.id ? 'var(--color-primary-subtle)' : undefined }}
+              onClick={() => setSelectedUser(selectedUser?.id === u.id ? null : u)}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <Avatar user={u} size={36} />
+                <div style={{ minWidth: 0, flex: 1 }}>
+                  <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--color-text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{fullName(u) || 'Name not set'}</div>
+                  <div style={{ fontSize: 12, color: 'var(--color-text-tertiary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{u.username ? `@${u.username}` : '@ username not set'}</div>
+                </div>
+                <span style={{
+                  flexShrink: 0, padding: '2px 8px', borderRadius: 6, fontSize: 11, fontWeight: 600,
+                  background: u.isAdmin ? 'var(--color-primary-subtle)' : 'var(--color-hover)',
+                  color: u.isAdmin ? 'var(--color-primary)' : 'var(--color-text-tertiary)',
+                }}>{u.isAdmin ? 'Admin' : 'User'}</span>
+              </div>
+              <div style={{ display: 'flex', gap: 12, fontSize: 12, color: 'var(--color-text-tertiary)', flexWrap: 'wrap' }}>
+                <span>{u.walletCount} wallets</span>
+                <span>{u.txnCount} txns</span>
+                <span>{u.contactCount} contacts</span>
+              </div>
+              <div style={{ display: 'flex', gap: 12, fontSize: 12, color: 'var(--color-text-tertiary)', flexWrap: 'wrap' }}>
+                <span>Registered {relativeTime(u.createdAt)}</span>
+                <span>Last txn {relativeTime(u.lastTxnAt)}</span>
+              </div>
+              <div style={{ display: 'flex', gap: 8 }} onClick={e => e.stopPropagation()}>
+                <button
+                  disabled={u.id === currentUserID || toggleActive.isPending}
+                  onClick={() => setConfirmUser(u)}
+                  style={{
+                    padding: '4px 10px', borderRadius: 6, fontSize: 11, fontWeight: 600,
+                    border: '1px solid var(--color-border)',
+                    background: u.isActive ? 'var(--color-success-subtle, var(--color-hover))' : 'var(--color-danger-subtle, var(--color-hover))',
+                    color: u.isActive ? 'var(--color-success, var(--color-text))' : 'var(--color-danger, var(--color-text))',
+                    cursor: u.id === currentUserID ? 'not-allowed' : 'pointer',
+                    opacity: u.id === currentUserID ? 0.5 : 1,
+                  }}
+                >{u.isActive ? 'Active' : 'Disabled'}</button>
+                {u.telegramId > 0 && (
+                  <button
+                    onClick={() => setMessageUser(u)}
+                    style={{
+                      padding: '4px 10px', borderRadius: 6, fontSize: 11, fontWeight: 600,
+                      border: '1px solid var(--color-border)', background: 'transparent',
+                      color: 'var(--color-text-secondary)', cursor: 'pointer',
+                    }}
+                  >Message</button>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+
         {(!users || users.length === 0) && (
           <p style={{ padding: 24, textAlign: 'center', color: 'var(--color-text-tertiary)' }}>No users found.</p>
         )}
         {totalUsers > userLimit && (
-          <div style={{
-            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-            padding: '12px 24px', borderTop: '1px solid var(--color-border)',
-            gap: 16, flexWrap: 'wrap'
-          }}>
-            <span style={{ fontSize: 13, color: 'var(--color-text-tertiary)' }}>
-              Showing {Math.min(totalUsers, (userPage - 1) * userLimit + 1)}-{Math.min(totalUsers, userPage * userLimit)} of {totalUsers} users
-            </span>
-            <div style={{ display: 'flex', gap: 8 }}>
-              <Button
-                variant="secondary"
-                disabled={userPage === 1}
-                onClick={() => setUserPage(prev => prev - 1)}
-                style={{ padding: '6px 12px', fontSize: 13 }}
-              >
-                Previous
-              </Button>
-              <Button
-                variant="secondary"
-                disabled={userPage * userLimit >= totalUsers}
-                onClick={() => setUserPage(prev => prev + 1)}
-                style={{ padding: '6px 12px', fontSize: 13 }}
-              >
-                Next
-              </Button>
-            </div>
-          </div>
+          <Pagination
+            rangeText={`Showing ${Math.min(totalUsers, (userPage - 1) * userLimit + 1)}–${Math.min(totalUsers, userPage * userLimit)} of ${totalUsers} users`}
+            canPrev={userPage > 1}
+            canNext={userPage * userLimit < totalUsers}
+            onPrev={() => setUserPage(prev => prev - 1)}
+            onNext={() => setUserPage(prev => prev + 1)}
+          />
         )}
       </Card>
 
@@ -347,31 +384,29 @@ export default function Admin() {
       )}
 
       {confirmUser && (
-        <Modal title={confirmUser.isActive ? 'Disable user?' : 'Enable user?'} onClose={() => setConfirmUser(null)} width={460}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
-            <Avatar user={confirmUser} size={44} />
-            <div>
-              <div style={{ fontWeight: 600, color: 'var(--color-text-primary)' }}>{userLabel(confirmUser)}</div>
-              <div style={{ fontSize: 12, color: 'var(--color-text-tertiary)' }}>Telegram · {confirmUser.telegramId}</div>
+        <ConfirmDialog
+          title={confirmUser.isActive ? 'Disable user?' : 'Enable user?'}
+          type={confirmUser.isActive ? 'danger' : 'info'}
+          confirmText={confirmUser.isActive ? 'Disable' : 'Enable'}
+          onConfirm={() => toggleActive.mutate({ id: confirmUser.id, isActive: !confirmUser.isActive })}
+          onClose={() => setConfirmUser(null)}
+          message={
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <Avatar user={confirmUser} size={44} />
+                <div>
+                  <div style={{ fontWeight: 600, color: 'var(--color-text-primary)' }}>{userLabel(confirmUser)}</div>
+                  <div style={{ fontSize: 12, color: 'var(--color-text-tertiary)' }}>Telegram · {confirmUser.telegramId}</div>
+                </div>
+              </div>
+              <span>
+                {confirmUser.isActive
+                  ? 'Web login and bot interaction will be blocked until re-enabled.'
+                  : 'Web login and bot interaction will be restored.'}
+              </span>
             </div>
-          </div>
-          <p style={{ margin: 0, color: 'var(--color-text-secondary)', lineHeight: 1.6 }}>
-            {confirmUser.isActive
-              ? 'Web login and bot interaction will be blocked until re-enabled.'
-              : 'Web login and bot interaction will be restored.'}
-          </p>
-          <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', marginTop: 24 }}>
-            <Button variant="secondary" onClick={() => setConfirmUser(null)} disabled={toggleActive.isPending}>
-              Cancel
-            </Button>
-            <Button
-              onClick={() => toggleActive.mutate({ id: confirmUser.id, isActive: !confirmUser.isActive })}
-              disabled={toggleActive.isPending}
-            >
-              {toggleActive.isPending ? 'Working…' : confirmUser.isActive ? 'Disable' : 'Enable'}
-            </Button>
-          </div>
-        </Modal>
+          }
+        />
       )}
     </div>
   )
@@ -380,12 +415,12 @@ export default function Admin() {
 function UserDetailCard({ user, isSelf, onClose, onToggle }: { user: AdminUser; isSelf: boolean; onClose: () => void; onToggle: () => void }) {
   return (
     <Card padding={0}>
-      <div style={{
+      <div className="user-detail-header" style={{
         padding: '24px 28px', borderBottom: '1px solid var(--color-border)',
-        display: 'flex', alignItems: 'center', gap: 20, flexWrap: 'wrap',
+        display: 'flex', alignItems: 'flex-start', gap: 20, flexWrap: 'wrap',
       }}>
         <Avatar user={user} size={64} showStatus={false} />
-        <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ flex: 1, minWidth: 160 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', minWidth: 0, marginBottom: 6 }}>
             <Field
               value={fullName(user)}
@@ -412,7 +447,7 @@ function UserDetailCard({ user, isSelf, onClose, onToggle }: { user: AdminUser; 
             />
           </div>
         </div>
-        <div style={{ display: 'flex', gap: 8 }}>
+        <div className="user-detail-actions" style={{ display: 'flex', gap: 8, marginLeft: 'auto' }}>
           <Button
             variant="secondary"
             disabled={isSelf}
@@ -443,7 +478,7 @@ function UserDetailCard({ user, isSelf, onClose, onToggle }: { user: AdminUser; 
       </div>
 
       <Section title="Activity">
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16 }}>
+        <div className="detail-activity" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16 }}>
           <Tile
             icon={<TileIcon path="M3 7l2-2 7 4 7-4 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z" />}
             label="Wallets"
@@ -481,7 +516,7 @@ function UserDetailCard({ user, isSelf, onClose, onToggle }: { user: AdminUser; 
       </Section>
 
       <Section title="Account">
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 16 }}>
+        <div className="detail-account" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 16 }}>
           <DetailRow label="User ID" primary={String(user.id)} />
           <DetailRow label="Username" primary={user.username ? `@${user.username}` : '—'} />
           <DetailRow label="Full name" primary={fullName(user) || '—'} />
@@ -494,7 +529,7 @@ function UserDetailCard({ user, isSelf, onClose, onToggle }: { user: AdminUser; 
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div style={{ padding: '20px 28px', borderBottom: '1px solid var(--color-border)' }}>
+    <div className="detail-section" style={{ padding: '20px 28px', borderBottom: '1px solid var(--color-border)' }}>
       <h4 style={{
         fontSize: 11, fontWeight: 700, color: 'var(--color-text-tertiary)',
         textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 14px',
@@ -508,12 +543,12 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 function Tile({ icon, label, value, accent }: { icon: React.ReactNode; label: string; value: string; accent: string }) {
   return (
-    <div style={{
+    <div className="detail-tile" style={{
       padding: 16, borderRadius: 12, border: '1px solid var(--color-border)',
       background: 'var(--color-surface-elevated, var(--color-surface))',
       display: 'flex', alignItems: 'center', gap: 14,
     }}>
-      <div style={{
+      <div className="detail-tile-icon" style={{
         width: 40, height: 40, borderRadius: 10,
         background: `${accent}1a`, color: accent,
         display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
@@ -522,7 +557,7 @@ function Tile({ icon, label, value, accent }: { icon: React.ReactNode; label: st
       </div>
       <div>
         <div style={{ fontSize: 11, color: 'var(--color-text-tertiary)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{label}</div>
-        <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--color-text-primary)', letterSpacing: '-0.02em', lineHeight: 1.1 }}>{value}</div>
+        <div className="detail-tile-value" style={{ fontSize: 22, fontWeight: 700, color: 'var(--color-text-primary)', letterSpacing: '-0.02em', lineHeight: 1.1 }}>{value}</div>
       </div>
     </div>
   )
@@ -649,8 +684,23 @@ function BroadcastModal({ onClose }: ModalProps) {
   }
 
   return (
-    <Modal title="Broadcast Message" onClose={onClose} width={580}>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+    <Modal
+      title="Broadcast Message"
+      onClose={onClose}
+      width={580}
+      footer={
+        <>
+          <Button variant="secondary" onClick={onClose} disabled={broadcastMut.isPending}>Cancel</Button>
+          <Button
+            onClick={handleSend}
+            disabled={!message.trim() || selectedCount === 0 || broadcastMut.isPending}
+          >
+            {broadcastMut.isPending ? 'Sending...' : 'Send Broadcast'}
+          </Button>
+        </>
+      }
+    >
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
         <p style={{ margin: 0, fontSize: 13, color: 'var(--color-text-secondary)', lineHeight: 1.5 }}>
           Send a customized Telegram message to selected active users. Supports Telegram Markdown formatting.
         </p>
@@ -696,6 +746,15 @@ function BroadcastModal({ onClose }: ModalProps) {
           </div>
 
           <input
+            type="search"
+            name="recipient-search"
+            autoComplete="off"
+            autoCorrect="off"
+            autoCapitalize="off"
+            spellCheck={false}
+            data-lpignore="true"
+            data-1p-ignore="true"
+            data-form-type="other"
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Search recipients..."
@@ -774,31 +833,18 @@ function BroadcastModal({ onClose }: ModalProps) {
           </div>
         )}
 
-        <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', marginTop: 8 }}>
-          <Button variant="secondary" onClick={onClose} disabled={broadcastMut.isPending}>Cancel</Button>
-          <Button 
-            onClick={handleSend} 
-            disabled={!message.trim() || selectedCount === 0 || broadcastMut.isPending}
-          >
-            {broadcastMut.isPending ? 'Sending...' : 'Send Broadcast'}
-          </Button>
-        </div>
       </div>
 
       {confirmOpen && (
-        <Modal title="Confirm Broadcast" onClose={() => setConfirmOpen(false)} width={460}>
-          <p style={{ margin: 0, color: 'var(--color-text-secondary)', lineHeight: 1.6 }}>
-            Are you sure you want to send this broadcast to <strong style={{ color: 'var(--color-text-primary)' }}>{selectedCount}</strong> user{selectedCount !== 1 ? 's' : ''}?
-          </p>
-          <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', marginTop: 24 }}>
-            <Button variant="secondary" onClick={() => setConfirmOpen(false)}>Cancel</Button>
-            <Button 
-              onClick={triggerBroadcast}
-            >
-              Confirm & Send
-            </Button>
-          </div>
-        </Modal>
+        <ConfirmDialog
+          title="Confirm Broadcast"
+          confirmText="Confirm & Send"
+          onConfirm={triggerBroadcast}
+          onClose={() => setConfirmOpen(false)}
+          message={
+            <>Are you sure you want to send this broadcast to <strong style={{ color: 'var(--color-text-primary)' }}>{selectedCount}</strong> user{selectedCount !== 1 ? 's' : ''}?</>
+          }
+        />
       )}
     </Modal>
   )
@@ -829,8 +875,24 @@ function MessageUserModal({ user, onClose }: { user: AdminUser } & ModalProps) {
   }
 
   return (
-    <Modal title={`Message ${userLabel(user)}`} onClose={onClose} width={480}>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+    <Modal
+      title={`Message ${userLabel(user)}`}
+      onClose={onClose}
+      width={480}
+      footer={
+        <>
+          <Button variant="secondary" onClick={onClose} disabled={broadcastMut.isPending}>Cancel</Button>
+          <Button
+            onClick={handleSend}
+            disabled={!message.trim() || broadcastMut.isPending}
+            icon={<SendIcon />}
+          >
+            {broadcastMut.isPending ? 'Sending...' : 'Send Message'}
+          </Button>
+        </>
+      }
+    >
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <Avatar user={user} size={40} showStatus={false} />
           <div>
@@ -877,16 +939,6 @@ function MessageUserModal({ user, onClose }: { user: AdminUser } & ModalProps) {
           </div>
         )}
 
-        <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', marginTop: 8 }}>
-          <Button variant="secondary" onClick={onClose} disabled={broadcastMut.isPending}>Cancel</Button>
-          <Button 
-            onClick={handleSend} 
-            disabled={!message.trim() || broadcastMut.isPending}
-            icon={<SendIcon />}
-          >
-            {broadcastMut.isPending ? 'Sending...' : 'Send Message'}
-          </Button>
-        </div>
       </div>
     </Modal>
   )

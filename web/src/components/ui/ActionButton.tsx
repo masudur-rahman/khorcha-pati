@@ -12,13 +12,14 @@ export default function ActionButton({ actionType, icon, variant = 'default', st
   const accent = isDelete ? 'var(--color-danger)' : 'var(--color-primary)'
   
   const isGlass = variant === 'glass'
-  
-  // Use CSS color-mix to create very light and slightly darker backgrounds
-  const baseBg = isGlass ? 'rgba(255,255,255,0.2)' : `color-mix(in srgb, ${accent} 12%, transparent)`
-  const hoverBg = isGlass ? 'rgba(255,255,255,0.35)' : `color-mix(in srgb, ${accent} 24%, transparent)`
-  
+
+  // Default variant: neutral at rest (no fill, muted icon), accent tint + accent
+  // color on hover — matching the minimal edit/delete style used across the app.
+  const baseBg = isGlass ? 'rgba(255,255,255,0.2)' : 'transparent'
+  const hoverBg = isGlass ? 'rgba(255,255,255,0.35)' : `color-mix(in srgb, ${accent} 14%, transparent)`
+
   // Base Color
-  const color = isGlass ? 'white' : accent
+  const color = isGlass ? 'white' : (isHovered && !disabled ? accent : 'var(--color-text-tertiary)')
 
   return (
     <button

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, useRef, type KeyboardEvent } from 'react'
-import toast from 'react-hot-toast'
+import { notify } from '../../lib/notify'
 import { useQuery } from '@tanstack/react-query'
 import { listCategories, listSubcategories } from '../../api/endpoints'
 import { useCreateTransaction, useUpdateTransaction } from '../../hooks/useTransactions'
@@ -11,6 +11,7 @@ import Modal from './Modal'
 import Button from './Button'
 import Input from './Input'
 import Select from './Select'
+import SearchableSelect from './SearchableSelect'
 import ContactCombobox from './ContactCombobox'
 
 export type { TxnType }
@@ -222,18 +223,20 @@ export default function TxnDialog({ txn, initialType, initialContact, initialSub
       contactName: type === 'Transfer' ? '' : contactName,
     }
     if (isEdit) {
-      update.mutate({ id: txn!.id, ...payload }, { 
+      update.mutate({ id: txn!.id, ...payload }, {
         onSuccess: () => {
-          toast.success('Transaction updated successfully')
+          notify.updated('Transaction')
           onClose()
-        } 
+        },
+        onError: (err) => notify.error(err, 'update transaction'),
       })
     } else {
-      create.mutate(payload, { 
+      create.mutate(payload, {
         onSuccess: () => {
-          toast.success('Transaction recorded successfully')
+          notify.created('Transaction')
           onClose()
-        } 
+        },
+        onError: (err) => notify.error(err, 'record transaction'),
       })
     }
   }
@@ -242,7 +245,19 @@ export default function TxnDialog({ txn, initialType, initialContact, initialSub
   const walletOptions = wallets.map(w => ({ value: w.shortName, label: w.name }))
 
   return (
-    <Modal title={isEdit ? 'Edit Transaction' : 'Add Transaction'} onClose={onClose}>
+    <Modal
+      title={isEdit ? 'Edit Transaction' : 'Add Transaction'}
+      onClose={onClose}
+      onSubmit={() => { if (!create.isPending && !update.isPending) handleSubmit() }}
+      footer={
+        <>
+          <Button variant="secondary" onClick={onClose}>Cancel</Button>
+          <Button onClick={handleSubmit} disabled={create.isPending || update.isPending}>
+            {isEdit ? 'Update Changes' : 'Create Transaction'}
+          </Button>
+        </>
+      }
+    >
       <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
         {/* Fuzzy smart-search */}
         <div style={{ position: 'relative' }}>
@@ -286,11 +301,11 @@ export default function TxnDialog({ txn, initialType, initialContact, initialSub
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
           <Select label="Type" value={type} onChange={e => setType(e.target.value as TxnType)} options={TXN_TYPE_OPTIONS.map(t => ({ value: t, label: t }))} />
-          <Input ref={amountRef} label="Amount" type="number" value={amount} onChange={e => setAmount(e.target.value)} placeholder="0.00" error={errors.amount} />
+          <Input ref={amountRef} label="Amount" type="number" inputMode="decimal" value={amount} onChange={e => setAmount(e.target.value)} placeholder="0.00" error={errors.amount} />
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-          <Select label="Category" value={catId} onChange={e => { setCatId(e.target.value); setSubcategoryId('') }} options={categories.map(c => ({ value: c.id, label: c.name }))} />
-          <Select label="Sub Category" value={subcategoryId} onChange={e => setSubcategoryId(e.target.value)} options={subcategories.map(s => ({ value: s.id, label: s.name }))} error={errors.sub} />
+          <SearchableSelect label="Category" value={catId} onChange={v => { setCatId(v); setSubcategoryId('') }} options={categories.map(c => ({ value: c.id, label: c.name }))} placeholder="Search category…" />
+          <SearchableSelect label="Sub Category" value={subcategoryId} onChange={setSubcategoryId} options={subcategories.map(s => ({ value: s.id, label: s.name }))} placeholder="Search sub category…" error={errors.sub} />
         </div>
 
         {type === 'Transfer' ? (
@@ -314,17 +329,14 @@ export default function TxnDialog({ txn, initialType, initialContact, initialSub
           </div>
         )}
 
-        <Input label="Remarks" value={remarks} onChange={e => setRemarks(e.target.value)} placeholder="Any notes..." />
-        {mutationError && (
-          <span style={{ fontSize: 12, color: 'var(--color-danger)' }}>
-            Couldn't save the transaction. Please try again.
-          </span>
-        )}
-        <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', marginTop: 12 }}>
-          <Button variant="secondary" onClick={onClose} style={{ padding: '12px 24px' }}>Cancel</Button>
-          <Button onClick={handleSubmit} disabled={create.isPending || update.isPending} style={{ padding: '12px 32px' }}>
-            {isEdit ? 'Update Changes' : 'Create Transaction'}
-          </Button>
+        {/* Relative wrapper so the server error can float below without resizing the modal. */}
+        <div style={{ position: 'relative' }}>
+          <Input label="Remarks" value={remarks} onChange={e => setRemarks(e.target.value)} placeholder="Any notes..." />
+          {mutationError && (
+            <span style={{ position: 'absolute', top: '100%', left: 0, marginTop: 6, fontSize: 12, lineHeight: 1.2, color: 'var(--color-danger)', whiteSpace: 'nowrap' }}>
+              Couldn't save the transaction. Please try again.
+            </span>
+          )}
         </div>
       </div>
     </Modal>

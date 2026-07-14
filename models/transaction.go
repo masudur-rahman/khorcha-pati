@@ -30,6 +30,19 @@ const (
 	Separator = "──────────────"
 )
 
+// TxnListQuery scopes and paginates a transaction listing. Zero-value fields are
+// ignored. Page is 1-based; Limit <= 0 returns all matches (no pagination).
+type TxnListQuery struct {
+	UserID  int64
+	Type    TransactionType
+	Start   int64  // inclusive timestamp lower bound (0 = unbounded)
+	End     int64  // inclusive timestamp upper bound (0 = unbounded)
+	Wallet  string // matches src_id OR dst_id
+	Contact string // matches contact_name
+	Page    int64
+	Limit   int64
+}
+
 type Transaction struct {
 	ID            int64           `db:"id,pk autoincr" json:"id"`
 	UserID        int64           `json:"userId"`

@@ -55,7 +55,7 @@ func (ws *walletService) CreateWallet(wallet *models.Wallet) (err error) {
 		}
 	}
 
-	if wallet.Name != "" && !validator.IsValidDisplayName(wallet.Name) {
+	if wallet.Name != "" && !validator.IsValidWalletName(wallet.Name) {
 		return models.StatusError{
 			Status:  400,
 			Message: "wallet name cannot have leading/trailing spaces or special characters",
@@ -159,7 +159,7 @@ func (ws *walletService) UpdateWallet(userID, id int64, name, shortName string) 
 		}
 	}
 
-	if !validator.IsValidDisplayName(name) {
+	if !validator.IsValidWalletName(name) {
 		return models.StatusError{
 			Status:  400,
 			Message: "wallet name cannot have leading/trailing spaces or special characters",

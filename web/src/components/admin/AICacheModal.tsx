@@ -6,6 +6,8 @@ import Modal from '../ui/Modal'
 import Button from '../ui/Button'
 import Input from '../ui/Input'
 import Select from '../ui/Select'
+import SearchableSelect from '../ui/SearchableSelect'
+import { notify } from '../../lib/notify'
 
 export interface SubMeta { name: string; catName: string; types: TxnType[] }
 
@@ -36,15 +38,28 @@ export default function AICacheModal({ entry, subMeta, subOptions, onClose, onSa
       const body: AICacheInput = { subcategoryId: subId, intent: intent.toLowerCase(), confidence: clampPct(pct) / 100 }
       return isEdit ? updateAICache(existing!.id, body) : createAICache({ ...body, inputText: inputText.trim() })
     },
-    onSuccess: onSaved,
+    onSuccess: () => { isEdit ? notify.updated('Cache entry') : notify.created('Cache entry'); onSaved() },
     onError: (e: Error) => setError(e.message || 'Failed to save'),
   })
 
   const canSave = !!subId && !!intent && (isEdit || !!inputText.trim()) && !save.isPending
 
   return (
-    <Modal title={isEdit ? 'Edit cache entry' : 'Add cache entry'} onClose={onClose} width={520}>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+    <Modal
+      title={isEdit ? 'Edit cache entry' : 'Add cache entry'}
+      onClose={onClose}
+      width={520}
+      onSubmit={() => { if (canSave) save.mutate() }}
+      footer={
+        <>
+          <Button variant="secondary" onClick={onClose} disabled={save.isPending}>Cancel</Button>
+          <Button onClick={() => save.mutate()} disabled={!canSave}>
+            {save.isPending ? 'Saving…' : isEdit ? 'Save changes' : 'Add entry'}
+          </Button>
+        </>
+      }
+    >
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
         <Input
           label="Input text"
           value={inputText}
@@ -54,11 +69,12 @@ export default function AICacheModal({ entry, subMeta, subOptions, onClose, onSa
         />
         {isEdit && <Hint>Input text is the cache key and can’t be changed. Delete and re-add to fix a typo.</Hint>}
 
-        <Select
+        <SearchableSelect
           label="Subcategory"
           value={subId}
-          options={[{ value: '', label: 'Select subcategory…' }, ...subOptions]}
-          onChange={e => setSubId(e.target.value)}
+          options={subOptions}
+          onChange={setSubId}
+          placeholder="Search subcategory…"
         />
 
         <Select
@@ -79,15 +95,10 @@ export default function AICacheModal({ entry, subMeta, subOptions, onClose, onSa
           value={pct}
           onChange={e => setPct(Number(e.target.value))}
         />
-        <Hint>Manually curated entries are usually 100%.</Hint>
-
-        {error && <p style={{ margin: 0, color: 'var(--color-danger)', fontSize: 13 }}>{error}</p>}
-
-        <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', marginTop: 4 }}>
-          <Button variant="secondary" onClick={onClose} disabled={save.isPending}>Cancel</Button>
-          <Button onClick={() => save.mutate()} disabled={!canSave}>
-            {save.isPending ? 'Saving…' : isEdit ? 'Save changes' : 'Add entry'}
-          </Button>
+        {/* Wrapper carries the hint's hug-margin and floats the server error below it (no modal resize). */}
+        <div style={{ position: 'relative', marginTop: -8 }}>
+          <p style={{ margin: '0 0 0 4px', fontSize: 12, color: 'var(--color-text-tertiary)' }}>Manually curated entries are usually 100%.</p>
+          {error && <p style={{ position: 'absolute', top: '100%', left: 4, right: 4, margin: '6px 0 0', color: 'var(--color-danger)', fontSize: 13, lineHeight: 1.2 }}>{error}</p>}
         </div>
       </div>
     </Modal>

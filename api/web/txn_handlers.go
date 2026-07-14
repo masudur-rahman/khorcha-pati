@@ -3,7 +3,6 @@ package web
 import (
 	"net/http"
 	"strconv"
-	"time"
 
 	"github.com/masudur-rahman/khorcha-pati/models"
 	"github.com/masudur-rahman/khorcha-pati/services/all"
@@ -41,20 +40,23 @@ func HandleListTransactions(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	txnType := models.TransactionType(r.URL.Query().Get("type"))
-	startStr := r.URL.Query().Get("startDate")
-	endStr := r.URL.Query().Get("endDate")
-
-	start := int64(0)
-	end := time.Now().Unix()
-	if startStr != "" {
-		start, _ = strconv.ParseInt(startStr, 10, 64)
+	page, limit := parsePageLimit(r)
+	q := models.TxnListQuery{
+		UserID:  claims.UserID,
+		Type:    models.TransactionType(r.URL.Query().Get("type")),
+		Wallet:  r.URL.Query().Get("wallet"),
+		Contact: r.URL.Query().Get("contact"),
+		Page:    page,
+		Limit:   limit,
 	}
-	if endStr != "" {
-		end, _ = strconv.ParseInt(endStr, 10, 64)
+	if s := r.URL.Query().Get("startDate"); s != "" {
+		q.Start, _ = strconv.ParseInt(s, 10, 64)
+	}
+	if e := r.URL.Query().Get("endDate"); e != "" {
+		q.End, _ = strconv.ParseInt(e, 10, 64)
 	}
 
-	txns, err := all.GetServices().Txn.ListTransactionsByTime(claims.UserID, txnType, start, end)
+	txns, total, err := all.GetServices().Txn.ListTransactionsPaged(q)
 	if err != nil {
 		WriteError(w, http.StatusInternalServerError, "list_failed", err.Error())
 		return
@@ -63,16 +65,7 @@ func HandleListTransactions(w http.ResponseWriter, r *http.Request) {
 		txns = []models.Transaction{}
 	}
 
-	// For now, return all since service doesn't support pagination yet
-	// but wrap in the expected response format
-	WriteJSON(w, http.StatusOK, map[string]any{
-		"data": txns,
-		"pagination": map[string]any{
-			"page":  1,
-			"limit": len(txns),
-			"total": len(txns),
-		},
-	})
+	writePaged(w, http.StatusOK, txns, page, limit, total)
 }
 
 // HandleCreateTransaction handles POST /transactions.

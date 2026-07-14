@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query'
 import { listCategories } from '../api/endpoints'
 import { useSearch } from '../context/SearchContext'
 import { fmt } from '../lib/formatter'
+import { notify } from '../lib/notify'
 
 import TopBar from '../components/layout/TopBar'
 import Card from '../components/ui/Card'
@@ -365,19 +366,34 @@ function SetBudgetDialog({ categories, existing, onClose }: { categories: import
   const [amount, setAmount] = useState(existing ? String(existing.amount) : '')
   const [alertAt, setAlertAt] = useState(existing ? String(existing.alertAt) : '80')
 
+  const submit = () => {
+    if (!amount) return
+    setBudget.mutate({ categoryId, amount: parseFloat(amount), alertAt: parseInt(alertAt) }, {
+      onSuccess: () => { notify.saved('Budget'); onClose() },
+      onError: (err) => notify.error(err, 'save budget'),
+    })
+  }
+
   return (
-    <Modal title={isEdit ? 'Edit Budget' : 'Set Budget'} onClose={onClose} width={460}>
+    <Modal
+      title={isEdit ? 'Edit Budget' : 'Set Budget'}
+      onClose={onClose}
+      width={460}
+      onSubmit={submit}
+      footer={
+        <>
+          <Button variant="secondary" onClick={onClose}>Cancel</Button>
+          <Button onClick={submit} disabled={!amount}>
+            {isEdit ? 'Update Budget' : 'Save Budget'}
+          </Button>
+        </>
+      }
+    >
       <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
         <Select label="Category" value={categoryId} onChange={e => setCategoryId(e.target.value)} disabled={isEdit}
           options={[{ value: '', label: 'Overall Budget' }, ...categories.map(c => ({ value: c.id, label: c.name }))]} />
         <Input label="Monthly Limit" type="number" placeholder="0.00" value={amount} onChange={e => setAmount(e.target.value)} />
         <Input label="Alert Threshold (%)" type="number" placeholder="80" value={alertAt} onChange={e => setAlertAt(e.target.value)} />
-        <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', marginTop: 12 }}>
-          <Button variant="secondary" onClick={onClose}>Cancel</Button>
-          <Button onClick={() => setBudget.mutate({ categoryId, amount: parseFloat(amount), alertAt: parseInt(alertAt) }, { onSuccess: onClose })} disabled={!amount} style={{ padding: '12px 32px' }}>
-            {isEdit ? 'Update Budget' : 'Save Budget'}
-          </Button>
-        </div>
       </div>
     </Modal>
   )
