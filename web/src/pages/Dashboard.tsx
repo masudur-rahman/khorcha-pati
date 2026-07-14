@@ -36,8 +36,7 @@ export default function Dashboard() {
     queryKey: ['chartData'],
     queryFn: () => getChartData(),
   })
-  const { data: resp } = useTransactions()
-  const txns = resp?.data ?? []
+  const { data: resp } = useTransactions({ limit: '5' })
   const { data: wallets } = useWallets()
   const { data: contacts } = useContacts()
   const { data: allCategories, isLoading: isCatsLoading } = useQuery({ queryKey: ['categories'], queryFn: () => listCategories() })
@@ -109,7 +108,7 @@ export default function Dashboard() {
   if (!charts) return null
 
   const overview = charts.overview
-  const recentTxns = [...txns].sort((a, b) => b.timestamp - a.timestamp).slice(0, 5)
+  const recentTxns = resp?.data ?? []
   const hour = new Date().getHours()
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
 

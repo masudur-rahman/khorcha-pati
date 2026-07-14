@@ -254,17 +254,8 @@ const ContactRow = forwardRef<HTMLButtonElement, { contact: Contact; onClick: ()
 function ContactDrawer({ contact, onEdit, onDelete, onClose }: { contact: Contact; onEdit: (c: Contact) => void; onDelete: (c: Contact) => void; onClose: () => void }) {
   const { data: profile } = useQuery({ queryKey: ['profile'], queryFn: getProfile })
   const [add, setAdd] = useState<{ type: TxnType; sub: string } | null>(null)
-  const { data: resp } = useTransactions()
-
-  const nick = contact.nickName.toLowerCase()
-  const txns = (resp?.data ?? [])
-    .filter(t =>
-      (t.contactName ?? '').toLowerCase() === nick ||
-      (t.srcId ?? '').toLowerCase() === nick ||
-      (t.dstId ?? '').toLowerCase() === nick
-    )
-    .sort((a, b) => b.timestamp - a.timestamp)
-    .slice(0, 20)
+  const { data: resp } = useTransactions({ contact: contact.nickName, limit: '20' })
+  const txns = resp?.data ?? []
 
   const owesYou = contact.netBalance > 0
   const settled = contact.netBalance === 0

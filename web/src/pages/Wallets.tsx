@@ -148,7 +148,7 @@ export default function Wallets() {
 
 export function WalletDrawer({ wallet, wallets, onEdit, onDelete, onClose }: { wallet: Wallet; wallets: Wallet[]; onEdit: (w: Wallet) => void; onDelete: (w: Wallet) => void; onClose: () => void }) {
   const { data: profile } = useQuery({ queryKey: ['profile'], queryFn: getProfile })
-  const { data: resp } = useTransactions()
+  const { data: resp } = useTransactions({ wallet: wallet.shortName, limit: '10' })
   const { data: subcategories } = useQuery({ queryKey: ['subcategories'], queryFn: () => listSubcategories() })
   const { data: categories } = useQuery({ queryKey: ['categories'], queryFn: () => listCategories() })
 
@@ -185,10 +185,7 @@ export function WalletDrawer({ wallet, wallets, onEdit, onDelete, onClose }: { w
     return 0
   }, [wallets, wallet.id])
 
-  const txns = (resp?.data ?? [])
-    .filter(t => t.srcId === wallet.shortName || t.dstId === wallet.shortName)
-    .sort((a, b) => b.timestamp - a.timestamp)
-    .slice(0, 10)
+  const txns = resp?.data ?? []
 
   return (
     <Modal
