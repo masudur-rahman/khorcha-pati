@@ -142,6 +142,7 @@ docker-build-web: # @HELP builds web frontend Docker image for current platform
 .PHONY: docker-push-web
 docker-push-web: # @HELP pushes web frontend Docker image to registry
 	docker buildx build --platform linux/amd64,linux/arm64 \
+	  --provenance=false --sbom=false \
 	  --output "type=image,push=true" \
 	  --tag $(DOCKER_IMAGE)-web:$(VERSION) web/
 
@@ -152,6 +153,7 @@ docker-compose-up: # @HELP runs backend + frontend via Docker Compose
 .PHONY: docker-build-push
 docker-build-push: # @HELP builds and pushes multi-arch image (PDF_GENERATOR=wkhtmltopdf|chromedp)
 	docker buildx build --platform linux/amd64,linux/arm64 \
+	  --provenance=false --sbom=false \
 	  --target $(PDF_GENERATOR) \
 	  --build-arg VERSION=$(VERSION) \
 	  --build-arg BUILD_DATE=$(commit_timestamp) \
@@ -184,12 +186,14 @@ ensure-base: # @HELP builds the base images only if they are missing from the re
 .PHONY: base-build-push
 base-build-push: # @HELP builds and pushes the prebuilt runtime base images (wkhtmltopdf + chromedp)
 	docker buildx build --platform linux/amd64,linux/arm64 \
+	  --provenance=false --sbom=false \
 	  --target wkhtmltopdf \
 	  $(DOCKER_CACHE_ARGS) \
 	  --output "type=image,push=true" \
 	  --tag $(BASE_REF_WK) \
 	  -f Dockerfile.base .
 	docker buildx build --platform linux/amd64,linux/arm64 \
+	  --provenance=false --sbom=false \
 	  --target chromedp \
 	  $(DOCKER_CACHE_ARGS) \
 	  --output "type=image,push=true" \
