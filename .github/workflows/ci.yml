@@ -27,15 +27,9 @@ jobs:
       - uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
-
-      - name: Cache Go modules & build cache
-        uses: actions/cache@v5
-        with:
-          path: |
-            ~/.cache/go-build
-            ~/go/pkg/mod
-          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-          restore-keys: ${{ runner.os }}-go-
+          # setup-go caches the module + build cache itself; a separate
+          # actions/cache over the same paths makes tar fail to extract over
+          # already-restored files ("Cannot open: File exists").
 
       - name: Run tests
         run: go test -v -race -coverprofile=coverage.out ./...
