@@ -71,6 +71,8 @@ func NewRouter(jwtSecret, corsOrigin string) chi.Router {
 				r.Post("/admin/broadcast", HandleAdminBroadcast)
 
 				r.Get("/admin/ai-cache", HandleAdminListAICache)
+				r.Get("/admin/ai-cache/export", HandleAdminExportAICache)
+				r.Post("/admin/ai-cache/import", HandleAdminImportAICache)
 				r.Post("/admin/ai-cache", HandleAdminCreateAICache)
 				r.Put("/admin/ai-cache/{id}", HandleAdminUpdateAICache)
 				r.Delete("/admin/ai-cache/{id}", HandleAdminDeleteAICache)
