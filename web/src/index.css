@@ -385,6 +385,10 @@ input[type="search"]::-webkit-search-results-decoration {
     flex: 1;
     min-width: 0 !important;
   }
+  /* Icon-only buttons on mobile — shrink them so the search box keeps its width. */
+  .aicache-actions .aicache-btn {
+    padding: 9px 11px !important;
+  }
 }
 
 .contact-list { display: flex; flex-direction: column; }

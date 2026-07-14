@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useState, useRef } from 'react'
+import { useEffect, useMemo, useState, useRef, type ChangeEvent } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
-  listAICache, deleteAICache, listCategories, listSubcategories, type AICacheEntry,
+  listAICache, deleteAICache, listCategories, listSubcategories, exportAICache,
+  type AICacheEntry, type AICacheExportEntry,
 } from '../../api/endpoints'
 import { useSearch } from '../../context/SearchContext'
 import { notify } from '../../lib/notify'
@@ -12,6 +13,7 @@ import ActionButton from '../ui/ActionButton'
 import { ICONS } from '../ui/Icons'
 import { useViewportPageSize } from '../../hooks/useViewportPageSize'
 import AICacheModal, { type SubMeta } from './AICacheModal'
+import AICacheImportDialog from './AICacheImportDialog'
 
 const INTENT_COLOR: Record<string, string> = {
   Income: 'var(--color-success)',
@@ -47,6 +49,8 @@ export default function AICachePanel() {
   const [page, setPage] = useState(0)
   const [editing, setEditing] = useState<AICacheEntry | 'new' | null>(null)
   const [deleting, setDeleting] = useState<AICacheEntry | null>(null)
+  const [importEntries, setImportEntries] = useState<AICacheExportEntry[] | null>(null)
+  const fileRef = useRef<HTMLInputElement>(null)
   const firstRowRef = useRef<HTMLTableRowElement>(null)
   const firstCardRef = useRef<HTMLDivElement>(null)
   const pageSize = useViewportPageSize(firstRowRef, firstCardRef)
@@ -95,6 +99,55 @@ export default function AICachePanel() {
     return opts
   }, [subMeta])
 
+  const handleExport = async () => {
+    try {
+      const data = await exportAICache()
+      const json = JSON.stringify(data, null, 2)
+      const filename = `ai-cache-${new Date().toISOString().slice(0, 10)}.json`
+
+      // Prefer the save picker so the toast fires only after the file is written;
+      // fall back to an anchor download where it isn't supported.
+      const saver = (window as any).showSaveFilePicker as undefined | ((opts: any) => Promise<any>)
+      if (saver) {
+        let handle
+        try {
+          handle = await saver({ suggestedName: filename, types: [{ description: 'JSON', accept: { 'application/json': ['.json'] } }] })
+        } catch (err: any) {
+          if (err?.name === 'AbortError') return // user cancelled the dialog — no toast
+          throw err
+        }
+        const writable = await handle.createWritable()
+        await writable.write(json)
+        await writable.close()
+      } else {
+        const url = URL.createObjectURL(new Blob([json], { type: 'application/json' }))
+        const a = document.createElement('a')
+        a.href = url
+        a.download = filename
+        a.click()
+        URL.revokeObjectURL(url)
+      }
+
+      const n = data.length
+      notify.success(`Saved ${n} ${n === 1 ? 'entry' : 'entries'} to ${filename}`)
+    } catch (e) {
+      notify.error(e, 'export cache')
+    }
+  }
+
+  const handleFile = async (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    e.target.value = '' // let the same file be re-selected later
+    if (!file) return
+    try {
+      const parsed = JSON.parse(await file.text())
+      if (!Array.isArray(parsed)) throw new Error('Expected a JSON array of entries')
+      setImportEntries(parsed as AICacheExportEntry[])
+    } catch (err) {
+      notify.error(err, 'read file')
+    }
+  }
+
   const delMut = useMutation({
     mutationFn: (id: number) => deleteAICache(id),
     onSuccess: () => { notify.deleted('Cache entry'); qc.invalidateQueries({ queryKey: ['aiCache'] }); setDeleting(null) },
@@ -131,7 +184,10 @@ export default function AICachePanel() {
               padding: '9px 14px', fontSize: 13, color: 'var(--color-text-primary)', outline: 'none', minWidth: 160,
             }}
           />
-          <Button icon={<PlusIcon />} onClick={() => setEditing('new')}>Add entry</Button>
+          <input ref={fileRef} type="file" accept=".json,application/json" onChange={handleFile} style={{ display: 'none' }} />
+          <Button className="aicache-btn" variant="secondary" icon={<ExportIcon />} onClick={handleExport} title="Export" aria-label="Export"><span className="hidden md:inline">Export</span></Button>
+          <Button className="aicache-btn" variant="secondary" icon={<ImportIcon />} onClick={() => fileRef.current?.click()} title="Import" aria-label="Import"><span className="hidden md:inline">Import</span></Button>
+          <Button className="aicache-btn" icon={<PlusIcon />} onClick={() => setEditing('new')} title="Add entry" aria-label="Add entry"><span className="hidden md:inline">Add entry</span></Button>
         </div>
       </div>
 
@@ -245,6 +301,9 @@ export default function AICachePanel() {
           }
         />
       )}
+      {importEntries && (
+        <AICacheImportDialog entries={importEntries} onClose={() => setImportEntries(null)} />
+      )}
     </Card>
   )
 }
@@ -292,3 +351,6 @@ function ConfidenceBar({ value }: { value: number }) {
 const iconProps = { width: 16, height: 16, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const }
 
 function PlusIcon() { return <svg {...iconProps}><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg> }
+// Export = data leaving (arrow up/out of tray); Import = data coming in (arrow down/in).
+function ExportIcon() { return <svg {...iconProps}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 8 12 3 17 8" /><line x1="12" y1="3" x2="12" y2="15" /></svg> }
+function ImportIcon() { return <svg {...iconProps}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="3" x2="12" y2="15" /></svg> }

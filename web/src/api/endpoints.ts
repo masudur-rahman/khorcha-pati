@@ -201,6 +201,31 @@ export const updateAICache = (id: number, body: AICacheInput) =>
 export const deleteAICache = (id: number) =>
   apiFetch<{ id: number }>(`${API}/admin/ai-cache/${id}`, { method: 'DELETE' })
 
+export interface AICacheExportEntry {
+  inputText: string
+  subcategoryId: string
+  intent: string
+  confidence: number
+}
+
+export type AICacheImportMode = 'skip' | 'overwrite' | 'confidence'
+
+export interface AICacheImportSummary {
+  imported: number
+  overwritten: number
+  skipped: number
+  invalid: number
+}
+
+export const exportAICache = () =>
+  apiFetch<AICacheExportEntry[]>(`${API}/admin/ai-cache/export`)
+
+export const importAICache = (mode: AICacheImportMode, entries: AICacheExportEntry[]) =>
+  apiFetch<AICacheImportSummary>(`${API}/admin/ai-cache/import`, {
+    method: 'POST',
+    body: JSON.stringify({ mode, entries }),
+  })
+
 // Profile
 export const getProfile = () => apiFetch<Profile>(`${API}/profile`)
 
