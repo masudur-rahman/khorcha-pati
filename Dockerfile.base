@@ -41,7 +41,7 @@ WORKDIR /app
 EXPOSE 6336
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-  CMD wget -q --spider "http://localhost:${SERVER_PORT:-6336}/healthz" || exit 1
+  CMD wget -q -O /dev/null "http://localhost:${SERVER_PORT:-6336}/healthz" || exit 1
 
 ENTRYPOINT ["/app/khorcha-pati"]
 CMD ["serve"]
