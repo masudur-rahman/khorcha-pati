@@ -26,6 +26,7 @@ A Telegram Bot to track your expenses. This guide covers everything you need to 
     cat - List Transaction categories
     budget - View and manage spending budgets
     dashboard - Open the web dashboard
+    phone - Share phone number for dashboard login
     sync - Sync database to Google Drive
     help - Show Usage page
     ```

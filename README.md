@@ -9,7 +9,7 @@ A Telegram Bot — now with a web dashboard — to track your expenses.
 
 - **Web Dashboard**: A beautiful, mobile-friendly React dashboard to visualize your spending trends, manage budgets, generate custom statements, and configure user settings.
 - **Natural Language Input**: The bot natively understands natural language phrases (e.g., "add 500", "lunch 250"). Just text it what you spent!
-- **AI-Powered Categorization**: Natural-language transactions are automatically sorted into the right category and subcategory using Google Gemini, and results are cached so repeats are instant.
+- **AI-Powered Categorization**: Natural-language transactions are automatically sorted into the right category and subcategory using AI (Google Gemini and/or OpenRouter, with rotation and failover), and results are cached so repeats are instant.
 - **Flexible Tracking**: Keep track of your daily expenses, income, and balance transfers between accounts.
 - **Lending and Borrowing**: Track lendings and borrowings with other individuals.
 - **Paginated Lists**: View your transactions and expenses in clean, paginated Markdown lists with easy navigation.
@@ -27,15 +27,17 @@ A Telegram Bot — now with a web dashboard — to track your expenses.
 The `Khorcha-Pati` bot is now available for public use.
 To use this bot, go to Telegram and search for [@KhorchaPatiBot](https://t.me/KhorchaPatiBot)
 
-Once you are inside the bot inbox,  press `Start` button to start using the Tracker Bot.
+Once you are inside the bot inbox, press `Start` button to start using the Tracker Bot.
 
-Before you start tracking your expenses
-- Add wallets like `cash`, `brac`, `ebl` etc
-  - Command `/new` => Wallet => Type (Cash or Bank)
-  - Reply with wallet details (`cash "Cash in Hand"`, `ebl EBL` etc)
+A `cash` wallet is created for you automatically — you can start tracking right away.
+
+Optionally, before you start:
+- Add bank wallets like `brac`, `ebl` etc
+  - Command `/new` => Wallet => Bank
+  - Reply with wallet details (`brac BRAC Bank`, `ebl EBL` etc)
 - Add contacts with whom you are financially involved
   - Command `/new` => Contact
-  - Reply with the contact details (`john "John Doe" john@doe.com`)
+  - Reply with the contact details (`john John Doe john@doe.com`)
 
 ### Track your Transactions
 
@@ -219,9 +221,20 @@ You always can send `/cat` command to list the subcategory
 - `/budget` - View and manage spending budgets
 - `/cat` - Browse transaction categories
 - `/undo` - Undo last transaction
-- `/dashboard` - Open web dashboard
+- `/dashboard` - Open web dashboard (one-tap login)
+- `/phone` - Share phone number for dashboard login
 - `/sync` - Sync database to Google Drive (if configured)
 - `/help` - Show usage help
+
+### Web Dashboard
+
+The easiest way in: send `/dashboard` to the bot and tap the button — you're signed in automatically.
+
+From the dashboard's sign-in page you can also use:
+- **QR Scan** — scan with your phone and approve in Telegram
+- **OTP Code** — enter your Telegram username or phone number; the bot sends you a login code. Country code on the phone number is optional.
+
+No Telegram username? Share your number once with `/phone`, then log in with it.
 
 
 ## Live Demonstration
@@ -233,7 +246,7 @@ https://github.com/masudur-rahman/khorcha-pati/assets/13915755/83db45c8-1e84-473
 - **Backend**: Go (Golang), Telebot, Styx ORM
 - **Database**: SQLite & PostgreSQL supported
 - **Frontend**: React, TypeScript, Vite
-- **AI Integration**: Google Gemini API
+- **AI Integration**: Google Gemini & OpenRouter APIs
 - **Deployment**: Docker (Multi-arch), Kubernetes, Terraform
 
 ## Self Hosting
