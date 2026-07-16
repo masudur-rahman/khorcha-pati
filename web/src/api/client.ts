@@ -24,6 +24,12 @@ export function getRepoUrl(): string {
   return absoluteUrl((window as any).__CONFIG__?.REPO_URL || import.meta.env.VITE_REPO_URL || DEFAULT_REPO_URL)
 }
 
+// getBotHandle derives the bot's @username from the configured bot URL.
+export function getBotHandle(): string {
+  const match = getBotUrl().match(/t\.me\/([A-Za-z0-9_]+)/i)
+  return match ? `@${match[1]}` : ''
+}
+
 const RT_KEY = 'expense_rt'
 
 let accessToken = ''

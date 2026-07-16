@@ -21,6 +21,8 @@ func NewRouter(jwtSecret, corsOrigin string) chi.Router {
 	r.Get("/healthz", HandleHealthz)
 
 	r.Route("/api/v1", func(r chi.Router) {
+		// Public runtime info (bot identity) — the SPA hydrates its config from this.
+		r.Get("/meta", HandleMeta)
 		r.Post("/auth/request-otp", HandleRequestOTP)
 		r.Post("/auth/verify-otp", HandleVerifyOTP)
 		r.Post("/auth/qr/init", HandleQRInit)

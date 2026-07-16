@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { getProfile, updateProfile } from '../api/endpoints'
+import { getBotHandle } from '../api/client'
 import { useTheme } from '../context/ThemeContext'
 import { useThemeSetter } from '../hooks/useThemeSync'
 import { notify } from '../lib/notify'
@@ -101,6 +102,9 @@ export default function Settings() {
                 <InfoItem label="Telegram User" value={`@${profile.username}`} icon={ICONS.user(18)} visible={matchesSearch('telegram')} />
                 <InfoItem label="Full Name" value={`${profile.firstName} ${profile.lastName || ''}`} icon={ICONS.shield(18)} visible={matchesSearch('name')} />
                 <InfoItem label="Telegram ID" value={profile.telegramId.toString()} isCode visible={matchesSearch('id')} />
+                {getBotHandle() && (
+                  <InfoItem label="Connected Bot" value={getBotHandle()} icon={ICONS.transactions(18)} visible={matchesSearch('bot')} />
+                )}
               </div>
             </Card>
           )}

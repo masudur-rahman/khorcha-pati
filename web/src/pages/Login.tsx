@@ -3,7 +3,7 @@ import { useNavigate, useLocation, Link } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { requestOTP, verifyOTP, initQR, pollQR, verifyMagicLink } from '../api/endpoints'
 import { QRCodeSVG } from 'qrcode.react'
-import { getBotUrl } from '../api/client'
+import { getBotUrl, getBotHandle } from '../api/client'
 import { IS_ANDROID, autofillSafeType } from '../lib/platform'
 
 export default function Login() {
@@ -105,8 +105,11 @@ export default function Login() {
         </div>
 
         <div style={{ marginTop: 28, paddingTop: 20, borderTop: '1px solid #DFE1E6', textAlign: 'center' }}>
-          <p style={{ fontSize: 12, color: '#6B778C', fontWeight: 500 }}>
-            Need help? Contact <a href={getBotUrl()} target="_blank" rel="noreferrer" style={{ color: '#0052CC', fontWeight: 700, textDecoration: 'none' }}>Support Bot</a>
+          <p style={{ fontSize: 12, color: '#6B778C', fontWeight: 500, margin: '0 0 8px' }}>
+            💡 Fastest way in: send <code style={{ background: '#F4F5F7', color: '#003D9B', padding: '1px 6px', borderRadius: 5, fontWeight: 600 }}>/dashboard</code> to the bot and tap the button.
+          </p>
+          <p style={{ fontSize: 12, color: '#6B778C', fontWeight: 500, margin: 0 }}>
+            Need help? Contact <a href={getBotUrl()} target="_blank" rel="noreferrer" style={{ color: '#0052CC', fontWeight: 700, textDecoration: 'none' }}>{getBotHandle() || 'the bot'}</a>
           </p>
         </div>
       </div>

@@ -65,6 +65,14 @@ func GetMessenger() authmod.Messenger {
 	return webCfg.messenger
 }
 
+// BotUsername returns the effective bot username (config override or live bot identity).
+func BotUsername() string {
+	if webCfg == nil {
+		return ""
+	}
+	return webCfg.botUsername
+}
+
 func InitiateSQLServices(uow styx.UnitOfWork, logger logr.Logger) {
 	userRepo := user.NewSQLUserRepository(uow.SQL, logger)
 	walletRepo := wallets.NewSQLWalletRepository(uow.SQL, logger)

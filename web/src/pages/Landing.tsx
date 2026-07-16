@@ -1,12 +1,13 @@
 import { useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
-import { getBotUrl, getRepoUrl } from '../api/client'
+import { getBotUrl, getRepoUrl, getBotHandle } from '../api/client'
 import './Landing.css'
 
-const BOT_URL = getBotUrl()
-const REPO_URL = getRepoUrl()
-
 export default function Landing() {
+  // Resolved at render (not module load) so the hydrated runtime config applies.
+  const BOT_URL = getBotUrl()
+  const REPO_URL = getRepoUrl()
+  const BOT_HANDLE = getBotHandle()
   const heroLayerRefs = useRef<HTMLElement[]>([])
 
   useEffect(() => {
@@ -70,9 +71,11 @@ export default function Landing() {
           <li><a href="#how">How it works</a></li>
           <li><a href="#commands">Commands</a></li>
           <li><a href="#dashboard">Dashboard</a></li>
-          <li><Link to="/login">Sign In</Link></li>
         </ul>
-        <a className="nav-cta" href={BOT_URL} target="_blank" rel="noreferrer">Open in Telegram</a>
+        <div className="nav-actions">
+          <Link className="nav-signin" to="/login">Sign In</Link>
+          <a className="nav-cta" href={BOT_URL} target="_blank" rel="noreferrer">Open Telegram Bot</a>
+        </div>
       </nav>
 
       <section className="hero">
@@ -94,8 +97,13 @@ export default function Landing() {
               monitor budgets, and export beautifully-typeset PDF statements — all from your phone.
             </p>
             <div className="hero-cta">
-              <a className="btn primary" href={BOT_URL} target="_blank" rel="noreferrer">Start on Telegram →</a>
-              <Link className="btn ghost" to="/login">View Dashboard</Link>
+              <a className="btn primary" href={BOT_URL} target="_blank" rel="noreferrer">Open Telegram Bot →</a>
+              <Link className="btn ghost" to="/login">Open Dashboard</Link>
+            </div>
+            <div className="getin">
+              <span className="getin-step"><b>1</b> Open {BOT_HANDLE || 'the bot'} on Telegram &amp; press <b>Start</b></span>
+              <span className="getin-step"><b>2</b> Log a khorcha — "lunch 320" <em>(optional)</em></span>
+              <span className="getin-step"><b>3</b> Send <code>/dashboard</code> &amp; tap the button — you're signed in</span>
             </div>
             <div className="trust">
               <span>Open source</span>
@@ -103,6 +111,12 @@ export default function Landing() {
               <span>Free, forever</span>
               <span>•</span>
               <span>Self-hostable</span>
+              {BOT_HANDLE && (
+                <>
+                  <span>•</span>
+                  <a className="trust-bot" href={BOT_URL} target="_blank" rel="noreferrer">{BOT_HANDLE}</a>
+                </>
+              )}
             </div>
           </div>
 
@@ -268,9 +282,10 @@ export default function Landing() {
         <h2>Ready to master your money?</h2>
         <p>Reconcile your finances in seconds, not hours. Free. Forever. Open source.</p>
         <div className="cta-actions">
-          <a className="btn primary" href={BOT_URL} target="_blank" rel="noreferrer">Start tracking on Telegram</a>
-          <Link className="btn ghost" to="/login">Explore Dashboard</Link>
+          <a className="btn primary" href={BOT_URL} target="_blank" rel="noreferrer">Open Telegram Bot</a>
+          <Link className="btn ghost" to="/login">Open Dashboard</Link>
         </div>
+        {BOT_HANDLE && <p className="cta-handle">Find the bot at <a href={BOT_URL} target="_blank" rel="noreferrer">{BOT_HANDLE}</a></p>}
       </section>
 
       <footer>
@@ -283,7 +298,7 @@ export default function Landing() {
           </div>
           <div>
             <h4>Product</h4>
-            <a href={BOT_URL} target="_blank" rel="noreferrer">Telegram Bot</a>
+            <a href={BOT_URL} target="_blank" rel="noreferrer">Telegram Bot{BOT_HANDLE ? ` (${BOT_HANDLE})` : ''}</a>
             <Link to="/login">Dashboard</Link>
           </div>
           <div>
