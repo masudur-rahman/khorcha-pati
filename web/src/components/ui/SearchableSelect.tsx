@@ -144,6 +144,7 @@ export default function SearchableSelect({ label, value, onChange, options, plac
     <div ref={containerRef} style={{ position: 'relative', width: '100%' }}>
       <Input
         label={label}
+        type="search"
         value={displayValue}
         onChange={e => {
           setSearch(e.target.value)

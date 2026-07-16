@@ -1,27 +1,46 @@
-import React, { forwardRef } from 'react'
+import React, { forwardRef, useId, useState } from 'react'
+
+import { IS_ANDROID, autofillSafeType, keypadFor } from '../../lib/platform'
 
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label: string
   error?: string
 }
 
-const Input = forwardRef<HTMLInputElement, InputProps>(function Input({ label, error, style, type, inputMode, ...props }, ref) {
-  // A stable, non-semantic name keeps mobile browsers/password managers from
-  // guessing the field is a credit-card/credential and offering saved data.
-  const fieldName = props.name ?? label.toLowerCase().replace(/[^a-z0-9]+/g, '-')
-  // Chrome/Gboard force a card/key/location autofill strip onto text & number
-  // inputs even with autocomplete=off — but exempt type="search". Render
-  // non-sensitive fields as search while preserving the intended keypad via
-  // inputMode (e.g. decimal for amounts).
-  const resolvedType = type === undefined || type === 'text' || type === 'number' || type === 'email' ? 'search' : type
-  const resolvedInputMode = inputMode ?? (type === 'number' ? 'decimal' : type === 'email' ? 'email' : undefined)
+/* Desktop Chrome ignores autocomplete="off" and heuristically matches fields
+   to saved cards/addresses using name/id/label text — e.g. "full-name" hits
+   the cardholder-name regex. Layered defenses, all needed:
+   1. Random name/id per mount — field names never match autofill regexes.
+   2. Unrecognized autocomplete token — recognized tokens invite autofill,
+      bare "off" is ignored; unknown values give Chrome nothing to map.
+   3. readOnly until first pointer/focus — autofill skips readonly fields,
+      so no suggestion popup can attach before the user interacts.
+   On Android none of this hides Chrome's keyboard autofill bar — only
+   type="search" does (see lib/platform.ts), so fields render as search there.
+   Desktop keeps real types; email/tel get their real token so the browser
+   offers the designated data, not cards. */
+const suppressedAutoCompleteFor = (type: string, uid: string) => {
+  if (IS_ANDROID) return `khp-${uid}`
+  if (type === 'email') return 'email'
+  if (type === 'tel') return 'tel'
+  return `khp-${uid}`
+}
+
+const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
+  { label, error, style, type = 'text', inputMode, autoComplete, name, id, onFocus, onBlur, onPointerDown, ...props },
+  ref,
+) {
+  const uid = useId().replace(/[^a-zA-Z0-9]/g, '')
+  const [armed, setArmed] = useState(false)
+  const resolvedType = autofillSafeType(type)
+  const resolvedInputMode = inputMode ?? keypadFor(type)
   return (
     <label style={{ display: 'flex', flexDirection: 'column', gap: 6, width: '100%', position: 'relative' }}>
-      <span style={{ 
-        fontSize: 10, 
-        fontWeight: 700, 
-        textTransform: 'uppercase', 
-        letterSpacing: '0.08em', 
+      <span style={{
+        fontSize: 10,
+        fontWeight: 700,
+        textTransform: 'uppercase',
+        letterSpacing: '0.08em',
         color: 'var(--color-text-tertiary)',
         marginLeft: 4,
       }}>
@@ -29,16 +48,22 @@ const Input = forwardRef<HTMLInputElement, InputProps>(function Input({ label, e
       </span>
       <input
         ref={ref}
-        name={fieldName}
+        name={name ?? `f-${uid}`}
+        id={id ?? `f-${uid}`}
         type={resolvedType}
         inputMode={resolvedInputMode}
-        autoComplete="off"
+        autoComplete={autoComplete ?? suppressedAutoCompleteFor(type, uid)}
         autoCorrect="off"
         autoCapitalize="off"
         spellCheck={false}
         data-lpignore="true"
         data-1p-ignore="true"
         data-form-type="other"
+        readOnly={props.readOnly ?? !armed}
+        onPointerDown={e => {
+          setArmed(true)
+          onPointerDown?.(e)
+        }}
         style={{
           width: '100%',
           background: 'var(--color-bg)',
@@ -55,12 +80,15 @@ const Input = forwardRef<HTMLInputElement, InputProps>(function Input({ label, e
           ...style,
         }}
         onFocus={e => {
-            e.currentTarget.style.border = '1px solid var(--color-primary)'
-            e.currentTarget.style.boxShadow = '0 0 0 4px var(--color-primary-subtle)'
+          setArmed(true)
+          e.currentTarget.style.border = '1px solid var(--color-primary)'
+          e.currentTarget.style.boxShadow = '0 0 0 4px var(--color-primary-subtle)'
+          onFocus?.(e)
         }}
         onBlur={e => {
-            e.currentTarget.style.border = error ? '1px solid var(--color-danger)' : '1px solid var(--color-border)'
-            e.currentTarget.style.boxShadow = 'none'
+          e.currentTarget.style.border = error ? '1px solid var(--color-danger)' : '1px solid var(--color-border)'
+          e.currentTarget.style.boxShadow = 'none'
+          onBlur?.(e)
         }}
         {...props}
       />

@@ -122,6 +122,7 @@ export default function Modal({
         {onSubmit ? (
           <form
             className={padded ? 'modal-body' : 'modal-body modal-body--flush'}
+            autoComplete="off"
             onSubmit={e => { e.preventDefault(); onSubmit() }}
           >
             {children}

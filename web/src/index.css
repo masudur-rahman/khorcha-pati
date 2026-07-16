@@ -264,9 +264,7 @@ h1, h2, h3, h4, h5, h6 {
   outline-offset: 2px;
 }
 
-/* Non-sensitive fields render as type="search" to suppress Chrome/Gboard's
-   card/key/location autofill strip. Strip the native search chrome so they
-   look identical to a normal text input. */
+/* Strip native search chrome so search fields look identical to text inputs. */
 input[type="search"] {
   -webkit-appearance: none;
   appearance: none;
@@ -278,6 +276,17 @@ input[type="search"]::-webkit-search-results-decoration {
   -webkit-appearance: none;
   appearance: none;
   display: none;
+}
+
+/* Numeric fields: hide spinner buttons; keypad comes from inputmode. */
+input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
 }
 
 /* Selection */

@@ -114,7 +114,7 @@ export default function Settings() {
               <div style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 24 }}>
                 {isEditing ? (
                   <>
-                    <Input label="Mobile Number" value={mobileNumber} onChange={e => setMobileNumber(e.target.value)} placeholder="+88017..." style={{ maxWidth: 300 }} />
+                    <Input label="Mobile Number" type="tel" value={mobileNumber} onChange={e => setMobileNumber(e.target.value)} placeholder="+88017..." style={{ maxWidth: 300 }} />
                     <SearchableSelect 
                       label="Timezone" 
                       value={timezone} 

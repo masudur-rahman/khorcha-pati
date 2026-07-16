@@ -263,6 +263,7 @@ export default function TxnDialog({ txn, initialType, initialContact, initialSub
         <div style={{ position: 'relative' }}>
           <Input
             label="Smart Search"
+            type="search"
             value={search}
             onChange={e => { setSearch(e.target.value); setShowResults(true); setHighlight(0) }}
             onKeyDown={onSearchKeyDown}

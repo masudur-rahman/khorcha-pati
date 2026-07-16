@@ -4,6 +4,7 @@ import { useAuth } from '../hooks/useAuth'
 import { requestOTP, verifyOTP, initQR, pollQR, verifyMagicLink } from '../api/endpoints'
 import { QRCodeSVG } from 'qrcode.react'
 import { getBotUrl } from '../api/client'
+import { IS_ANDROID, autofillSafeType } from '../lib/platform'
 
 export default function Login() {
   const [tab, setTab] = useState<'otp' | 'qr'>('otp')
@@ -151,7 +152,7 @@ function OTPLogin() {
     <form style={{ display: 'flex', flexDirection: 'column', gap: 16 }} autoComplete="off" onSubmit={e => e.preventDefault()}>
       <div>
         <label style={labelStyle}>Identity</label>
-        <input type="search" style={inputStyle} placeholder="Username or phone" value={identifier} onChange={e => setIdentifier(e.target.value)} disabled={sent} onKeyDown={e => { if (e.key === 'Enter' && !sent && identifier && !loading) handleSend(); }} autoComplete="off" autoCorrect="off" autoCapitalize="none" spellCheck={false} name="tg_identifier" id="tg_identifier" list="khp-identity-history" data-lpignore="true" data-1p-ignore="true" data-form-type="other" />
+        <input type={autofillSafeType('username')} style={inputStyle} placeholder="Username or phone" value={identifier} onChange={e => setIdentifier(e.target.value)} disabled={sent} onKeyDown={e => { if (e.key === 'Enter' && !sent && identifier && !loading) handleSend(); }} autoComplete="khp-identity" autoCorrect="off" autoCapitalize="none" spellCheck={false} name="khp-identity" id="khp-identity" list="khp-identity-history" data-lpignore="true" data-1p-ignore="true" data-form-type="other" />
         {history.length > 0 && (
           <datalist id="khp-identity-history">
             {history.map(h => <option key={h} value={h} />)}
@@ -161,7 +162,7 @@ function OTPLogin() {
       {sent && (
         <div>
           <label style={labelStyle}>Verification Code</label>
-          <input type="search" style={{ ...inputStyle, textAlign: 'center', letterSpacing: '0.3em', fontSize: 22, fontWeight: 700 }} placeholder="000000" value={code} onChange={e => setCode(e.target.value)} maxLength={6} onKeyDown={e => { if (e.key === 'Enter' && sent && code.length === 6 && !loading) handleVerify(); }} autoFocus autoComplete="off" inputMode="numeric" pattern="[0-9]*" name="tg_code" id="tg_code" data-lpignore="true" data-1p-ignore="true" data-form-type="other" />
+          <input type={autofillSafeType('number')} style={{ ...inputStyle, textAlign: 'center', letterSpacing: '0.3em', fontSize: 22, fontWeight: 700 }} placeholder="000000" value={code} onChange={e => setCode(e.target.value)} maxLength={6} onKeyDown={e => { if (e.key === 'Enter' && sent && code.length === 6 && !loading) handleVerify(); }} autoFocus autoComplete={IS_ANDROID ? 'khp-otp' : 'one-time-code'} inputMode="numeric" pattern="[0-9]*" name="khp-otp" id="khp-otp" data-lpignore="true" data-1p-ignore="true" data-form-type="other" />
         </div>
       )}
       {error && <p style={{ color: '#DE350B', fontSize: 12, fontWeight: 700, textAlign: 'center', margin: 0 }}>{error}</p>}

@@ -477,7 +477,7 @@ function AddContactDialog({ onClose }: { onClose: () => void }) {
       <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
         <Input label="Nick Name (Unique)" placeholder="e.g. karim" value={nickName} onChange={e => setNickName(e.target.value)} error={nickNameError || undefined} />
         <Input label="Full Name" placeholder="e.g. Abdul Karim" value={fullName} onChange={e => setFullName(e.target.value)} error={fullNameError || undefined} />
-        <Input label="Email Address" type="email" name="ct-addr" placeholder="karim@example.com" value={email} onChange={e => setEmail(e.target.value)} error={emailError || undefined} />
+        <Input label="Email Address" type="email" placeholder="karim@example.com" value={email} onChange={e => setEmail(e.target.value)} error={emailError || undefined} />
       </div>
     </Modal>
   )
@@ -527,7 +527,7 @@ function EditContactDialog({ contact, onClose }: { contact: Contact; onClose: ()
       <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
         <Input label="Nick Name (Unique)" placeholder="e.g. karim" value={nickName} onChange={e => setNickName(e.target.value)} error={nickNameError || undefined} />
         <Input label="Full Name" placeholder="e.g. Abdul Karim" value={fullName} onChange={e => setFullName(e.target.value)} error={fullNameError || undefined} />
-        <Input label="Email Address" type="email" name="ct-addr" placeholder="karim@example.com" value={email} onChange={e => setEmail(e.target.value)} error={emailError || undefined} />
+        <Input label="Email Address" type="email" placeholder="karim@example.com" value={email} onChange={e => setEmail(e.target.value)} error={emailError || undefined} />
       </div>
     </Modal>
   )
