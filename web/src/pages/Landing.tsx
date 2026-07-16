@@ -74,7 +74,10 @@ export default function Landing() {
         </ul>
         <div className="nav-actions">
           <Link className="nav-signin" to="/login">Sign In</Link>
-          <a className="nav-cta" href={BOT_URL} target="_blank" rel="noreferrer">Open Telegram Bot</a>
+          <a className="nav-cta" href={BOT_URL} target="_blank" rel="noreferrer">
+            <span className="label-full">Open Telegram Bot</span>
+            <span className="label-short">Open Bot</span>
+          </a>
         </div>
       </nav>
 
@@ -101,9 +104,9 @@ export default function Landing() {
               <Link className="btn ghost" to="/login">Open Dashboard</Link>
             </div>
             <div className="getin">
-              <span className="getin-step"><b>1</b> Open {BOT_HANDLE || 'the bot'} on Telegram &amp; press <b>Start</b></span>
-              <span className="getin-step"><b>2</b> Log a khorcha — "lunch 320" <em>(optional)</em></span>
-              <span className="getin-step"><b>3</b> Send <code>/dashboard</code> &amp; tap the button — you're signed in</span>
+              <span className="getin-step"><b>1</b><span>Open {BOT_HANDLE || 'the bot'} on Telegram &amp; press <b>Start</b></span></span>
+              <span className="getin-step"><b>2</b><span>Log a khorcha — "lunch 320" <em>(optional)</em></span></span>
+              <span className="getin-step"><b>3</b><span>Send <code>/dashboard</code> — one tap signs you in</span></span>
             </div>
             <div className="trust">
               <span>Open source</span>
@@ -124,28 +127,37 @@ export default function Landing() {
             <div ref={registerLayer} className="parallax bg-art" data-speed="0.08" />
             <div ref={registerLayer} className="parallax phone" data-speed="0.18">
               <div className="phone-screen">
-                <div className="phone-head"><span className="dot" /> Khorcha-Pati Bot</div>
+                <div className="phone-head"><span className="dot" /> {BOT_HANDLE || 'Khorcha-Pati Bot'}</div>
                 <div className="chat">
-                  <div className="bubble user">Lunch 320</div>
-                  <div className="bubble bot">Saved 🍱 Food · Dining · ৳320 from bKash</div>
-                  <div className="bubble user">Paid Karim 500</div>
-                  <div className="bubble bot">Tracked 💰 Loan · −৳500 to @karim</div>
-                  <div className="bubble user">Salary 52000</div>
-                  <div className="bubble bot">Logged 💼 Income · +৳52,000 to BRAC</div>
+                  <div className="bubble user">lunch 320</div>
+                  <div className="bubble bot">
+                    <span className="b-title">💸 Expense Recorded</span>
+                    <span className="b-line">💵 −৳320 · 🏷 Food › Dining</span>
+                  </div>
+                  <div className="bubble user">lent karim 500</div>
+                  <div className="bubble bot">
+                    <span className="b-title">💸 Expense Recorded</span>
+                    <span className="b-line">💵 −৳500 · 👤 To: Karim</span>
+                  </div>
+                  <div className="bubble user">salary 52k in brac</div>
+                  <div className="bubble bot">
+                    <span className="b-title">💰 Income Recorded</span>
+                    <span className="b-line">💵 +৳52,000 · 📥 To: BRAC Bank</span>
+                  </div>
                 </div>
               </div>
             </div>
             <div ref={registerLayer} className="parallax card-floater bank" data-speed="0.26" data-base-rotate="-2deg" data-rotate="0.003">
               <span className="card-brand">Khorcha-Pati</span>
-              <span className="card-num">•••• 4521</span>
+              <span className="card-num">brac · bank</span>
               <span className="card-amt">৳ 37,630</span>
               <span className="card-name">BRAC BANK</span>
             </div>
             <div ref={registerLayer} className="parallax card-floater cash" data-speed="0.32" data-base-rotate="-6deg" data-rotate="0.005">
               <span className="card-brand">Khorcha-Pati</span>
-              <span className="card-num">— — — —</span>
+              <span className="card-num">cash · wallet</span>
               <span className="card-amt">৳ 3,210</span>
-              <span className="card-name">WALLET</span>
+              <span className="card-name">CASH IN HAND</span>
             </div>
           </div>
         </div>
@@ -235,14 +247,15 @@ export default function Landing() {
             <span>Khorcha-Pati</span>
           </div>
           <div className="dash-main">
+            {/* Numbers stay consistent with the hero mockup: 37,630 (brac) + 3,210 (cash) = 40,840 */}
             <div className="dash-hero">
               <span>Good morning</span>
-              <strong>Current Balance is ৳37,630</strong>
+              <strong>Current Balance is ৳40,840</strong>
             </div>
             <div className="dash-strip">
               <div><em>Income</em><strong>+৳52,000</strong></div>
               <div><em>Expense</em><strong>−৳18,450</strong></div>
-              <div><em>Net</em><strong>৳33,550</strong></div>
+              <div><em>Net</em><strong>+৳33,550</strong></div>
             </div>
           </div>
         </div>
