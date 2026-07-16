@@ -56,7 +56,17 @@ func StartTrackingExpenses(ctx telebot.Context) error {
 		return HandleQRLogin(sessionID, ctx)
 	}
 
-	return sendStartText(ctx)
+	if err = sendStartText(ctx); err != nil {
+		return err
+	}
+
+	// Without a Telegram username, OTP login has nothing to identify the user by —
+	// point them at /phone (verified number) as the alternative.
+	if ctx.Get("new-user") != nil && ctx.Sender().Username == "" {
+		return ctx.Send("ℹ️ No Telegram username set — share your number with /phone for OTP login, or just use /dashboard.")
+	}
+
+	return nil
 }
 
 func ensureDefaultWallet(userID int64) error {

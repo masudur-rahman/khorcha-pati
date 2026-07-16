@@ -18,10 +18,6 @@ func Dashboard(ctx telebot.Context) error {
 		return ctx.Send("Please /start the bot first to create your profile.")
 	}
 
-	if user.Username == "" && user.MobileNumber == "" {
-		return ctx.Send("Set a Telegram username or share your phone number first so the dashboard can identify you.")
-	}
-
 	cfg := configs.TrackerConfig.Server
 	if !cfg.DashboardEnabled {
 		return ctx.Send("Web dashboard is not enabled.")

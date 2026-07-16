@@ -65,8 +65,6 @@ func TestRequestOTP_userNotFound(t *testing.T) {
 
 	userRepo.On("GetUser", models.Profile{Username: "nobody"}).
 		Return(nil, models.ErrUserNotFound{Username: "nobody"})
-	userRepo.On("GetUser", models.Profile{MobileNumber: "nobody"}).
-		Return(nil, models.ErrUserNotFound{})
 
 	err := svc.RequestOTP("nobody")
 

@@ -29,16 +29,10 @@ func (us *userService) GetUserByUsername(username string) (*models.Profile, erro
 	return us.userRepo.GetUser(filter)
 }
 
-// GetUserByIdentifier looks up a user by username first, then by mobile number.
+// GetUserByIdentifier looks up a user by username first, then by mobile number
+// (with or without country code).
 func (us *userService) GetUserByIdentifier(identifier string) (*models.Profile, error) {
-	user, err := us.userRepo.GetUser(models.Profile{Username: identifier})
-	if err == nil {
-		return user, nil
-	}
-	if !models.IsErrNotFound(err) {
-		return nil, err
-	}
-	return us.userRepo.GetUser(models.Profile{MobileNumber: identifier})
+	return repos.FindUserByIdentifier(us.userRepo, identifier)
 }
 
 func (us *userService) ListUsers() ([]models.Profile, error) {

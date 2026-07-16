@@ -37,6 +37,11 @@ func (m *UserRepo) ListUsers() ([]models.Profile, error) {
 	return args.Get(0).([]models.Profile), args.Error(1)
 }
 
+func (m *UserRepo) FindUsers(filter models.Profile) ([]models.Profile, error) {
+	args := m.Called(filter)
+	return args.Get(0).([]models.Profile), args.Error(1)
+}
+
 func (m *UserRepo) AddNewUser(user *models.Profile) error {
 	return m.Called(user).Error(0)
 }

@@ -51,6 +51,7 @@ func TeleBotRoutes() (*telebot.Bot, error) {
 
 	bot.Handle("/help", handlers.Help)
 	bot.Handle("/dashboard", handlers.Dashboard)
+	bot.Handle("/phone", handlers.SharePhone)
 
 	bot.Handle("/sync", handlers.SyncSQLiteDatabase)
 	bot.Handle("/undo", handlers.HandleUndo)
@@ -79,6 +80,7 @@ func setBotCommands(bot *telebot.Bot) error {
 		{Text: "allsummary", Description: "Detailed summary by type/category"},
 		{Text: "budget", Description: "View and manage budgets"},
 		{Text: "dashboard", Description: "Open web dashboard"},
+		{Text: "phone", Description: "Share phone number for dashboard login"},
 		{Text: "list", Description: "List recent transactions"},
 		{Text: "expense", Description: "List expenses"},
 		{Text: "cat", Description: "Browse transaction categories"},

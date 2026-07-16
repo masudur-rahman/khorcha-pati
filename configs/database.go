@@ -91,6 +91,9 @@ func initializeSQLServices(uow styx.UnitOfWork) error {
 	if err := fixNullZeroValues(uow.SQL); err != nil {
 		return err
 	}
+	if err := backfillMobileSuffix(uow.SQL); err != nil {
+		return err
+	}
 	all.InitiateSQLServices(uow, logr.DefaultLogger)
 
 	return all.GetServices().Txn.UpdateTxnCategories()
@@ -233,6 +236,28 @@ func InsertAICache(entry models.AICache) error {
 	}
 	_, err := GetUnitOfWork().SQL.Table(models.AICache{}.TableName()).InsertOne(context.Background(), entry)
 	return err
+}
+
+// backfillMobileSuffix populates the mobile_suffix lookup key for profiles
+// created before the column existed. One-time cost at startup; subsequent
+// writes maintain the suffix in the user repo.
+func backfillMobileSuffix(db isql.Engine) error {
+	ctx := context.Background()
+	profiles := make([]models.Profile, 0)
+	if err := db.Table(models.Profile{}.TableName()).FindMany(ctx, &profiles); err != nil {
+		return fmt.Errorf("backfill mobile suffix: %w", err)
+	}
+	for i := range profiles {
+		suffix := models.PhoneSuffix(profiles[i].MobileNumber)
+		if suffix == "" || profiles[i].MobileSuffix == suffix {
+			continue
+		}
+		profiles[i].MobileSuffix = suffix
+		if err := db.Table(profiles[i].TableName()).ID(profiles[i].ID).UpdateOne(ctx, &profiles[i]); err != nil {
+			return fmt.Errorf("backfill mobile suffix: %w", err)
+		}
+	}
+	return nil
 }
 
 // SeedAdminUser marks the configured bot owner as admin.

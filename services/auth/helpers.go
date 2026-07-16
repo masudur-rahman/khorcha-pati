@@ -6,6 +6,7 @@ import (
 
 	"github.com/masudur-rahman/khorcha-pati/models"
 	authmod "github.com/masudur-rahman/khorcha-pati/modules/auth"
+	"github.com/masudur-rahman/khorcha-pati/repos"
 )
 
 type otpSession struct {
@@ -25,14 +26,7 @@ func qrKey(sessionID string) string { return fmt.Sprintf("qr:%s", sessionID) }
 func magicKey(token string) string { return fmt.Sprintf("magic:%s", token) }
 
 func (s *authService) lookupUser(identifier string) (*models.Profile, error) {
-	user, err := s.userRepo.GetUser(models.Profile{Username: identifier})
-	if err == nil {
-		return user, nil
-	}
-	if !models.IsErrNotFound(err) {
-		return nil, err
-	}
-	return s.userRepo.GetUser(models.Profile{MobileNumber: identifier})
+	return repos.FindUserByIdentifier(s.userRepo, identifier)
 }
 
 func (s *authService) issueTokenPair(user *models.Profile) (*authmod.TokenPair, error) {

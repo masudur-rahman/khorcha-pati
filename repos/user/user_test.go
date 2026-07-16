@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/masudur-rahman/khorcha-pati/models"
+	"github.com/masudur-rahman/khorcha-pati/repos"
 
 	isql "github.com/masudur-rahman/styx/sql"
 	"github.com/masudur-rahman/styx/sql/sqlite"
@@ -68,6 +69,50 @@ func TestUpdateUser_PersistsTheme(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, models.ThemeDark, got.Theme)
 	assert.Equal(t, "Asia/Dhaka", got.Timezone)
+}
+
+// Phone login must work whether the user types the country code or not,
+// regardless of which form the stored number has.
+func TestFindUserByIdentifier_PhoneWithOrWithoutCountryCode(t *testing.T) {
+	repo, _ := setupUserRepo(t)
+
+	require.NoError(t, repo.AddNewUser(&models.Profile{
+		TelegramID: 555004, Username: "phoneuser", MobileNumber: "+8801712345678", IsActive: true,
+	}))
+
+	for _, id := range []string{"phoneuser", "+8801712345678", "8801712345678", "01712345678", "008801712345678"} {
+		got, err := repos.FindUserByIdentifier(repo, id)
+		require.NoError(t, err, "identifier %q", id)
+		assert.Equal(t, int64(555004), got.TelegramID, "identifier %q", id)
+	}
+
+	_, err := repos.FindUserByIdentifier(repo, "01898765432")
+	assert.True(t, models.IsErrNotFound(err))
+}
+
+// Same last-8 suffix across countries: verification must pick the full match
+// and refuse to guess when the typed form fits several accounts.
+func TestFindUserByIdentifier_SuffixCollision(t *testing.T) {
+	repo, _ := setupUserRepo(t)
+
+	require.NoError(t, repo.AddNewUser(&models.Profile{
+		TelegramID: 555005, Username: "bd", MobileNumber: "+8801712345678", IsActive: true,
+	}))
+	require.NoError(t, repo.AddNewUser(&models.Profile{
+		TelegramID: 555006, Username: "sg", MobileNumber: "+6512345678", IsActive: true,
+	}))
+
+	got, err := repos.FindUserByIdentifier(repo, "01712345678")
+	require.NoError(t, err)
+	assert.Equal(t, int64(555005), got.TelegramID)
+
+	got, err = repos.FindUserByIdentifier(repo, "+6512345678")
+	require.NoError(t, err)
+	assert.Equal(t, int64(555006), got.TelegramID)
+
+	// Bare "12345678" fits both accounts — ambiguous, must not guess.
+	_, err = repos.FindUserByIdentifier(repo, "12345678")
+	assert.True(t, models.IsErrNotFound(err))
 }
 
 // Disabled users remain findable (blocking is done by explicit IsActive checks

@@ -161,8 +161,9 @@ func TestGetUserByIdentifier_foundByMobile(t *testing.T) {
 	expected := &models.Profile{ID: 1, MobileNumber: "+8801700000000"}
 	repo.On("GetUser", models.Profile{Username: "+8801700000000"}).
 		Return(nil, models.ErrUserNotFound{})
-	repo.On("GetUser", models.Profile{MobileNumber: "+8801700000000"}).
-		Return(expected, nil)
+	// Mobile lookup queries by the last-8-digits suffix key, then verifies.
+	repo.On("FindUsers", models.Profile{MobileSuffix: "00000000"}).
+		Return([]models.Profile{*expected}, nil)
 
 	result, err := svc.GetUserByIdentifier("+8801700000000")
 
@@ -176,8 +177,6 @@ func TestGetUserByIdentifier_notFound(t *testing.T) {
 	svc := NewProfileService(repo)
 
 	repo.On("GetUser", models.Profile{Username: "nobody"}).
-		Return(nil, models.ErrUserNotFound{})
-	repo.On("GetUser", models.Profile{MobileNumber: "nobody"}).
 		Return(nil, models.ErrUserNotFound{})
 
 	result, err := svc.GetUserByIdentifier("nobody")

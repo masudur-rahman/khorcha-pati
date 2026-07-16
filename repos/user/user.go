@@ -73,8 +73,17 @@ func (u *SQLUserRepository) ListUsers() ([]models.Profile, error) {
 	return users, err
 }
 
+// FindUsers returns all users matching the non-zero fields of the filter.
+func (u *SQLUserRepository) FindUsers(filter models.Profile) ([]models.Profile, error) {
+	ctx := context.Background()
+	users := make([]models.Profile, 0)
+	err := u.db.FindMany(ctx, &users, filter)
+	return users, err
+}
+
 func (u *SQLUserRepository) AddNewUser(user *models.Profile) error {
 	ctx := context.Background()
+	user.MobileSuffix = models.PhoneSuffix(user.MobileNumber)
 	_, err := u.db.InsertOne(ctx, user)
 	return err
 }
@@ -89,6 +98,7 @@ func (u *SQLUserRepository) UpdateUser(id int64, us *models.Profile) error {
 	user.FirstName = us.FirstName
 	user.LastName = us.LastName
 	user.MobileNumber = us.MobileNumber
+	user.MobileSuffix = models.PhoneSuffix(us.MobileNumber)
 	user.Timezone = us.Timezone
 	user.Theme = us.Theme
 
