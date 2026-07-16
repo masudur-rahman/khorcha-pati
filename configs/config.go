@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/masudur-rahman/khorcha-pati/modules/cache"
@@ -35,8 +36,16 @@ type ServerConfig struct {
 }
 
 type Telegram struct {
-	User   string `json:"user" yaml:"user"`
+	// BotOwner is the Telegram username granted dashboard admin on signup/startup.
+	BotOwner string `json:"bot_owner" yaml:"bot_owner"`
+	// User is the deprecated name for BotOwner; kept so existing configs load.
+	User   string `json:"user,omitempty" yaml:"user,omitempty"`
 	Secret string `json:"secret" yaml:"secret"`
+}
+
+// IsBotOwner reports whether the given Telegram username is the configured bot owner.
+func (c ExpenseConfiguration) IsBotOwner(username string) bool {
+	return c.Telegram.BotOwner != "" && strings.EqualFold(username, c.Telegram.BotOwner)
 }
 
 type DatabaseConfig struct {
@@ -109,8 +118,19 @@ func (c *ExpenseConfiguration) OverrideWithEnv() {
 	if token := os.Getenv("EXPENSE_BOT_TOKEN"); token != "" {
 		c.Telegram.Secret = token
 	}
-	if user := os.Getenv("EXPENSE_BOT_USER"); user != "" {
-		c.Telegram.User = user
+	// Deprecated `telegram.user` yaml key and EXPENSE_BOT_USER env still work as fallbacks.
+	if c.Telegram.BotOwner == "" {
+		c.Telegram.BotOwner = c.Telegram.User
+	}
+	c.Telegram.User = ""
+	if owner := os.Getenv("EXPENSE_BOT_OWNER"); owner != "" {
+		c.Telegram.BotOwner = owner
+	} else if owner = os.Getenv("EXPENSE_BOT_USER"); owner != "" {
+		c.Telegram.BotOwner = owner
+	}
+
+	if c.Telegram.BotOwner == "" {
+		c.Telegram.BotOwner = "masudur_rahman"
 	}
 
 	if dbPass := os.Getenv("EXPENSE_DB_PASS"); dbPass != "" {

@@ -235,9 +235,9 @@ func InsertAICache(entry models.AICache) error {
 	return err
 }
 
-// SeedAdminUser marks the configured Telegram user as admin.
+// SeedAdminUser marks the configured bot owner as admin.
 func SeedAdminUser() {
-	username := TrackerConfig.Telegram.User
+	username := TrackerConfig.Telegram.BotOwner
 	if username == "" {
 		return
 	}

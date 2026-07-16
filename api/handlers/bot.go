@@ -34,6 +34,9 @@ func StartTrackingExpenses(ctx telebot.Context) error {
 			FirstName:  ctx.Sender().FirstName,
 			LastName:   ctx.Sender().LastName,
 			Timezone:   "Asia/Dhaka",
+			// Startup seeding can't cover a clean DB where the owner hasn't
+			// signed up yet, so grant admin here as well.
+			IsAdmin: configs.TrackerConfig.IsBotOwner(ctx.Sender().Username),
 		}
 		if err = us.SignUp(user); err != nil {
 			return ctx.Send(models.ErrCommonResponse(err))

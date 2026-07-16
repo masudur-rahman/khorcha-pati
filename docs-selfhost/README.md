@@ -88,6 +88,7 @@ The application supports environment variable overrides for all sensitive config
 |---|---|
 | `TELEGRAM_BOT_TOKEN` | Bot token from @BotFather |
 | `EXPENSE_BOT_TOKEN` | (Alternative) Overrides the Telegram secret in YAML |
+| `EXPENSE_BOT_OWNER` | Overrides `telegram.bot_owner` in YAML — the Telegram username granted dashboard admin (legacy: `EXPENSE_BOT_USER` / `telegram.user`) |
 
 ### AI Classification (Optional)
 
@@ -121,7 +122,7 @@ The bot reads its configuration from `.configs/.khorcha-pati.yaml` (relative to 
 
 ```yaml
 telegram:
-    user: <telegram_username>
+    bot_owner: <telegram_username>  # granted dashboard admin
 database:
     type: sqlite  # or postgres
     sqlite:
@@ -181,7 +182,7 @@ The Docker image supports both `wkhtmltopdf` and `chromedp` engines and is built
 
     echo '
     telegram:
-      user: <telegram_username>
+      bot_owner: <telegram_username>
     database:
       type: sqlite
     cache:

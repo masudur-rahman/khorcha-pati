@@ -30,7 +30,4 @@ func initConfig() {
 
 	configs.TrackerConfig.OverrideWithEnv()
 
-	if configs.TrackerConfig.Telegram.User == "" {
-		configs.TrackerConfig.Telegram.User = "masudur_rahman"
-	}
 }
