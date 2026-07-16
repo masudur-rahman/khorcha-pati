@@ -2,7 +2,9 @@
 # ══════════════════════════════════════════════════════════════════════════════
 # Stage 1 · Build
 # ══════════════════════════════════════════════════════════════════════════════
-FROM node:22-alpine AS build
+# --platform=$BUILDPLATFORM: dist/ is arch-independent static output, so build
+# natively on the host — Node under QEMU emulation crashes (illegal instruction).
+FROM --platform=$BUILDPLATFORM node:22-alpine AS build
 
 WORKDIR /app
 
