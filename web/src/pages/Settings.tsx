@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { getProfile, updateProfile } from '../api/endpoints'
 import { useTheme } from '../context/ThemeContext'
+import { useThemeSetter } from '../hooks/useThemeSync'
 import { notify } from '../lib/notify'
 
 import TopBar from '../components/layout/TopBar'
@@ -47,7 +48,8 @@ const getTimezoneOptions = () => {
 };
 
 export default function Settings() {
-  const { theme, setTheme } = useTheme()
+  const { theme } = useTheme()
+  const setTheme = useThemeSetter()
   const qc = useQueryClient()
   const { data: profile, isLoading } = useQuery({ queryKey: ['profile'], queryFn: getProfile })
   const update = useMutation({
@@ -158,7 +160,7 @@ export default function Settings() {
                   />
                 </div>
                 <p style={{ fontSize: 11, color: 'var(--color-text-tertiary)', margin: '4px 0 0' }}>
-                  Theme syncs across the app and persists in this browser.
+                  Theme is saved to your profile and follows you across devices.
                 </p>
               </div>
             </Card>

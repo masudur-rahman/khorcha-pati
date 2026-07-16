@@ -131,12 +131,18 @@ func HandleUpdateProfile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Pointer fields so partial updates (e.g. theme-only) leave other fields untouched.
 	var req struct {
-		MobileNumber string `json:"mobileNumber"`
-		Timezone     string `json:"timezone"`
+		MobileNumber *string `json:"mobileNumber"`
+		Timezone     *string `json:"timezone"`
+		Theme        *string `json:"theme"`
 	}
 	if err := ReadJSON(r, &req); err != nil {
 		WriteError(w, http.StatusBadRequest, "bad_request", "invalid request body")
+		return
+	}
+	if req.Theme != nil && *req.Theme != "" && *req.Theme != models.ThemeLight && *req.Theme != models.ThemeDark {
+		WriteError(w, http.StatusBadRequest, "bad_request", "theme must be light, dark, or empty")
 		return
 	}
 
@@ -146,8 +152,15 @@ func HandleUpdateProfile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user.MobileNumber = req.MobileNumber
-	user.Timezone = req.Timezone
+	if req.MobileNumber != nil {
+		user.MobileNumber = *req.MobileNumber
+	}
+	if req.Timezone != nil {
+		user.Timezone = *req.Timezone
+	}
+	if req.Theme != nil {
+		user.Theme = *req.Theme
+	}
 
 	if err := all.GetServices().User.UpdateUser(claims.UserID, user); err != nil {
 		WriteError(w, http.StatusInternalServerError, "update_failed", err.Error())

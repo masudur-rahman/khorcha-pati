@@ -16,6 +16,13 @@ func (Contacts) TableName() string {
 	return "contacts"
 }
 
+// Dashboard theme preferences stored on the profile. Empty means unset —
+// the dashboard falls back to the device color scheme.
+const (
+	ThemeLight = "light"
+	ThemeDark  = "dark"
+)
+
 type Profile struct {
 	ID           int64  `db:"id,pk" json:"id"`
 	TelegramID   int64  `db:",uq" json:"telegramId"`
@@ -24,6 +31,7 @@ type Profile struct {
 	LastName     string `json:"lastName"`
 	Timezone     string `db:"timezone" json:"timezone"`
 	MobileNumber string `db:"mobile_number" json:"mobileNumber"`
+	Theme        string `db:"theme" json:"theme"`
 	IsAdmin      bool   `db:"is_admin" json:"isAdmin"`
 	IsActive     bool   `db:"is_active" json:"isActive"`
 	CreatedAt    int64  `db:"created_at" json:"createdAt"`

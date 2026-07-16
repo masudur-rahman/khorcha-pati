@@ -4,9 +4,12 @@ import Sidebar from './Sidebar'
 import MobileNav from './MobileNav'
 import { ICONS } from '../ui/Icons'
 import TxnDialog from '../ui/TxnDialog'
+import { useServerTheme } from '../../hooks/useThemeSync'
 
 export default function AppLayout() {
   const location = useLocation()
+  // Apply the profile's saved theme once the profile loads.
+  useServerTheme()
   const showFab = true
   const [showAddTxn, setShowAddTxn] = useState(false)
   const [fabVisible, setFabVisible] = useState(true)

@@ -90,6 +90,7 @@ func (u *SQLUserRepository) UpdateUser(id int64, us *models.Profile) error {
 	user.LastName = us.LastName
 	user.MobileNumber = us.MobileNumber
 	user.Timezone = us.Timezone
+	user.Theme = us.Theme
 
 	return u.db.ID(id).UpdateOne(ctx, user)
 }

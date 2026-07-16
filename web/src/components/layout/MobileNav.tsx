@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
 import { useTheme } from '../../context/ThemeContext'
+import { useThemeToggle } from '../../hooks/useThemeSync'
 import { ICONS } from '../ui/Icons'
 
 const primary = [
@@ -16,7 +17,8 @@ const moreRoutes = ['/settings', '/admin']
 
 export default function MobileNav() {
   const { isAdmin, logout } = useAuth()
-  const { theme, toggle } = useTheme()
+  const { theme } = useTheme()
+  const toggle = useThemeToggle()
   const navigate = useNavigate()
   const location = useLocation()
   const [showMore, setShowMore] = useState(false)

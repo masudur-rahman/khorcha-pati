@@ -5,6 +5,7 @@ import { ICONS } from '../ui/Icons'
 import { useSearch } from '../../context/SearchContext'
 import { useAuth } from '../../hooks/useAuth'
 import { useTheme } from '../../context/ThemeContext'
+import { useThemeToggle } from '../../hooks/useThemeSync'
 import { useBudgetAlerts } from '../../hooks/useBudgets'
 import { getProfile } from '../../api/endpoints'
 import { fmt } from '../../lib/formatter'
@@ -35,7 +36,8 @@ export default function TopBar({ title, subtitle }: TopBarProps) {
   const [dropdownTop, setDropdownTop] = useState(0)
   const [searchResultsTop, setSearchResultsTop] = useState(0)
 
-  const { theme, toggle: toggleDarkMode } = useTheme()
+  const { theme } = useTheme()
+  const toggleDarkMode = useThemeToggle()
   const darkMode = theme === 'dark'
 
   // Close dropdowns on outside click

@@ -97,6 +97,8 @@ export interface Profile {
   lastName: string
   timezone: string
   mobileNumber: string
+  /** '' = unset — dashboard follows the device color scheme */
+  theme: '' | 'light' | 'dark'
 }
 
 export interface ChartData {

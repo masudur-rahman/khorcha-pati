@@ -50,6 +50,26 @@ func TestGetUser_ActiveUserIsFound(t *testing.T) {
 	})
 }
 
+// Theme must round-trip through UpdateUser so the dashboard preference
+// saved from the web UI survives profile edits.
+func TestUpdateUser_PersistsTheme(t *testing.T) {
+	repo, _ := setupUserRepo(t)
+
+	u := &models.Profile{TelegramID: 555003, Username: "themed", Timezone: "Asia/Dhaka", IsActive: true}
+	require.NoError(t, repo.AddNewUser(u))
+
+	saved, err := repo.GetUser(models.Profile{TelegramID: 555003})
+	require.NoError(t, err)
+
+	saved.Theme = models.ThemeDark
+	require.NoError(t, repo.UpdateUser(saved.ID, saved))
+
+	got, err := repo.GetUserByID(saved.ID)
+	require.NoError(t, err)
+	assert.Equal(t, models.ThemeDark, got.Theme)
+	assert.Equal(t, "Asia/Dhaka", got.Timezone)
+}
+
 // Disabled users remain findable (blocking is done by explicit IsActive checks
 // in the auth/middleware layer, not by the lookup filter).
 func TestGetUser_DisabledUserIsFound(t *testing.T) {
