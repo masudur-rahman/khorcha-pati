@@ -295,14 +295,27 @@ func handleTransactionFromRegularText(ctx telebot.Context) (string, error) {
 		return "", err
 	}
 
-	isContact := func(name string) bool {
-		_, err = all.GetServices().Contact.GetContactByName(user.ID, name)
-		return err == nil
+	// Prefetch names once: the parser probes many candidate tokens per message,
+	// so set lookups beat a DB query per token.
+	contactNames := make(map[string]struct{})
+	if contacts, err := all.GetServices().Contact.ListContacts(user.ID); err == nil {
+		for _, c := range contacts {
+			contactNames[strings.ToLower(c.NickName)] = struct{}{}
+		}
 	}
-
+	walletNames := make(map[string]struct{})
+	if wallets, err := all.GetServices().Wallet.ListWallets(user.ID); err == nil {
+		for _, w := range wallets {
+			walletNames[strings.ToLower(w.ShortName)] = struct{}{}
+		}
+	}
+	isContact := func(name string) bool {
+		_, ok := contactNames[strings.ToLower(name)]
+		return ok
+	}
 	isAccount := func(name string) bool {
-		_, err = all.GetServices().Wallet.GetWalletByShortName(user.ID, name)
-		return err == nil
+		_, ok := walletNames[strings.ToLower(name)]
+		return ok
 	}
 
 	txn, err := transaction.ParseTransaction(ctx.Text(), isContact, isAccount, pkg.LoadTimezone(user.Timezone))
