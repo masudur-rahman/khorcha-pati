@@ -90,6 +90,8 @@ The application supports environment variable overrides for all sensitive config
 | `TELEGRAM_BOT_TOKEN` | Bot token from @BotFather |
 | `EXPENSE_BOT_TOKEN` | (Alternative) Overrides the Telegram secret in YAML |
 | `EXPENSE_BOT_OWNER` | Overrides `telegram.bot_owner` in YAML — the Telegram username granted dashboard admin (legacy: `EXPENSE_BOT_USER` / `telegram.user`) |
+| `EXPENSE_ALLOWED_USERS_ONLY` | `true` restricts the instance to allowed users (stage/dev) |
+| `EXPENSE_ALLOWED_USERS` | Comma-separated usernames or Telegram IDs seeded into the allowlist |
 
 ### AI Classification (Optional)
 
@@ -124,6 +126,12 @@ The bot reads its configuration from `.configs/.khorcha-pati.yaml` (relative to 
 ```yaml
 telegram:
     bot_owner: <telegram_username>  # granted dashboard admin
+    # Optional — restrict a stage/dev instance to allowed users only.
+    # Seeded additively on boot; manage from the admin dashboard afterwards.
+    # allowedUsersOnly: true
+    # allowedUsers: [alice, "@bob", "123456789"]  # usernames or Telegram IDs
+    # liveBotURL: https://t.me/KhorchaPatiBot     # baked into the redirect reply
+    # liveDashboardURL: https://khorcha-pati.example.com
 database:
     type: sqlite  # or postgres
     sqlite:
