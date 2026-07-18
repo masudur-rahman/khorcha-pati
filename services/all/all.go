@@ -5,7 +5,9 @@ import (
 	"sync"
 
 	"github.com/masudur-rahman/khorcha-pati/infra/logr"
+	"github.com/masudur-rahman/khorcha-pati/models"
 	authmod "github.com/masudur-rahman/khorcha-pati/modules/auth"
+	accessrepo "github.com/masudur-rahman/khorcha-pati/repos/access"
 	authrepo "github.com/masudur-rahman/khorcha-pati/repos/auth"
 	"github.com/masudur-rahman/khorcha-pati/repos/budgets"
 	"github.com/masudur-rahman/khorcha-pati/repos/event"
@@ -13,6 +15,7 @@ import (
 	"github.com/masudur-rahman/khorcha-pati/repos/user"
 	"github.com/masudur-rahman/khorcha-pati/repos/wallets"
 	"github.com/masudur-rahman/khorcha-pati/services"
+	accesssvc "github.com/masudur-rahman/khorcha-pati/services/access"
 	authsvc "github.com/masudur-rahman/khorcha-pati/services/auth"
 	budgetsvc "github.com/masudur-rahman/khorcha-pati/services/budgets"
 	eventsvc "github.com/masudur-rahman/khorcha-pati/services/event"
@@ -33,6 +36,7 @@ type Services struct {
 	Budget  services.BudgetService
 	Summary services.SummaryService
 	Auth    services.AuthService
+	Access  services.AccessService
 }
 
 var (
@@ -73,6 +77,17 @@ func BotUsername() string {
 	return webCfg.botUsername
 }
 
+// makeAccessCheck builds the web-login gate: restricted instances reject
+// non-allowed users with the admin-configured redirect text.
+func makeAccessCheck(acc services.AccessService) func(*models.Profile) error {
+	return func(p *models.Profile) error {
+		if !acc.IsRestricted() || acc.IsUserAllowed(p.Username, p.TelegramID) {
+			return nil
+		}
+		return models.StatusError{Status: 403, Message: acc.RestrictedReplyText()}
+	}
+}
+
 func InitiateSQLServices(uow styx.UnitOfWork, logger logr.Logger) {
 	userRepo := user.NewSQLUserRepository(uow.SQL, logger)
 	walletRepo := wallets.NewSQLWalletRepository(uow.SQL, logger)
@@ -88,6 +103,7 @@ func InitiateSQLServices(uow styx.UnitOfWork, logger logr.Logger) {
 	eventSvc := eventsvc.NewEventService(eventRepo)
 	budgetSvc := budgetsvc.NewBudgetService(budgetRepo, txnRepo)
 	summarySvc := summarysvc.NewSummaryService(txnRepo, walletRepo, budgetRepo)
+	accessSvc := accesssvc.NewAccessService(accessrepo.NewSQLAccessRepository(uow.SQL, logger), logger)
 
 	// Preserve Auth service across DB reconnects
 	var existingAuth services.AuthService
@@ -106,16 +122,19 @@ func InitiateSQLServices(uow styx.UnitOfWork, logger logr.Logger) {
 		Budget:  budgetSvc,
 		Summary: summarySvc,
 		Auth:    existingAuth,
+		Access:  accessSvc,
 	}
 
 	// Re-initialize auth with new repos if web services were configured
 	if webCfg != nil {
 		ar := authrepo.NewSQLAuthRepository(uow.SQL, logger)
-		newSvc.Auth = authsvc.NewAuthService(
+		a := authsvc.NewAuthService(
 			userRepo, ar, webCfg.messenger,
 			webCfg.jwtSecret, webCfg.refreshSecret, webCfg.botUsername, webCfg.baseURL,
 			logger,
 		)
+		a.SetAccessCheck(makeAccessCheck(accessSvc))
+		newSvc.Auth = a
 	}
 
 	svcMu.Lock()
@@ -143,10 +162,14 @@ func InitiateWebServices(
 	ar := authrepo.NewSQLAuthRepository(uow.SQL, logger)
 
 	svcMu.Lock()
-	svc.Auth = authsvc.NewAuthService(
+	a := authsvc.NewAuthService(
 		userRepo, ar, messenger,
 		jwtSecret, refreshSecret, botUsername, baseURL,
 		logger,
 	)
+	if svc.Access != nil {
+		a.SetAccessCheck(makeAccessCheck(svc.Access))
+	}
+	svc.Auth = a
 	svcMu.Unlock()
 }

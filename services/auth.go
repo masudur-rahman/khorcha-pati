@@ -1,6 +1,9 @@
 package services
 
-import "github.com/masudur-rahman/khorcha-pati/modules/auth"
+import (
+	"github.com/masudur-rahman/khorcha-pati/models"
+	"github.com/masudur-rahman/khorcha-pati/modules/auth"
+)
 
 // AuthService handles OTP, QR, and JWT-based authentication.
 type AuthService interface {
@@ -21,4 +24,8 @@ type AuthService interface {
 	// Token management
 	RefreshTokens(refreshToken string) (*auth.TokenPair, error)
 	Logout(refreshToken string) error
+
+	// SetAccessCheck installs an optional gate evaluated before issuing tokens
+	// (used by restricted stage/dev instances to reject non-allowed users).
+	SetAccessCheck(check func(*models.Profile) error)
 }

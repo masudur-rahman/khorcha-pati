@@ -18,6 +18,11 @@ import (
 	"gopkg.in/telebot.v3"
 )
 
+// CtxRestrictedVisitor flags a /start from a non-allowed user on a restricted
+// instance: the profile is still created (visitor tracking), but the reply is
+// a short welcome + redirect instead of the full tutorial.
+const CtxRestrictedVisitor = "restricted-visitor"
+
 func StartTrackingExpenses(ctx telebot.Context) error {
 	payload := ctx.Message().Payload
 	logr.DefaultLogger.Infof("Start command received from %d with payload: %s", ctx.Sender().ID, payload)
@@ -46,6 +51,10 @@ func StartTrackingExpenses(ctx telebot.Context) error {
 
 	if err = ensureDefaultWallet(user.ID); err != nil {
 		return ctx.Send(models.ErrCommonResponse(err))
+	}
+
+	if ctx.Get(CtxRestrictedVisitor) != nil {
+		return sendRestrictedWelcome(ctx)
 	}
 
 	if strings.HasPrefix(payload, "login_") {
@@ -82,6 +91,16 @@ func ensureDefaultWallet(userID int64) error {
 		Name:      "Cash in Hand",
 	}
 	return all.GetServices().Wallet.CreateWallet(acc)
+}
+
+// sendRestrictedWelcome greets a non-allowed visitor with the redirect text
+// instead of the full tutorial they can't use.
+func sendRestrictedWelcome(ctx telebot.Context) error {
+	firstName := strings.TrimSpace(ctx.Sender().FirstName)
+	if firstName == "" {
+		firstName = "there"
+	}
+	return ctx.Send(fmt.Sprintf("👋 Hi %s!\n\n%s", firstName, all.GetServices().Access.RestrictedReplyText()))
 }
 
 func sendStartText(ctx telebot.Context) error {

@@ -29,9 +29,19 @@ func (s *authService) lookupUser(identifier string) (*models.Profile, error) {
 	return repos.FindUserByIdentifier(s.userRepo, identifier)
 }
 
+// SetAccessCheck installs the optional pre-issuance gate.
+func (s *authService) SetAccessCheck(check func(*models.Profile) error) {
+	s.accessCheck = check
+}
+
 func (s *authService) issueTokenPair(user *models.Profile) (*authmod.TokenPair, error) {
 	if !user.IsActive {
 		return nil, models.StatusError{Status: 403, Message: "account disabled"}
+	}
+	if s.accessCheck != nil {
+		if err := s.accessCheck(user); err != nil {
+			return nil, err
+		}
 	}
 	accessToken, err := authmod.GenerateAccessToken(user.ID, user.Username, s.jwtSecret, user.IsAdmin)
 	if err != nil {

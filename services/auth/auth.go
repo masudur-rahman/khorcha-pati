@@ -34,8 +34,10 @@ type authService struct {
 	refreshSecret string
 	botUsername   string
 	baseURL       string
-	logger        logr.Logger
-	refreshMu     sync.Mutex
+	// accessCheck, when set, gates token issuance (restricted instances).
+	accessCheck func(*models.Profile) error
+	logger      logr.Logger
+	refreshMu   sync.Mutex
 }
 
 // NewAuthService creates a new AuthService.

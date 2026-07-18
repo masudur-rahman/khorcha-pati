@@ -12,6 +12,7 @@ import (
 	"github.com/masudur-rahman/khorcha-pati/models"
 	"github.com/masudur-rahman/khorcha-pati/modules/cache"
 	"github.com/masudur-rahman/khorcha-pati/modules/google"
+	"github.com/masudur-rahman/khorcha-pati/services"
 	"github.com/masudur-rahman/khorcha-pati/services/all"
 
 	"github.com/masudur-rahman/styx"
@@ -96,7 +97,30 @@ func initializeSQLServices(uow styx.UnitOfWork) error {
 	}
 	all.InitiateSQLServices(uow, logr.DefaultLogger)
 
+	if err := all.GetServices().Access.EnsureSeeded(buildAccessSeed()); err != nil {
+		return fmt.Errorf("seed access control: %w", err)
+	}
+
 	return all.GetServices().Txn.UpdateTxnCategories()
+}
+
+// buildAccessSeed maps the config's access-control bootstrap into a seed.
+// Applied on first boot only; the owner is re-applied every boot.
+func buildAccessSeed() services.AccessSeed {
+	tg := TrackerConfig.Telegram
+	text := "🔒 This is a private test instance of Khorcha-Pati."
+	if tg.LiveBotURL != "" {
+		text += "\nUse the live bot: " + tg.LiveBotURL
+	}
+	if tg.LiveDashboardURL != "" {
+		text += "\nDashboard: " + tg.LiveDashboardURL
+	}
+	return services.AccessSeed{
+		Restricted:   tg.AllowedUsersOnly,
+		AllowedUsers: tg.AllowedUsers,
+		ReplyText:    text,
+		Owner:        tg.BotOwner,
+	}
 }
 
 // fixNullZeroValues patches existing rows where styx v1.2.x inserted NULL for zero-value fields.
@@ -197,6 +221,8 @@ func syncTables(db isql.Engine) error {
 		models.AICache{},
 		models.Budget{},
 		models.RefreshToken{},
+		models.Setting{},
+		models.AllowedUser{},
 	)
 }
 

@@ -41,6 +41,16 @@ type Telegram struct {
 	// User is the deprecated name for BotOwner; kept so existing configs load.
 	User   string `json:"user,omitempty" yaml:"user,omitempty"`
 	Secret string `json:"secret" yaml:"secret"`
+
+	// Access-control bootstrap for stage/dev instances. Seeded into the DB on
+	// FIRST boot only — afterwards the admin dashboard is the source of truth
+	// and these values are ignored.
+	AllowedUsersOnly bool     `json:"allowed_users_only" yaml:"allowed_users_only"`
+	AllowedUsers     []string `json:"allowed_users" yaml:"allowed_users"`
+	// LiveBotURL / LiveDashboardURL are baked into the default redirect reply
+	// shown to non-allowed users.
+	LiveBotURL       string `json:"live_bot_url" yaml:"live_bot_url"`
+	LiveDashboardURL string `json:"live_dashboard_url" yaml:"live_dashboard_url"`
 }
 
 // IsBotOwner reports whether the given Telegram username is the configured bot owner.
@@ -127,6 +137,13 @@ func (c *ExpenseConfiguration) OverrideWithEnv() {
 		c.Telegram.BotOwner = owner
 	} else if owner = os.Getenv("EXPENSE_BOT_USER"); owner != "" {
 		c.Telegram.BotOwner = owner
+	}
+
+	if v := os.Getenv("EXPENSE_ALLOWED_USERS_ONLY"); v != "" {
+		c.Telegram.AllowedUsersOnly = v == "true"
+	}
+	if v := os.Getenv("EXPENSE_ALLOWED_USERS"); v != "" {
+		c.Telegram.AllowedUsers = strings.Split(v, ",")
 	}
 
 	if c.Telegram.BotOwner == "" {

@@ -3,6 +3,7 @@ package api
 import (
 	"log"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/masudur-rahman/khorcha-pati/api/handlers"
@@ -25,6 +26,7 @@ func TeleBotRoutes() (*telebot.Bot, error) {
 
 	bot.Use(rejectBots())
 	bot.Use(rejectDisabledUsers())
+	bot.Use(restrictedAccess())
 	bot.Use(AutoKeyboardReset())
 
 	bot.Handle("/start", handlers.StartTrackingExpenses)
@@ -113,6 +115,30 @@ func rejectDisabledUsers() telebot.MiddlewareFunc {
 				return ctx.Send("Account disabled. Contact admin.")
 			}
 			return next(ctx)
+		}
+	}
+}
+
+// restrictedAccess gates stage/dev instances: non-allowed users may only
+// /start (registers them so the admin sees who found the bot); everything
+// else gets the admin-configured redirect reply.
+func restrictedAccess() telebot.MiddlewareFunc {
+	return func(next telebot.HandlerFunc) telebot.HandlerFunc {
+		return func(ctx telebot.Context) error {
+			acc := all.GetServices().Access
+			sender := ctx.Sender()
+			if acc == nil || sender == nil || !acc.IsRestricted() {
+				return next(ctx)
+			}
+			if acc.IsUserAllowed(sender.Username, sender.ID) {
+				acc.NoteSeen(sender.Username, sender.ID)
+				return next(ctx)
+			}
+			if strings.HasPrefix(strings.TrimSpace(ctx.Text()), "/start") {
+				ctx.Set(handlers.CtxRestrictedVisitor, true)
+				return next(ctx)
+			}
+			return ctx.Send(acc.RestrictedReplyText())
 		}
 	}
 }
