@@ -4,9 +4,11 @@ import (
 	"fmt"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/masudur-rahman/khorcha-pati/models"
 	"github.com/masudur-rahman/khorcha-pati/modules/cache"
+	"github.com/masudur-rahman/khorcha-pati/pkg"
 )
 
 var testInputs = []string{
@@ -180,6 +182,103 @@ func TestParseTransaction_bareWalletMention(t *testing.T) {
 			}
 			if got.ContactName != tt.wantContact {
 				t.Errorf("ContactName = %q, want %q", got.ContactName, tt.wantContact)
+			}
+		})
+	}
+}
+
+// walkBackToDay returns the latest date at or before t with the given day-of-month.
+func walkBackToDay(t time.Time, day int) time.Time {
+	for t.Day() != day {
+		t = t.AddDate(0, 0, -1)
+	}
+	return t
+}
+
+// walkBackToWeekday returns the latest date at or before t falling on wd.
+func walkBackToWeekday(t time.Time, wd time.Weekday) time.Time {
+	for t.Weekday() != wd {
+		t = t.AddDate(0, 0, -1)
+	}
+	return t
+}
+
+// TestParseTransaction_dateTime verifies natural date/time forms — ordinals
+// ("on 1st"), weekdays, hour-only times — produce the exact expected
+// amount and timestamp. Expected dates are computed independently by
+// walking back from today.
+func TestParseTransaction_dateTime(t *testing.T) {
+	// No cache seeding: every phrase here (internet, lunch, dinner, coffee,
+	// rent) must resolve through localClassify without touching the AI.
+	initCache()
+
+	loc := pkg.DefaultLocation
+	now := time.Now().In(loc)
+	today := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, loc)
+	yesterday := today.AddDate(0, 0, -1)
+	tomorrow := today.AddDate(0, 0, 1)
+	lastFriday := walkBackToWeekday(today, time.Friday)
+	first := walkBackToDay(today, 1)
+	day31 := walkBackToDay(today, 31)
+	jan5 := time.Date(today.Year(), time.January, 5, 0, 0, 0, 0, loc)
+	if jan5.After(today) {
+		jan5 = jan5.AddDate(-1, 0, 0)
+	}
+	jan5of2026 := time.Date(2026, time.January, 5, 0, 0, 0, 0, loc)
+	at := func(d time.Time, hour, min int) time.Time {
+		return time.Date(d.Year(), d.Month(), d.Day(), hour, min, 0, 0, loc)
+	}
+
+	tests := []struct {
+		name       string
+		text       string
+		wantAmount float64
+		wantTS     time.Time // zero value means "expect roughly now"
+	}{
+		{"ordinal date", "internet 500 on 1st", 500, first},
+		{"ordinal skips short months", "internet 500 on 31st", 500, day31},
+		{"bare weekday", "lunch 250 friday", 250, lastFriday},
+		{"short weekday after on", "lunch 250 on fri", 250, lastFriday},
+		{"today with named time", "lunch 250 today at noon", 250, at(today, 12, 0)},
+		{"yesterday defaults to midnight", "dinner 1.5k yesterday", 1500, yesterday},
+		{"yesterday with named time", "dinner 400 yesterday at night", 400, at(yesterday, 22, 0)},
+		{"bare named time", "dinner 400 night", 400, at(today, 22, 0)},
+		{"bare date and named time", "dinner 400 yesterday night", 400, at(yesterday, 22, 0)},
+		{"tomorrow", "dinner 500 tomorrow", 500, tomorrow},
+		{"hour-only pm", "dinner 400 at 5pm", 400, at(today, 17, 0)},
+		{"hour-only pm spaced", "dinner 400 at 5 pm", 400, at(today, 17, 0)},
+		{"bare 24h hour", "dinner 400 at 17", 400, at(today, 17, 0)},
+		{"clock with minutes", "coffee 100 at 5:30", 100, at(today, 5, 30)},
+		{"time before amount", "dinner at 5:30pm 400", 400, at(today, 17, 30)},
+		{"date plus clock time", "rent 15k on 1st at 9:15pm", 15000, at(first, 21, 15)},
+		{"yearless month day", "internet 500 on jan 5", 500, jan5},
+		{"yearless ordinal month day", "internet 500 on jan 5th", 500, jan5},
+		{"iso date", "internet 500 on 2026-01-05", 500, jan5of2026},
+		{"dd-mm-yyyy date", "internet 500 on 05-01-2026", 500, jan5of2026},
+		{"month name with year", "internet 500 on jan 5, 2026", 500, jan5of2026},
+		{"bare ordinal is not a date", "internet 500 1st", 500, time.Time{}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := ParseTransaction(tt.text, nil, nil, nil)
+			if err != nil {
+				if strings.Contains(err.Error(), "API error") || strings.Contains(err.Error(), "rate limit") {
+					t.Skipf("ParseTransaction(%q) hit AI: %v", tt.text, err)
+				}
+				t.Fatalf("ParseTransaction(%q) error = %v", tt.text, err)
+			}
+			if got.Amount != tt.wantAmount {
+				t.Errorf("Amount = %v, want %v", got.Amount, tt.wantAmount)
+			}
+			gotTS := time.Unix(got.Timestamp, 0).In(loc)
+			if tt.wantTS.IsZero() {
+				if d := gotTS.Sub(now); d < -2*time.Minute || d > 2*time.Minute {
+					t.Errorf("Timestamp = %v, want about now (%v)", gotTS, now)
+				}
+				return
+			}
+			if !gotTS.Equal(tt.wantTS) {
+				t.Errorf("Timestamp = %v, want %v", gotTS, tt.wantTS)
 			}
 		})
 	}

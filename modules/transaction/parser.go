@@ -140,6 +140,14 @@ func ParseTransaction(text string, isContact ContactVerifier, isAccount AccountV
 			currentKey = ""
 			continue
 		}
+		// Named times of day ("dinner 400 night") work without an "at".
+		if pkg.IsNamedHour(lowerWord) {
+			p.flushBuffer(currentKey, currentBuffer, isContact, isAccount)
+			p.time = lowerWord
+			currentBuffer = []string{}
+			currentKey = ""
+			continue
+		}
 		if isStandardKeyword(lowerWord) {
 			p.flushBuffer(currentKey, currentBuffer, isContact, isAccount)
 			currentKey = lowerWord
@@ -170,14 +178,23 @@ func ParseTransaction(text string, isContact ContactVerifier, isAccount AccountV
 	return p.txn, err
 }
 
+// reTimeOrdinal matches time-of-day and ordinal fragments right after a
+// number ("5pm", "5:30", "1st") — those are never monetary amounts.
+var reTimeOrdinal = regexp.MustCompile(`(?i)^(?:\s*(?:am|pm)\b|(?:st|nd|rd|th)\b|:\d)`)
+
 // findMonetaryAmount picks the best monetary amount from regex matches,
-// skipping numbers followed by measurement units (kg, g, ml, etc.).
+// skipping numbers followed by measurement units (kg, g, ml, etc.) and
+// time/ordinal fragments ("5pm", "5:30", "1st").
 func findMonetaryAmount(text string, matches [][]int, reUnit *regexp.Regexp) []int {
 	// Prefer matches with currency suffix (tk/taka/bdt) or k multiplier
 	var fallback []int
 	for _, loc := range matches {
 		after := text[loc[1]:]
-		if reUnit.MatchString(after) {
+		if reUnit.MatchString(after) || reTimeOrdinal.MatchString(after) {
+			continue
+		}
+		// A number preceded by ":" is the minutes half of a clock time.
+		if loc[2] > 0 && text[loc[2]-1] == ':' {
 			continue
 		}
 		hasCurrency := loc[1] > loc[3] || (loc[4] != -1)
@@ -441,16 +458,17 @@ func (p *transactionParser) assignValue(key, value string, isAccount AccountVeri
 			p.subcategory = val
 		}
 	case "on":
-		if isDateKeyword(value) {
+		if isDateKeyword(strings.ToLower(value)) {
 			p.date = value
+			return
+		}
+		// Wallet check first so a wallet named like a date still wins.
+		if isAccount(strings.ToLower(value)) {
+			p.fromValue = value
 			return
 		}
 		if _, err := pkg.ParseDate(value, p.tz); err == nil {
 			p.date = value
-			return
-		}
-		if isAccount(strings.ToLower(value)) {
-			p.fromValue = value
 			return
 		}
 		val := "on " + value
@@ -490,7 +508,9 @@ func isDateKeyword(w string) bool {
 	case "yesterday", "today", "tomorrow":
 		return true
 	}
-	return false
+	// Full names only — short forms (fri, sat) collide too easily with
+	// wallet/contact names, so those need an explicit "on".
+	return pkg.IsFullWeekdayName(w)
 }
 
 func isDebtTransaction(subID string) bool {
@@ -596,33 +616,22 @@ func (p *transactionParser) setDefaultSourceDestination() {
 }
 
 func (p *transactionParser) parseTransactionTime() error {
-	var year, day, hour, minute, second int
-	var month time.Month
-
-	if isDateKeyword(strings.ToLower(p.date)) {
-		now := time.Now().In(p.tz)
-		switch strings.ToLower(p.date) {
-		case "yesterday":
-			now = now.AddDate(0, 0, -1)
-		case "tomorrow":
-			now = now.AddDate(0, 0, 1)
-		}
-		year, month, day = now.Date()
-	} else {
-		date, err := pkg.ParseDate(p.date, p.tz)
-		if err != nil {
-			return err
-		}
-		year, month, day = date.Date()
+	// ParseDate handles keywords, weekdays, ordinals and explicit formats;
+	// empty date means today.
+	date, err := pkg.ParseDate(p.date, p.tz)
+	if err != nil {
+		return err
 	}
+	year, month, day := date.Date()
+
 	tim, err := pkg.ParseTime(p.time, p.tz)
 	if err != nil {
 		return err
 	}
 
-	if p.date != "" && p.time == "" {
-		hour, minute, second = 0, 0, 0
-	} else {
+	// A date without a time means midnight of that day, not the current clock.
+	var hour, minute, second int
+	if p.date == "" || p.time != "" {
 		hour, minute, second = tim.Clock()
 	}
 	p.txn.Timestamp = time.Date(year, month, day, hour, minute, second, 0, p.tz).Unix()
