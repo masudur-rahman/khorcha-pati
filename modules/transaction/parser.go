@@ -62,7 +62,12 @@ type transactionParser struct {
 	note        string
 	rawText     string
 	verbFound   bool
-	tz          *time.Location
+	// bareAccounts / bareContacts are wallet and contact names mentioned
+	// without a preposition ("salary 50k ebl", "lent 500 karim") — routed
+	// once the transaction type is known.
+	bareAccounts []string
+	bareContacts []string
+	tz           *time.Location
 }
 
 func ParseTransaction(text string, isContact ContactVerifier, isAccount AccountVerifier, tz *time.Location) (models.Transaction, error) {
@@ -80,7 +85,9 @@ func ParseTransaction(text string, isContact ContactVerifier, isAccount AccountV
 	p := transactionParser{tz: tz}
 
 	// --- STEP 1: Find Amount ---
-	reAmount := regexp.MustCompile(`(?i)(?:(?:total|tk|taka|amount)\s*)?(\d+(?:\.\d+)?)\s*(k)?(?:\s*(?:tk|taka|bdt))?`)
+	// The thousands multiplier needs a word boundary so "500 karim" isn't read
+	// as "500k" with a leftover "arim".
+	reAmount := regexp.MustCompile(`(?i)(?:(?:total|tk|taka|amount)\s*)?(\d+(?:\.\d+)?)\s*(k\b)?(?:\s*(?:tk|taka|bdt))?`)
 	reUnit := regexp.MustCompile(`(?i)^(?:kg|km|g|gm|lb|lbs|ml|mg|oz|l|pcs?|pieces?)\b`)
 	matches := reAmount.FindAllStringSubmatchIndex(text, -1)
 
@@ -111,7 +118,7 @@ func ParseTransaction(text string, isContact ContactVerifier, isAccount AccountV
 		lowerWord := strings.ToLower(word)
 
 		if lowerWord == "note" {
-			p.flushBuffer(currentKey, currentBuffer, isAccount)
+			p.flushBuffer(currentKey, currentBuffer, isContact, isAccount)
 			if i+1 < len(words) {
 				p.note = strings.Join(words[i+1:], " ")
 			}
@@ -121,27 +128,27 @@ func ParseTransaction(text string, isContact ContactVerifier, isAccount AccountV
 		}
 		if p.isVerbKeyword(lowerWord) {
 			p.verbFound = true
-			p.flushBuffer(currentKey, currentBuffer, isAccount)
+			p.flushBuffer(currentKey, currentBuffer, isContact, isAccount)
 			currentBuffer = []string{}
 			currentKey = ""
 			continue
 		}
 		if isDateKeyword(lowerWord) {
-			p.flushBuffer(currentKey, currentBuffer, isAccount)
+			p.flushBuffer(currentKey, currentBuffer, isContact, isAccount)
 			p.date = lowerWord
 			currentBuffer = []string{}
 			currentKey = ""
 			continue
 		}
 		if isStandardKeyword(lowerWord) {
-			p.flushBuffer(currentKey, currentBuffer, isAccount)
+			p.flushBuffer(currentKey, currentBuffer, isContact, isAccount)
 			currentKey = lowerWord
 			currentBuffer = []string{}
 		} else {
 			currentBuffer = append(currentBuffer, word)
 		}
 	}
-	p.flushBuffer(currentKey, currentBuffer, isAccount)
+	p.flushBuffer(currentKey, currentBuffer, isContact, isAccount)
 	p.cleanSubcategory()
 
 	// --- STEP 3: Resolve debt direction (subject-aware, pre-AI) ---
@@ -378,19 +385,38 @@ func (p *transactionParser) appendNote(s string) {
 	}
 }
 
-func (p *transactionParser) flushBuffer(key string, buffer []string, isAccount AccountVerifier) {
+func (p *transactionParser) flushBuffer(key string, buffer []string, isContact ContactVerifier, isAccount AccountVerifier) {
 	if len(buffer) == 0 {
 		return
 	}
-	val := strings.Join(buffer, " ")
 	if key != "" {
-		p.assignValue(key, val, isAccount)
-	} else {
-		if p.subcategory != "" {
-			p.subcategory += " " + val
-		} else {
-			p.subcategory = val
+		p.assignValue(key, strings.Join(buffer, " "), isAccount)
+		return
+	}
+
+	// Bare wallet/contact mentions ("salary 50k ebl", "lent 500 karim") carry
+	// routing info even without a preposition. Wallet names are stripped from
+	// the classifier text (noise); contact names stay in it — the person is
+	// context the classifier uses (matching keyed from/to behavior).
+	kept := make([]string, 0, len(buffer))
+	for _, w := range buffer {
+		token := strings.ToLower(strings.Trim(w, ".,!?"))
+		if isContact(token) {
+			p.bareContacts = append(p.bareContacts, token)
+		} else if isAccount(token) {
+			p.bareAccounts = append(p.bareAccounts, token)
+			continue
 		}
+		kept = append(kept, w)
+	}
+	if len(kept) == 0 {
+		return
+	}
+	val := strings.Join(kept, " ")
+	if p.subcategory != "" {
+		p.subcategory += " " + val
+	} else {
+		p.subcategory = val
 	}
 }
 
@@ -494,6 +520,7 @@ func (p *transactionParser) parseTransaction() error {
 	p.txn.Type = p.txnType
 	p.txn.SubcategoryID = p.subcategory
 	p.txn.Remarks = p.note
+	p.applyBareMentions()
 	p.setDefaultSourceDestination()
 
 	if p.txn.SubcategoryID == "" {
@@ -519,6 +546,40 @@ func (p *transactionParser) parseAmount() error {
 	var err error
 	p.txn.Amount, err = strconv.ParseFloat(p.amount, 64)
 	return err
+}
+
+// applyBareMentions routes preposition-less wallet and contact mentions into
+// the slots the final transaction type needs. Runs after type/subcategory are
+// settled and never overrides an explicitly keyed value (from/to/in). The
+// debt path attaches its person earlier; this covers the non-debt cases.
+func (p *transactionParser) applyBareMentions() {
+	if p.txn.ContactName == "" && len(p.bareContacts) > 0 {
+		p.txn.ContactName = p.bareContacts[0]
+	}
+	for _, acc := range p.bareAccounts {
+		switch p.txn.Type {
+		case models.IncomeTransaction:
+			if p.txn.DstID == "" {
+				p.txn.DstID = acc
+			}
+		case models.ExpenseTransaction:
+			if p.txn.SrcID == "" {
+				p.txn.SrcID = acc
+			}
+		case models.TransferTransaction:
+			switch {
+			// "withdraw 5k ebl" takes from the bank; "deposit 5k ebl" puts into it.
+			case p.txn.SubcategoryID == "fin-with" && p.txn.SrcID == "":
+				p.txn.SrcID = acc
+			case p.txn.SubcategoryID == "fin-deposit" && p.txn.DstID == "":
+				p.txn.DstID = acc
+			case p.txn.SrcID == "":
+				p.txn.SrcID = acc
+			case p.txn.DstID == "":
+				p.txn.DstID = acc
+			}
+		}
+	}
 }
 
 func (p *transactionParser) setDefaultSourceDestination() {

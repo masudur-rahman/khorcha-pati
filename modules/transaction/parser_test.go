@@ -128,6 +128,63 @@ func TestParseTransaction_destinationPreposition(t *testing.T) {
 	}
 }
 
+// TestParseTransaction_bareWalletMention verifies wallets mentioned without a
+// preposition ("salary 50k ebl") are routed by the final transaction type,
+// while explicitly keyed wallets keep priority.
+func TestParseTransaction_bareWalletMention(t *testing.T) {
+	initCache()
+	_ = cache.SetCache("salary from office", `{"intent":"income","subcategory_id":"fin-sal"}`, -1)
+	_ = cache.SetCache("lunch", `{"intent":"expense","subcategory_id":"food-rest"}`, -1)
+	_ = cache.SetCache("dinner", `{"intent":"expense","subcategory_id":"food-rest"}`, -1)
+	_ = cache.SetCache("karim", `{"intent":"expense","subcategory_id":"fin-lend"}`, -1)
+
+	contacts := func(name string) bool { return strings.ToLower(name) == "karim" }
+	accounts := func(name string) bool {
+		switch strings.ToLower(name) {
+		case "cash", "ebl", "dbbl":
+			return true
+		}
+		return false
+	}
+
+	tests := []struct {
+		name        string
+		text        string
+		wantTyp     models.TransactionType
+		wantSrc     string
+		wantDst     string
+		wantContact string
+	}{
+		{"income routes to destination", "salary 50k ebl from office", models.IncomeTransaction, "", "ebl", ""},
+		{"expense routes to source", "lunch 250 ebl", models.ExpenseTransaction, "ebl", "", ""},
+		{"explicit wallet wins", "dinner 400 ebl from dbbl", models.ExpenseTransaction, "dbbl", "", ""},
+		{"bare contact resolved", "lent 500 karim", models.ExpenseTransaction, "cash", "", "karim"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := ParseTransaction(tt.text, contacts, accounts, nil)
+			if err != nil {
+				if strings.Contains(err.Error(), "API error") || strings.Contains(err.Error(), "rate limit") {
+					t.Skipf("ParseTransaction(%q) hit AI: %v", tt.text, err)
+				}
+				t.Fatalf("ParseTransaction(%q) error = %v", tt.text, err)
+			}
+			if got.Type != tt.wantTyp {
+				t.Errorf("Type = %v, want %v", got.Type, tt.wantTyp)
+			}
+			if got.SrcID != tt.wantSrc {
+				t.Errorf("SrcID = %q, want %q", got.SrcID, tt.wantSrc)
+			}
+			if got.DstID != tt.wantDst {
+				t.Errorf("DstID = %q, want %q", got.DstID, tt.wantDst)
+			}
+			if got.ContactName != tt.wantContact {
+				t.Errorf("ContactName = %q, want %q", got.ContactName, tt.wantContact)
+			}
+		})
+	}
+}
+
 func TestParseTransaction(t *testing.T) {
 	initCache()
 	mockContacts := func(name string) bool {
