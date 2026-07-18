@@ -37,7 +37,7 @@ type ServerConfig struct {
 
 type Telegram struct {
 	// BotOwner is the Telegram username granted dashboard admin on signup/startup.
-	BotOwner string `json:"bot_owner" yaml:"bot_owner"`
+	BotOwner string `json:"botOwner" yaml:"botOwner"`
 	// User is the deprecated name for BotOwner; kept so existing configs load.
 	User   string `json:"user,omitempty" yaml:"user,omitempty"`
 	Secret string `json:"secret" yaml:"secret"`
