@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/masudur-rahman/khorcha-pati/infra/logr"
 	"github.com/masudur-rahman/khorcha-pati/models"
@@ -29,42 +30,39 @@ func NewAccessService(repo repos.AccessRepository, logger logr.Logger) *accessSe
 	return &accessService{repo: repo, logger: logger}
 }
 
-// EnsureSeeded applies the config bootstrap exactly once (guarded by the
-// seeded marker), then loads DB state into memory. Owner applies every boot.
-func (s *accessService) EnsureSeeded(seed services.AccessSeed) error {
+// Seed applies the config bootstrap additively: allowlist entries that match
+// an existing row (active or revoked) are ignored, settings keys are written
+// only when absent. Owner applies every boot.
+func (s *accessService) Seed(seed services.AccessSeed) error {
 	s.mu.Lock()
 	s.owner = strings.TrimPrefix(seed.Owner, "@")
 	s.mu.Unlock()
 
-	_, seeded, err := s.repo.GetSetting(models.SettingAccessSeeded)
+	existing, err := s.repo.ListAllowedUsers()
 	if err != nil {
-		return fmt.Errorf("read seed marker: %w", err)
+		return fmt.Errorf("list allowed users: %w", err)
 	}
-	if !seeded {
-		if err := s.seedFromConfig(seed); err != nil {
-			return err
-		}
-	}
-	return s.reload()
-}
-
-func (s *accessService) seedFromConfig(seed services.AccessSeed) error {
 	for _, raw := range seed.AllowedUsers {
 		entry := parseAllowedEntry(raw)
 		if entry.Username == "" && entry.TelegramID == 0 {
 			continue
 		}
+		if matchEntry(existing, entry.Username, entry.TelegramID) != nil {
+			continue // present (possibly revoked by admin) — never touch it
+		}
 		if err := s.repo.AddAllowedUser(&entry); err != nil {
 			return fmt.Errorf("seed allowed user %q: %w", raw, err)
 		}
+		existing = append(existing, entry)
 	}
-	if err := s.repo.SetSetting(models.SettingAllowedUsersOnly, strconv.FormatBool(seed.Restricted)); err != nil {
+
+	if err := s.repo.SetSettingIfAbsent(models.SettingAllowedUsersOnly, strconv.FormatBool(seed.Restricted)); err != nil {
 		return err
 	}
-	if err := s.repo.SetSetting(models.SettingRestrictedReplyText, seed.ReplyText); err != nil {
+	if err := s.repo.SetSettingIfAbsent(models.SettingRestrictedReplyText, seed.ReplyText); err != nil {
 		return err
 	}
-	return s.repo.SetSetting(models.SettingAccessSeeded, "true")
+	return s.reload()
 }
 
 // parseAllowedEntry turns a config entry into an allowlist row: numeric
@@ -75,6 +73,19 @@ func parseAllowedEntry(raw string) models.AllowedUser {
 		return models.AllowedUser{TelegramID: id}
 	}
 	return models.AllowedUser{Username: raw}
+}
+
+// matchEntry finds a row matching by Telegram ID or username, revoked or not.
+func matchEntry(entries []models.AllowedUser, username string, telegramID int64) *models.AllowedUser {
+	for i := range entries {
+		if telegramID != 0 && entries[i].TelegramID == telegramID {
+			return &entries[i]
+		}
+		if username != "" && entries[i].Username != "" && strings.EqualFold(entries[i].Username, username) {
+			return &entries[i]
+		}
+	}
+	return nil
 }
 
 func (s *accessService) reload() error {
@@ -118,6 +129,9 @@ func (s *accessService) IsUserAllowed(username string, telegramID int64) bool {
 		return true
 	}
 	for _, e := range s.allowed {
+		if e.Revoked {
+			continue
+		}
 		if e.TelegramID != 0 && e.TelegramID == telegramID {
 			return true
 		}
@@ -167,11 +181,15 @@ func (s *accessService) SetReplyText(text string) error {
 	return nil
 }
 
-func (s *accessService) ListAllowedUsers() []models.AllowedUser {
+func (s *accessService) ListAllowedUsers(includeRevoked bool) []models.AllowedUser {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-	out := make([]models.AllowedUser, len(s.allowed))
-	copy(out, s.allowed)
+	out := make([]models.AllowedUser, 0, len(s.allowed))
+	for _, e := range s.allowed {
+		if includeRevoked || !e.Revoked {
+			out = append(out, e)
+		}
+	}
 	return out
 }
 
@@ -180,31 +198,50 @@ func (s *accessService) Allow(username string, telegramID int64) (*models.Allowe
 	if username == "" && telegramID == 0 {
 		return nil, fmt.Errorf("username or telegram id required")
 	}
-	if s.IsUserAllowed(username, telegramID) {
-		return nil, fmt.Errorf("user already allowed")
+
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if existing := matchEntry(s.allowed, username, telegramID); existing != nil {
+		if !existing.Revoked {
+			return nil, fmt.Errorf("user already allowed")
+		}
+		existing.Revoked = false
+		existing.RevokedAt = 0
+		if err := s.repo.UpdateAllowedUser(existing); err != nil {
+			return nil, err
+		}
+		return existing, nil
 	}
 
 	entry := models.AllowedUser{Username: username, TelegramID: telegramID}
 	if err := s.repo.AddAllowedUser(&entry); err != nil {
 		return nil, err
 	}
-	s.mu.Lock()
 	s.allowed = append(s.allowed, entry)
-	s.mu.Unlock()
 	return &entry, nil
 }
 
 func (s *accessService) Revoke(id int64) error {
-	if err := s.repo.RemoveAllowedUser(id); err != nil {
-		return err
-	}
+	return s.setRevoked(id, true)
+}
+
+func (s *accessService) Restore(id int64) error {
+	return s.setRevoked(id, false)
+}
+
+func (s *accessService) setRevoked(id int64, revoked bool) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	for i := range s.allowed {
 		if s.allowed[i].ID == id {
-			s.allowed = append(s.allowed[:i], s.allowed[i+1:]...)
-			break
+			s.allowed[i].Revoked = revoked
+			if revoked {
+				s.allowed[i].RevokedAt = time.Now().Unix()
+			} else {
+				s.allowed[i].RevokedAt = 0
+			}
+			return s.repo.UpdateAllowedUser(&s.allowed[i])
 		}
 	}
-	return nil
+	return fmt.Errorf("allowlist entry %d not found", id)
 }

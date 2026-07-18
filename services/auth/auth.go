@@ -65,6 +65,13 @@ func (s *authService) RequestOTP(identifier string) error {
 	if err != nil {
 		return err
 	}
+	// No point sending a code the user can't redeem — reject up front with
+	// the redirect message on restricted instances.
+	if s.accessCheck != nil {
+		if err := s.accessCheck(user); err != nil {
+			return err
+		}
+	}
 
 	otp, err := authmod.GenerateOTP()
 	if err != nil {

@@ -3,7 +3,7 @@ import { useNavigate, useLocation, Link } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { requestOTP, verifyOTP, initQR, pollQR, verifyMagicLink } from '../api/endpoints'
 import { QRCodeSVG } from 'qrcode.react'
-import { getBotUrl, getBotHandle } from '../api/client'
+import { getAdminHandle } from '../api/client'
 import { IS_ANDROID, autofillSafeType } from '../lib/platform'
 
 export default function Login() {
@@ -109,7 +109,7 @@ export default function Login() {
             💡 Fastest way in: send <code style={{ background: '#F4F5F7', color: '#003D9B', padding: '1px 6px', borderRadius: 5, fontWeight: 600 }}>/dashboard</code> to the bot and tap the button.
           </p>
           <p style={{ fontSize: 12, color: '#6B778C', fontWeight: 500, margin: 0 }}>
-            Need help? Contact <a href={getBotUrl()} target="_blank" rel="noreferrer" style={{ color: '#0052CC', fontWeight: 700, textDecoration: 'none' }}>{getBotHandle() || 'the bot'}</a>
+            Need help? Contact the admin{getAdminHandle() && <> — <a href={`https://t.me/${getAdminHandle().slice(1)}`} target="_blank" rel="noreferrer" style={{ color: '#0052CC', fontWeight: 700, textDecoration: 'none' }}>{getAdminHandle()}</a></>}
           </p>
         </div>
       </div>
@@ -165,10 +165,10 @@ function OTPLogin() {
       {sent && (
         <div>
           <label style={labelStyle}>Verification Code</label>
-          <input type={autofillSafeType('number')} style={{ ...inputStyle, textAlign: 'center', letterSpacing: '0.3em', fontSize: 22, fontWeight: 700 }} placeholder="000000" value={code} onChange={e => setCode(e.target.value)} maxLength={6} onKeyDown={e => { if (e.key === 'Enter' && sent && code.length === 6 && !loading) handleVerify(); }} autoFocus autoComplete={IS_ANDROID ? 'khp-otp' : 'one-time-code'} inputMode="numeric" pattern="[0-9]*" name="khp-otp" id="khp-otp" data-lpignore="true" data-1p-ignore="true" data-form-type="other" />
+          <OtpBoxes value={code} onChange={setCode} onEnter={() => { if (code.length === 6 && !loading) handleVerify() }} />
         </div>
       )}
-      {error && <p style={{ color: '#DE350B', fontSize: 12, fontWeight: 700, textAlign: 'center', margin: 0 }}>{error}</p>}
+      {error && <LoginNotice text={error} />}
       <button type="button" style={btnStyle} onClick={sent ? handleVerify : handleSend} disabled={loading || (!sent && !identifier) || (sent && code.length < 6)}>
         {loading ? 'Please wait...' : sent ? 'Verify Code' : 'Send Code'}
       </button>
@@ -176,6 +176,128 @@ function OTPLogin() {
         <button type="button" style={{ background: 'none', border: 'none', fontSize: 12, color: '#6B778C', cursor: 'pointer', padding: 8, fontWeight: 600, fontFamily: 'inherit' }} onClick={() => { setSent(false); setCode('') }}>Resend code</button>
       )}
     </form>
+  )
+}
+
+// linkify turns bare URLs in server messages into clickable links.
+function linkify(text: string) {
+  return text.split(/(https?:\/\/\S+)/g).map((part, i) =>
+    /^https?:\/\//.test(part)
+      ? <a key={i} href={part} target="_blank" rel="noreferrer" style={{ color: '#0052CC', fontWeight: 600, wordBreak: 'break-all' }}>{part}</a>
+      : part,
+  )
+}
+
+/* Server messages under the login form. The restricted-instance redirect is
+   informational (amber card, clickable links); real failures stay danger-red. */
+function LoginNotice({ text }: { text: string }) {
+  const info = text.includes('🔒')
+  return (
+    <div style={{
+      padding: '10px 14px', borderRadius: 12, fontSize: 12.5, lineHeight: 1.6,
+      textAlign: 'left', whiteSpace: 'pre-line',
+      background: info ? '#FFF7E6' : '#FFEBE6',
+      border: `1px solid ${info ? '#FFD591' : '#FFBDAD'}`,
+      color: '#172B4D', fontWeight: 500,
+    }}>
+      {linkify(text)}
+    </div>
+  )
+}
+
+const OTP_LEN = 6
+
+/* One logical OTP input rendered as 6 boxes. The string state is the single
+   source of truth: typing appends at the active (first empty) cell and
+   advances, Backspace always clears the last filled cell, and a paste or
+   keyboard autofill anywhere replaces the whole code. Focus is forced onto
+   the active cell so users can't type into arbitrary boxes. */
+function OtpBoxes({ value, onChange, onEnter }: { value: string; onChange: (v: string) => void; onEnter: () => void }) {
+  const refs = useRef<(HTMLInputElement | null)[]>([])
+  const [focused, setFocused] = useState(false)
+  const active = Math.min(value.length, OTP_LEN - 1)
+  const complete = value.length === OTP_LEN
+
+  // Keep focus on the active cell as the value grows/shrinks, but only when
+  // focus is already inside the boxes — never steal it from another field.
+  useEffect(() => {
+    if (refs.current.some(el => el === document.activeElement)) refs.current[active]?.focus()
+  }, [active])
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Backspace') {
+      e.preventDefault()
+      onChange(value.slice(0, -1))
+    } else if (e.key === 'Enter') {
+      onEnter()
+    } else if (/^[0-9]$/.test(e.key)) {
+      e.preventDefault()
+      if (value.length < OTP_LEN) onChange(value + e.key)
+    }
+  }
+
+  // Fallback for virtual keyboards that don't emit proper key events, and for
+  // OTP autofill dumping the entire code into one box.
+  const handleInput = (e: React.FormEvent<HTMLInputElement>) => {
+    const digits = e.currentTarget.value.replace(/\D/g, '')
+    if (digits.length > 1) onChange(digits.slice(0, OTP_LEN))
+    else if (digits.length === 1 && value.length < OTP_LEN) onChange(value + digits)
+    e.currentTarget.value = value[Number(e.currentTarget.dataset.idx)] ?? ''
+  }
+
+  const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+    e.preventDefault()
+    const digits = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, OTP_LEN)
+    if (digits) onChange(digits)
+  }
+
+  return (
+    <div style={{ display: 'flex', gap: 6, justifyContent: 'center' }}>
+      {Array.from({ length: OTP_LEN }, (_, i) => {
+        const filled = value[i] !== undefined
+        const isActive = focused && i === active && !complete
+        // Cell states, in the project palette: idle gray → filled primary
+        // tint → active primary ring → all-six success green.
+        const border = complete ? '#36B37E' : isActive ? '#0052CC' : filled ? '#99C2FF' : '#DFE1E6'
+        const background = complete ? '#E8F9F1' : isActive ? '#FFFFFF' : filled ? '#E9F2FF' : '#FAFBFC'
+        const color = complete ? '#00875A' : filled ? '#0052CC' : '#172B4D'
+        return (
+          <input
+            key={i}
+            ref={el => { refs.current[i] = el }}
+            data-idx={i}
+            type={autofillSafeType('text')}
+            value={value[i] ?? ''}
+            placeholder="•"
+            onChange={() => { /* handled via onInput to survive autofill */ }}
+            onInput={handleInput}
+            onKeyDown={handleKeyDown}
+            onPaste={handlePaste}
+            onFocus={() => { setFocused(true); if (i !== active) refs.current[active]?.focus() }}
+            onBlur={() => setFocused(false)}
+            autoFocus={i === 0}
+            inputMode="numeric"
+            pattern="[0-9]*"
+            autoComplete={i === 0 && !IS_ANDROID ? 'one-time-code' : 'khp-otp'}
+            name={`khp-otp-${i}`}
+            data-lpignore="true"
+            data-1p-ignore="true"
+            data-form-type="other"
+            style={{
+              width: 34, height: 40, textAlign: 'center',
+              fontSize: 17, fontWeight: 700, color, border: `1.5px solid ${border}`, borderRadius: 8,
+              background,
+              // Group the code as 3+3 — easier to read back against the message.
+              marginRight: i === 2 ? 10 : 0,
+              boxShadow: isActive ? '0 0 0 3px rgba(0, 82, 204, 0.16)' : complete ? '0 0 0 3px rgba(54, 179, 126, 0.14)' : 'none',
+              transform: isActive ? 'scale(1.07)' : 'scale(1)',
+              outline: 'none', caretColor: 'transparent',
+              transition: 'border-color 0.15s, background 0.15s, box-shadow 0.15s, transform 0.15s',
+            }}
+          />
+        )
+      })}
+    </div>
   )
 }
 

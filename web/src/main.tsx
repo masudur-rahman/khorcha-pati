@@ -19,6 +19,7 @@ async function hydrateRuntimeConfig() {
     if (res.ok) {
       const meta = await res.json()
       if (meta.botUsername) cfg.BOT_URL = `https://t.me/${meta.botUsername}`
+      if (meta.botOwner) cfg.BOT_OWNER = meta.botOwner
     }
   } catch {
     /* static defaults apply */

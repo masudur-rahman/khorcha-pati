@@ -35,6 +35,14 @@ func (r *SQLAccessRepository) GetSetting(key string) (string, bool, error) {
 }
 
 func (r *SQLAccessRepository) SetSetting(key, value string) error {
+	return r.setSetting(key, value, true)
+}
+
+func (r *SQLAccessRepository) SetSettingIfAbsent(key, value string) error {
+	return r.setSetting(key, value, false)
+}
+
+func (r *SQLAccessRepository) setSetting(key, value string, overwrite bool) error {
 	ctx := context.Background()
 	var existing models.Setting
 	found, err := r.settings.FindOne(ctx, &existing, models.Setting{Key: key})
@@ -42,6 +50,9 @@ func (r *SQLAccessRepository) SetSetting(key, value string) error {
 		return err
 	}
 	if found {
+		if !overwrite {
+			return nil
+		}
 		existing.Value = value
 		return r.settings.ID(existing.ID).MustCols("value").UpdateOne(ctx, &existing)
 	}
@@ -67,10 +78,5 @@ func (r *SQLAccessRepository) AddAllowedUser(entry *models.AllowedUser) error {
 
 func (r *SQLAccessRepository) UpdateAllowedUser(entry *models.AllowedUser) error {
 	ctx := context.Background()
-	return r.allowed.ID(entry.ID).UpdateOne(ctx, entry)
-}
-
-func (r *SQLAccessRepository) RemoveAllowedUser(id int64) error {
-	ctx := context.Background()
-	return r.allowed.DeleteOne(ctx, models.AllowedUser{ID: id})
+	return r.allowed.ID(entry.ID).MustCols("revoked", "revoked_at", "telegram_id").UpdateOne(ctx, entry)
 }

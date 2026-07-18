@@ -8,9 +8,12 @@ import (
 type AccessRepository interface {
 	GetSetting(key string) (string, bool, error)
 	SetSetting(key, value string) error
+	// SetSettingIfAbsent writes the value only when the key has no row yet,
+	// so restarts never overwrite admin edits.
+	SetSettingIfAbsent(key, value string) error
 
+	// ListAllowedUsers returns all rows, including revoked tombstones.
 	ListAllowedUsers() ([]models.AllowedUser, error)
 	AddAllowedUser(entry *models.AllowedUser) error
 	UpdateAllowedUser(entry *models.AllowedUser) error
-	RemoveAllowedUser(id int64) error
 }

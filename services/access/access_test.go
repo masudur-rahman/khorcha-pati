@@ -38,10 +38,10 @@ func seed(restricted bool, users []string, owner string) services.AccessSeed {
 	}
 }
 
-func TestEnsureSeeded_FirstBootAppliesConfig(t *testing.T) {
+func TestSeed_FirstBootAppliesConfig(t *testing.T) {
 	svc := setupAccessService(t)
 
-	require.NoError(t, svc.EnsureSeeded(seed(true, []string{"alice", "@bob", "123456"}, "owner")))
+	require.NoError(t, svc.Seed(seed(true, []string{"alice", "@bob", "123456"}, "owner")))
 
 	assert.True(t, svc.IsRestricted())
 	assert.Equal(t, "use the live bot", svc.RestrictedReplyText())
@@ -52,28 +52,36 @@ func TestEnsureSeeded_FirstBootAppliesConfig(t *testing.T) {
 	assert.False(t, svc.IsUserAllowed("stranger", 999))
 }
 
-// Restarts must never resurrect config state over admin edits.
-func TestEnsureSeeded_SecondBootIgnoresConfig(t *testing.T) {
+// Restarts must never resurrect config state over admin edits: revoked rows
+// are tombstones the seed skips, and settings keys are insert-if-absent.
+func TestSeed_RestartKeepsAdminEdits(t *testing.T) {
 	svc := setupAccessService(t)
-	require.NoError(t, svc.EnsureSeeded(seed(true, []string{"alice"}, "owner")))
+	require.NoError(t, svc.Seed(seed(true, []string{"alice"}, "owner")))
 
 	// Admin actions via UI: revoke alice, disable restriction.
-	entries := svc.ListAllowedUsers()
+	entries := svc.ListAllowedUsers(false)
 	require.Len(t, entries, 1)
 	require.NoError(t, svc.Revoke(entries[0].ID))
 	require.NoError(t, svc.SetRestricted(false))
 
-	// Restart with the same config — must not re-seed.
-	require.NoError(t, svc.EnsureSeeded(seed(true, []string{"alice"}, "owner")))
+	// Restart with the same config — alice stays revoked, toggle stays off.
+	require.NoError(t, svc.Seed(seed(true, []string{"alice"}, "owner")))
 
 	assert.False(t, svc.IsRestricted())
 	assert.False(t, svc.IsUserAllowed("alice", 0))
-	assert.Empty(t, svc.ListAllowedUsers())
+	assert.Empty(t, svc.ListAllowedUsers(false))
+	require.Len(t, svc.ListAllowedUsers(true), 1, "tombstone kept")
+	assert.True(t, svc.ListAllowedUsers(true)[0].Revoked)
+
+	// New config entries still seed additively.
+	require.NoError(t, svc.Seed(seed(true, []string{"alice", "newguy"}, "owner")))
+	assert.True(t, svc.IsUserAllowed("newguy", 0))
+	assert.False(t, svc.IsUserAllowed("alice", 0), "alice tombstone survives")
 }
 
-func TestAllowRevoke(t *testing.T) {
+func TestAllowRevokeRestore(t *testing.T) {
 	svc := setupAccessService(t)
-	require.NoError(t, svc.EnsureSeeded(seed(true, nil, "owner")))
+	require.NoError(t, svc.Seed(seed(true, nil, "owner")))
 
 	entry, err := svc.Allow("carol", 777)
 	require.NoError(t, err)
@@ -85,13 +93,25 @@ func TestAllowRevoke(t *testing.T) {
 
 	require.NoError(t, svc.Revoke(entry.ID))
 	assert.False(t, svc.IsUserAllowed("carol", 777))
+	require.Len(t, svc.ListAllowedUsers(true), 1, "revoked row kept")
+
+	// Allow on a revoked match restores the same row instead of inserting.
+	restored, err := svc.Allow("carol", 0)
+	require.NoError(t, err)
+	assert.Equal(t, entry.ID, restored.ID)
+	assert.True(t, svc.IsUserAllowed("carol", 777))
+	require.Len(t, svc.ListAllowedUsers(true), 1)
+
+	require.NoError(t, svc.Revoke(entry.ID))
+	require.NoError(t, svc.Restore(entry.ID))
+	assert.True(t, svc.IsUserAllowed("carol", 777))
 }
 
 // A username-only entry gets pinned to the telegram id on first sighting, so
 // a later username change can't break or leak access.
 func TestNoteSeen_BackfillsTelegramID(t *testing.T) {
 	svc := setupAccessService(t)
-	require.NoError(t, svc.EnsureSeeded(seed(true, []string{"dave"}, "owner")))
+	require.NoError(t, svc.Seed(seed(true, []string{"dave"}, "owner")))
 
 	svc.NoteSeen("Dave", 4242)
 

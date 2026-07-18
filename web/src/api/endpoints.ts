@@ -175,6 +175,38 @@ export const sendAdminBroadcast = (message: string, includeUserIds?: number[], e
     body: JSON.stringify({ message, includeUserIds, excludeUserIds }),
   })
 
+// Admin — access control (restricted stage/dev instances)
+export interface AllowedUser {
+  id: number
+  telegramId: number
+  username: string
+  revoked: boolean
+  revokedAt: number
+  createdAt: number
+}
+
+export interface AccessSettings {
+  restricted: boolean
+  replyText: string
+  allowedUsers: AllowedUser[]
+}
+
+export const getAccessSettings = (all?: boolean) =>
+  apiFetch<AccessSettings>(`${API}/admin/access${all ? '?all=true' : ''}`)
+
+export const updateAccessSettings = (body: { restricted?: boolean; replyText?: string }) =>
+  apiFetch<AccessSettings>(`${API}/admin/access`, { method: 'PUT', body: JSON.stringify(body) })
+
+export const addAllowedUser = (body: { username?: string; telegramId?: number }) =>
+  apiFetch<AllowedUser>(`${API}/admin/access/allowed`, { method: 'POST', body: JSON.stringify(body) })
+
+// Soft revoke — the entry is tombstoned, restorable later.
+export const removeAllowedUser = (id: number) =>
+  apiFetch<{ id: number; revoked: boolean }>(`${API}/admin/access/allowed/${id}`, { method: 'DELETE' })
+
+export const restoreAllowedUser = (id: number) =>
+  apiFetch<{ id: number; revoked: boolean }>(`${API}/admin/access/allowed/${id}/restore`, { method: 'POST' })
+
 // Admin — AI classification cache
 export interface AICacheEntry {
   id: number

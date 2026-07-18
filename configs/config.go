@@ -42,15 +42,15 @@ type Telegram struct {
 	User   string `json:"user,omitempty" yaml:"user,omitempty"`
 	Secret string `json:"secret" yaml:"secret"`
 
-	// Access-control bootstrap for stage/dev instances. Seeded into the DB on
-	// FIRST boot only — afterwards the admin dashboard is the source of truth
-	// and these values are ignored.
-	AllowedUsersOnly bool     `json:"allowed_users_only" yaml:"allowed_users_only"`
-	AllowedUsers     []string `json:"allowed_users" yaml:"allowed_users"`
+	// Access-control bootstrap for stage/dev instances. Seeded additively:
+	// entries already in the DB (active or revoked) and already-set settings
+	// keys are never touched, so admin dashboard edits always win.
+	AllowedUsersOnly bool     `json:"allowedUsersOnly" yaml:"allowedUsersOnly"`
+	AllowedUsers     []string `json:"allowedUsers" yaml:"allowedUsers"`
 	// LiveBotURL / LiveDashboardURL are baked into the default redirect reply
 	// shown to non-allowed users.
-	LiveBotURL       string `json:"live_bot_url" yaml:"live_bot_url"`
-	LiveDashboardURL string `json:"live_dashboard_url" yaml:"live_dashboard_url"`
+	LiveBotURL       string `json:"liveBotURL" yaml:"liveBotURL"`
+	LiveDashboardURL string `json:"liveDashboardURL" yaml:"liveDashboardURL"`
 }
 
 // IsBotOwner reports whether the given Telegram username is the configured bot owner.

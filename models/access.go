@@ -1,14 +1,11 @@
 package models
 
-// Setting keys for instance-level runtime configuration. Values are seeded
-// from the config file on first boot only; afterwards the DB (edited via the
-// admin dashboard) is the sole source of truth.
+// Setting keys for instance-level runtime configuration. Config values are
+// seeded insert-if-absent — an existing row (i.e. an admin edit) is never
+// overwritten on restart.
 const (
 	SettingAllowedUsersOnly    = "allowed_users_only"
 	SettingRestrictedReplyText = "restricted_reply_text"
-	// SettingAccessSeeded marks that the one-time config seed already ran, so
-	// restarts never resurrect config state over admin edits.
-	SettingAccessSeeded = "access_seeded"
 )
 
 // Setting is a single key/value row of instance runtime configuration.
@@ -19,19 +16,23 @@ type Setting struct {
 }
 
 func (Setting) TableName() string {
-	return "setting"
+	return "settings"
 }
 
 // AllowedUser is an allowlist entry for restricted (stage/dev) instances.
 // TelegramID 0 means the entry was added by username only and is backfilled
-// once that user interacts with the bot.
+// once that user interacts with the bot. Revoked rows are tombstones: the
+// user stays visible in the admin panel and config seeding can never
+// resurrect them (a matching row — active or revoked — is skipped).
 type AllowedUser struct {
 	ID         int64  `db:"id,pk" json:"id"`
 	TelegramID int64  `db:"telegram_id" json:"telegramId"`
 	Username   string `db:"username" json:"username"`
+	Revoked    bool   `db:"revoked,req" json:"revoked"`
+	RevokedAt  int64  `db:"revoked_at" json:"revokedAt"`
 	CreatedAt  int64  `db:"created_at" json:"createdAt"`
 }
 
 func (AllowedUser) TableName() string {
-	return "allowed_user"
+	return "allowed_users"
 }

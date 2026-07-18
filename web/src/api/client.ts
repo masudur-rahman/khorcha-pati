@@ -30,6 +30,12 @@ export function getBotHandle(): string {
   return match ? `@${match[1]}` : ''
 }
 
+// getAdminHandle returns the instance admin's Telegram @username (bot owner).
+export function getAdminHandle(): string {
+  const owner = (window as any).__CONFIG__?.BOT_OWNER
+  return owner ? `@${owner}` : ''
+}
+
 const RT_KEY = 'expense_rt'
 
 let accessToken = ''

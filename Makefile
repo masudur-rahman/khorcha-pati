@@ -30,8 +30,8 @@ BASE_REF_WK       ?= $(BASE_IMAGE):wkhtmltopdf
 BASE_REF_CHROMEDP ?= $(BASE_IMAGE):chromedp
 
 # Local dev: allowed host + direct API base for the web dev server (override per run if needed).
-DEV_WEB_HOST ?= khorchapati.mrahman.xyz
-DEV_API      ?= https://khorchapati-api.mrahman.xyz
+DEV_WEB_HOST ?= dev-khorcha-pati.mrahman.xyz
+DEV_API      ?= https://dev-khorcha-pati-api.mrahman.xyz
 
 # ── Build ─────────────────────────────────────────────────────────────────────
 

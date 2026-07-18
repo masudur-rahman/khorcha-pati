@@ -13,6 +13,7 @@ import ConfirmDialog from '../components/ui/ConfirmDialog'
 import Button from '../components/ui/Button'
 import Pagination from '../components/ui/Pagination'
 import AICachePanel from '../components/admin/AICachePanel'
+import AccessControlPanel, { AllowButton } from '../components/admin/AccessControlPanel'
 
 function decodeUserID(): number | null {
   const t = getAccessToken()
@@ -320,6 +321,7 @@ export default function Admin() {
                         Message
                       </button>
                     )}
+                    <AllowButton user={u} />
                   </td>
                 </tr>
               ))}
@@ -381,6 +383,7 @@ export default function Admin() {
                     }}
                   >Message</button>
                 )}
+                <AllowButton user={u} />
               </div>
             </div>
           ))}
@@ -406,6 +409,8 @@ export default function Admin() {
         onClose={() => setSelectedUser(null)}
         onToggle={() => setConfirmUser(liveSelected)}
       />}
+
+      <AccessControlPanel />
 
       <AICachePanel />
 

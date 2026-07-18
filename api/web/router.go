@@ -72,6 +72,12 @@ func NewRouter(jwtSecret, corsOrigin string) chi.Router {
 				r.Patch("/admin/users/{id}/activate", HandleAdminSetUserActive)
 				r.Post("/admin/broadcast", HandleAdminBroadcast)
 
+				r.Get("/admin/access", HandleGetAccessSettings)
+				r.Put("/admin/access", HandleUpdateAccessSettings)
+				r.Post("/admin/access/allowed", HandleAddAllowedUser)
+				r.Delete("/admin/access/allowed/{id}", HandleRemoveAllowedUser)
+				r.Post("/admin/access/allowed/{id}/restore", HandleRestoreAllowedUser)
+
 				r.Get("/admin/ai-cache", HandleAdminListAICache)
 				r.Get("/admin/ai-cache/export", HandleAdminExportAICache)
 				r.Post("/admin/ai-cache/import", HandleAdminImportAICache)

@@ -97,7 +97,7 @@ func initializeSQLServices(uow styx.UnitOfWork) error {
 	}
 	all.InitiateSQLServices(uow, logr.DefaultLogger)
 
-	if err := all.GetServices().Access.EnsureSeeded(buildAccessSeed()); err != nil {
+	if err := all.GetServices().Access.Seed(buildAccessSeed()); err != nil {
 		return fmt.Errorf("seed access control: %w", err)
 	}
 
@@ -105,7 +105,7 @@ func initializeSQLServices(uow styx.UnitOfWork) error {
 }
 
 // buildAccessSeed maps the config's access-control bootstrap into a seed.
-// Applied on first boot only; the owner is re-applied every boot.
+// Applied additively every boot; existing rows and settings are never touched.
 func buildAccessSeed() services.AccessSeed {
 	tg := TrackerConfig.Telegram
 	text := "🔒 This is a private test instance of Khorcha-Pati."
