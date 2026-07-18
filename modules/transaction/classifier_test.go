@@ -32,6 +32,16 @@ func TestLocalClassify(t *testing.T) {
 		{"salary", "got my salary", "fin-sal", true},
 		{"withdraw", "atm withdraw", "fin-with", true},
 		{"multiword beats single", "credit card bill", "fin-ccpay", true},
+		{"dinner", "dinner", "food-rest", true},
+		{"lunch", "lunch", "food-rest", true},
+		{"breakfast", "breakfast", "food-rest", true},
+		{"groceries", "groceries", "food-groc", true},
+		{"taxi", "taxi", "trans-taxi", true},
+		{"hospital", "hospital", "health-doc", true},
+		{"bare water is beverage", "water", "food-bev", true},
+		{"water bill is utility", "water bill", "house-util", true},
+		{"bare mobile is electronics", "mobile", "shop-elec", true},
+		{"mobile recharge is flexi", "mobile recharge", "fin-flexi", true},
 		{"no match", "asdf qwer zxcv", "", false},
 	}
 	for _, tt := range tests {

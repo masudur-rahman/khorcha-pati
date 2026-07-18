@@ -350,28 +350,28 @@ var miscSubs = []TxnSubcategory{
 // actually type in the UI. Kept separate from Hint (which stays verbose for the AI).
 var subKeywords = map[string]string{
 	// Food
-	"food-groc": "grocery, bazar, bajar, monihari, rice, oil", "food-veg": "veggies, shobji, torkari, potato, onion",
+	"food-groc": "grocery, groceries, bazar, bajar, monihari, rice, oil, sugar, salt, flour", "food-veg": "veggies, shobji, torkari, potato, onion",
 	"food-fruit": "fruit, fol, banana, mango, apple", "food-fish": "fish, mach, maach, ilish",
-	"food-meat": "meat, mangsho, gosht, chicken, beef, mutton", "food-dairy": "milk, egg, yogurt, cheese",
-	"food-bakery": "bread, cake, biscuit", "food-rest": "restaurant, dining, biryani, lunch out",
-	"food-street": "street food, fuchka, chotpoti", "food-take": "takeout, foodpanda, delivery",
-	"food-snack": "snacks, nasta, tiffin, chips, chanachur", "food-bev": "tea, coffee, juice, drinks",
+	"food-meat": "meat, mangsho, gosht, chicken, beef, mutton", "food-dairy": "milk, egg, eggs, yogurt, cheese, butter, ghee",
+	"food-bakery": "bread, cake, biscuit, pastry, pitha", "food-rest": "restaurant, dining, biryani, kacchi, buffet, lunch, dinner, breakfast",
+	"food-street": "street food, fuchka, chotpoti, jhalmuri, singara, shingara, samosa", "food-take": "takeout, takeaway, foodpanda, delivery",
+	"food-snack": "snacks, snack, nasta, tiffin, chips, chanachur", "food-bev": "tea, cha, coffee, juice, water, drinks",
 	"food-misc": "food, khabar",
 	// Transport
-	"trans-pub": "bus, train, metro, leguna, tempo", "trans-taxi": "uber, pathao, rickshaw, cng",
-	"trans-fuel": "fuel, petrol, octane, gas", "trans-toll": "toll, parking",
+	"trans-pub": "bus, train, metro, launch, leguna, tempo", "trans-taxi": "taxi, uber, pathao, rickshaw, cng",
+	"trans-fuel": "fuel, petrol, diesel, octane, gas", "trans-toll": "toll, parking",
 	"trans-maint": "servicing, repair, mechanic", "trans-other": "transport, fare",
 	// Shopping
-	"shop-supply": "detergent, cleaning, broom", "shop-cloth": "clothes, jama, kapor, panjabi, shirt, pant, saree",
-	"shop-foot": "shoes, juta, sandal, slipper", "shop-elec": "phone, charger, laptop, gadget",
-	"shop-jewelry": "jewelry, gold, ring, chain", "shop-beauty": "makeup, perfume, cosmetics",
-	"shop-acc": "watch, bag, belt, sunglasses", "shop-stat": "pen, notebook, stationery",
+	"shop-supply": "detergent, cleaning, broom", "shop-cloth": "clothes, jama, kapor, panjabi, lungi, shirt, pant, saree",
+	"shop-foot": "shoes, shoe, juta, sandal, slipper", "shop-elec": "phone, mobile, charger, earphone, headphone, laptop, gadget",
+	"shop-jewelry": "jewelry, gold, ring, chain", "shop-beauty": "makeup, lipstick, lotion, perfume, cosmetics",
+	"shop-acc": "watch, bag, belt, sunglasses, umbrella", "shop-stat": "pen, notebook, stationery",
 	"shop-other": "shopping, purchase",
 	// Financial
 	"fin-sal": "salary, wages, paycheck", "fin-prof": "bonus, profit, freelance, cashback",
 	"fin-interest": "interest, fdr", "fin-deposit": "deposit, savings",
-	"fin-with": "withdraw, cashout, atm", "fin-transfer": "transfer, bkash, nagad, send money",
-	"fin-flexi": "recharge, flexiload, topup, data", "fin-ccpay": "credit card, cc bill",
+	"fin-with": "withdraw, cashout, atm", "fin-transfer": "transfer, bkash, nagad, rocket, send money",
+	"fin-flexi": "recharge, flexi, flexiload, topup, data", "fin-ccpay": "credit card, cc bill",
 	"fin-dps": "dps, savings scheme", "fin-loan": "bank loan, took loan",
 	"fin-repay": "emi, installment, loan payment", "fin-lend": "lend, lent, gave loan, handed, covering, paid for, dhar dilam",
 	"fin-recover": "recover, recovered, collected, got back, paid me back, they returned, loan repayment, ferot pelam", "fin-borrow": "borrow, borrowed, took, took loan, dhar nilam, theke nilam",
@@ -380,28 +380,28 @@ var subKeywords = map[string]string{
 	"fin-gold": "gold", "fin-invest": "stocks, shares, crypto, mutual fund",
 	"fin-misc": "financial, misc",
 	// Housing
-	"house-rent": "rent, house rent, basha bhara", "house-util": "electricity, gas, water bill",
+	"house-rent": "rent, house rent, bhara, basha bhara", "house-util": "electricity, gas, current bill, water bill",
 	"house-net": "internet, wifi, broadband", "house-serv": "maid, bua, buya, cleaner, driver",
-	"house-maint": "repair, plumbing, electrician", "house-furn": "furniture, table, bed",
+	"house-maint": "repair, plumbing, electrician", "house-furn": "furniture, table, chair, bed, sofa, curtain",
 	"house-real": "flat, land, plot", "house-misc": "household, home",
 	// Health
-	"health-doc": "doctor, consultation, clinic", "health-test": "test, xray, ultrasound, lab",
-	"health-med": "medicine, pharmacy, drugs", "health-other": "surgery, dental, therapy",
+	"health-doc": "doctor, consultation, clinic, hospital", "health-test": "test, xray, ultrasound, lab",
+	"health-med": "medicine, pharmacy, drugs", "health-other": "surgery, dental, therapy, ambulance",
 	// Personal Care
-	"pc-salon": "salon, haircut, chuler kat, chul kata, barber, parlor", "pc-skin": "skincare, cream, facewash",
-	"pc-spa": "spa, massage", "pc-toilet": "soap, shampoo, toothpaste",
-	"pc-fit": "gym, yoga, fitness", "pc-smoke": "cigarette, vape, paan",
+	"pc-salon": "salon, haircut, shave, chuler kat, chul kata, barber, parlor", "pc-skin": "skincare, cream, facewash",
+	"pc-spa": "spa, massage", "pc-toilet": "soap, shampoo, toothpaste, razor, tissue",
+	"pc-fit": "gym, yoga, fitness, swimming", "pc-smoke": "cigarette, cigarettes, vape, paan",
 	"pc-misc": "personal care, wellness",
 	// Family
 	"fam-allow": "wife, husband, spouse, pocket money", "fam-par": "parents, baba, ma, support",
 	"fam-baby": "baby, diaper, formula", "fam-child": "kids, school fee, tuition, toys",
 	"fam-care": "family, elder care", "fam-other": "family",
 	// Education
-	"edu-course": "course, coaching, training, tuition", "edu-book": "books, study materials",
-	"edu-exam": "exam fee, admission", "edu-other": "education",
+	"edu-course": "course, coaching, training, tuition", "edu-book": "books, book, textbook, study materials",
+	"edu-exam": "exam, exam fee, admission", "edu-other": "education",
 	// Entertainment
-	"ent-movie": "movie, cinema", "ent-sub": "netflix, spotify, subscription",
-	"ent-rec": "park, outing, picnic, hangout", "ent-game": "games, gaming",
+	"ent-movie": "movie, cinema", "ent-sub": "netflix, youtube, spotify, subscription",
+	"ent-rec": "park, zoo, outing, picnic, hangout", "ent-game": "games, game, gaming",
 	"ent-event": "concert, event, ticket", "ent-misc": "hobby, entertainment",
 	// Travel
 	"trv-ticket": "flight, ticket, travel", "trv-hotel": "hotel, resort, airbnb",
@@ -411,8 +411,8 @@ var subKeywords = map[string]string{
 	// Festival
 	"fest-eid": "eid, eidi, salami", "fest-wed": "wedding, biye, gift",
 	"fest-others": "puja, christmas, boishakh", "fest-gift": "festival gift, birthday gift",
-	"fest-decor": "decoration, lights, flowers", "fest-charity": "zakat, donation, sadaqah",
-	"fest-food": "feast, dawat, iftar",
+	"fest-decor": "decoration, lights, flowers", "fest-charity": "zakat, fitra, donation, sadaqah",
+	"fest-food": "feast, dawat, iftar, sehri",
 	// Miscellaneous
 	"misc-init": "opening balance, initial", "misc-gift": "gift",
 	"misc-charity": "charity, tip, help", "misc-office": "office, work expense",
